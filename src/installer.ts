@@ -12,12 +12,9 @@ export async function installLilyPond(version: semver.SemVer): Promise<string> {
   const url = downloadUrl(version)
   core.info(`Downloading LilyPond from ${url}`)
   const downloadPath = await tc.downloadTool(url)
-  core.info('Extracting LilyPond...')
-  const extPath = await tc.extractTar(downloadPath, undefined, [
-    '--extract',
-    '--gzip',
-    '--strip-components=1'
-  ])
+  const opts = ['--extract', '--gzip', '--strip-components=1']
+  core.info(`Extracting LilyPond with options ${opts}...`)
+  const extPath = await tc.extractTar(downloadPath, undefined, opts)
   core.info('Adding LilyPond to tools cache...')
   const toolCacheDir = await tc.cacheDir(extPath, 'lilypond', version.version)
   core.info(`Successfully cached LilyPond to ${toolCacheDir}`)
