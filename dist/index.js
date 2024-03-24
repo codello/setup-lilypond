@@ -48598,11 +48598,7 @@ async function installLilyPond(version) {
     core.info(`Downloading LilyPond from ${url}`);
     const downloadPath = await tc.downloadTool(url);
     core.info(`Extracting LilyPond...`);
-    const extPath = await tc.extractTar(downloadPath, undefined, [
-        '--extract',
-        '--gzip',
-        '--strip-components=1'
-    ]);
+    const extPath = await extractArchive(downloadPath, version);
     core.info('Adding LilyPond to tools cache...');
     const toolCacheDir = await tc.cacheDir(extPath, 'lilypond', version.version);
     core.info('Fixing File Modification Dates');
@@ -48619,6 +48615,7 @@ exports.installLilyPond = installLilyPond;
  * @param version The LilyPond version to be downloaded.
  */
 function downloadUrl(version) {
+    let ext = 'tar.gz';
     let arch = os_1.default.arch();
     if (arch === 'x64') {
         arch = 'x86_64';
@@ -48626,8 +48623,19 @@ function downloadUrl(version) {
     let platform = os_1.default.platform().toString();
     if (platform === 'win32') {
         platform = 'mingw';
+        ext = 'zip';
     }
-    return `https://gitlab.com/lilypond/lilypond/-/releases/v${version}/downloads/lilypond-${version}-${platform}-${arch}.tar.gz`;
+    return `https://gitlab.com/lilypond/lilypond/-/releases/v${version}/downloads/lilypond-${version}-${platform}-${arch}.${ext}`;
+}
+async function extractArchive(archivePath, version) {
+    let extPath;
+    if (os_1.default.platform() === 'win32') {
+        extPath = await tc.extractZip(archivePath);
+    }
+    else {
+        extPath = await tc.extractTar(archivePath);
+    }
+    return path.join(extPath, `lilypond-${version.version}`);
 }
 
 

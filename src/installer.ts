@@ -20,11 +20,7 @@ export async function installLilyPond(version: semver.SemVer): Promise<string> {
   core.info(`Downloading LilyPond from ${url}`)
   const downloadPath = await tc.downloadTool(url)
   core.info(`Extracting LilyPond...`)
-  const extPath = await tc.extractTar(downloadPath, undefined, [
-    '--extract',
-    '--gzip',
-    '--strip-components=1'
-  ])
+  const extPath = await extractArchive(downloadPath, version)
   core.info('Adding LilyPond to tools cache...')
   const toolCacheDir = await tc.cacheDir(extPath, 'lilypond', version.version)
   core.info('Fixing File Modification Dates')
@@ -41,6 +37,7 @@ export async function installLilyPond(version: semver.SemVer): Promise<string> {
  * @param version The LilyPond version to be downloaded.
  */
 function downloadUrl(version: semver.SemVer): string {
+  let ext = 'tar.gz'
   let arch = os.arch()
   if (arch === 'x64') {
     arch = 'x86_64'
@@ -48,6 +45,20 @@ function downloadUrl(version: semver.SemVer): string {
   let platform = os.platform().toString()
   if (platform === 'win32') {
     platform = 'mingw'
+    ext = 'zip'
   }
-  return `https://gitlab.com/lilypond/lilypond/-/releases/v${version}/downloads/lilypond-${version}-${platform}-${arch}.tar.gz`
+  return `https://gitlab.com/lilypond/lilypond/-/releases/v${version}/downloads/lilypond-${version}-${platform}-${arch}.${ext}`
+}
+
+async function extractArchive(
+  archivePath: string,
+  version: semver.SemVer
+): Promise<string> {
+  let extPath: string
+  if (os.platform() === 'win32') {
+    extPath = await tc.extractZip(archivePath)
+  } else {
+    extPath = await tc.extractTar(archivePath)
+  }
+  return path.join(extPath, `lilypond-${version.version}`)
 }

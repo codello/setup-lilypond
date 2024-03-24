@@ -23,7 +23,7 @@ jobs:
           - { spec: 'development', result: 1 }
     steps:
       - name: Checkout Code
-        uses: action/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Test Setup LilyPond
         id: test
