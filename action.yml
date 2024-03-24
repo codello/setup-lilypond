@@ -1,24 +1,26 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Setup LilyPond'
+description: 'Setup a LilyPond environemnt and add it to the PATH'
+author: 'Codello'
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
-branding:
-  icon: 'heart'
-  color: 'red'
-
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  lilypond-version:
     required: true
-    default: '1000'
+    description:
+      'The LilyPond version to download and use. Supports semver spec and
+      ranges.'
+  ol-fonts:
+    description: 'A comma separated list of OpenLilyPondFonts to install.'
 
-# Define your outputs here.
 outputs:
-  time:
-    description: 'Your output description here'
+  lilypond-version:
+    description:
+      'The installed LilyPond version. Useful when given a version range as
+      input.'
 
 runs:
   using: node20
   main: dist/index.js
+
+branding:
+  icon: music
+  color: green
