@@ -1,7 +1,7 @@
 {
   "name": "setup-lilypond",
   "description": "Set up your GitHub Actions workflow with a specific version of LilyPond",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": "Codello",
   "private": true,
   "homepage": "https://github.com/codello/setup-lilypond",
