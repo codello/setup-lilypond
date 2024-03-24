@@ -1,21 +1,21 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
+  "name": "setup-lilypond",
+  "description": "Set up your GitHub Actions workflow with a specific version of LilyPond",
   "version": "0.0.0",
-  "author": "",
+  "author": "Codello",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/codello/setup-lilypond",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/codello/setup-lilypond.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/codello/setup-lilypond/issues"
   },
   "keywords": [
-    "actions",
-    "node",
-    "setup"
+    "GitHub",
+    "Actions",
+    "LilyPond"
   ],
   "exports": {
     ".": "./dist/index.js"
@@ -29,7 +29,7 @@
     "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
-    "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
+    "lint": "npx eslint .",
     "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "package:watch": "npm run package -- --watch",
     "test": "npx jest",
@@ -66,7 +66,9 @@
     ]
   },
   "dependencies": {
-    "@actions/core": "^1.10.1"
+    "@actions/core": "^1.10.1",
+    "@actions/tool-cache": "^2.0.1",
+    "@gitbeaker/rest": "^40.0.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

@@ -994,6 +994,741 @@ exports.toCommandProperties = toCommandProperties;
 
 /***/ }),
 
+/***/ 1514:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getExecOutput = exports.exec = void 0;
+const string_decoder_1 = __nccwpck_require__(1576);
+const tr = __importStar(__nccwpck_require__(8159));
+/**
+ * Exec a command.
+ * Output will be streamed to the live console.
+ * Returns promise with return code
+ *
+ * @param     commandLine        command to execute (can include additional args). Must be correctly escaped.
+ * @param     args               optional arguments for tool. Escaping is handled by the lib.
+ * @param     options            optional exec options.  See ExecOptions
+ * @returns   Promise<number>    exit code
+ */
+function exec(commandLine, args, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const commandArgs = tr.argStringToArray(commandLine);
+        if (commandArgs.length === 0) {
+            throw new Error(`Parameter 'commandLine' cannot be null or empty.`);
+        }
+        // Path to tool to execute should be first arg
+        const toolPath = commandArgs[0];
+        args = commandArgs.slice(1).concat(args || []);
+        const runner = new tr.ToolRunner(toolPath, args, options);
+        return runner.exec();
+    });
+}
+exports.exec = exec;
+/**
+ * Exec a command and get the output.
+ * Output will be streamed to the live console.
+ * Returns promise with the exit code and collected stdout and stderr
+ *
+ * @param     commandLine           command to execute (can include additional args). Must be correctly escaped.
+ * @param     args                  optional arguments for tool. Escaping is handled by the lib.
+ * @param     options               optional exec options.  See ExecOptions
+ * @returns   Promise<ExecOutput>   exit code, stdout, and stderr
+ */
+function getExecOutput(commandLine, args, options) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        let stdout = '';
+        let stderr = '';
+        //Using string decoder covers the case where a mult-byte character is split
+        const stdoutDecoder = new string_decoder_1.StringDecoder('utf8');
+        const stderrDecoder = new string_decoder_1.StringDecoder('utf8');
+        const originalStdoutListener = (_a = options === null || options === void 0 ? void 0 : options.listeners) === null || _a === void 0 ? void 0 : _a.stdout;
+        const originalStdErrListener = (_b = options === null || options === void 0 ? void 0 : options.listeners) === null || _b === void 0 ? void 0 : _b.stderr;
+        const stdErrListener = (data) => {
+            stderr += stderrDecoder.write(data);
+            if (originalStdErrListener) {
+                originalStdErrListener(data);
+            }
+        };
+        const stdOutListener = (data) => {
+            stdout += stdoutDecoder.write(data);
+            if (originalStdoutListener) {
+                originalStdoutListener(data);
+            }
+        };
+        const listeners = Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.listeners), { stdout: stdOutListener, stderr: stdErrListener });
+        const exitCode = yield exec(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
+        //flush any remaining characters
+        stdout += stdoutDecoder.end();
+        stderr += stderrDecoder.end();
+        return {
+            exitCode,
+            stdout,
+            stderr
+        };
+    });
+}
+exports.getExecOutput = getExecOutput;
+//# sourceMappingURL=exec.js.map
+
+/***/ }),
+
+/***/ 8159:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.argStringToArray = exports.ToolRunner = void 0;
+const os = __importStar(__nccwpck_require__(2037));
+const events = __importStar(__nccwpck_require__(2361));
+const child = __importStar(__nccwpck_require__(2081));
+const path = __importStar(__nccwpck_require__(1017));
+const io = __importStar(__nccwpck_require__(7436));
+const ioUtil = __importStar(__nccwpck_require__(1962));
+const timers_1 = __nccwpck_require__(9512);
+/* eslint-disable @typescript-eslint/unbound-method */
+const IS_WINDOWS = process.platform === 'win32';
+/*
+ * Class for running command line tools. Handles quoting and arg parsing in a platform agnostic way.
+ */
+class ToolRunner extends events.EventEmitter {
+    constructor(toolPath, args, options) {
+        super();
+        if (!toolPath) {
+            throw new Error("Parameter 'toolPath' cannot be null or empty.");
+        }
+        this.toolPath = toolPath;
+        this.args = args || [];
+        this.options = options || {};
+    }
+    _debug(message) {
+        if (this.options.listeners && this.options.listeners.debug) {
+            this.options.listeners.debug(message);
+        }
+    }
+    _getCommandString(options, noPrefix) {
+        const toolPath = this._getSpawnFileName();
+        const args = this._getSpawnArgs(options);
+        let cmd = noPrefix ? '' : '[command]'; // omit prefix when piped to a second tool
+        if (IS_WINDOWS) {
+            // Windows + cmd file
+            if (this._isCmdFile()) {
+                cmd += toolPath;
+                for (const a of args) {
+                    cmd += ` ${a}`;
+                }
+            }
+            // Windows + verbatim
+            else if (options.windowsVerbatimArguments) {
+                cmd += `"${toolPath}"`;
+                for (const a of args) {
+                    cmd += ` ${a}`;
+                }
+            }
+            // Windows (regular)
+            else {
+                cmd += this._windowsQuoteCmdArg(toolPath);
+                for (const a of args) {
+                    cmd += ` ${this._windowsQuoteCmdArg(a)}`;
+                }
+            }
+        }
+        else {
+            // OSX/Linux - this can likely be improved with some form of quoting.
+            // creating processes on Unix is fundamentally different than Windows.
+            // on Unix, execvp() takes an arg array.
+            cmd += toolPath;
+            for (const a of args) {
+                cmd += ` ${a}`;
+            }
+        }
+        return cmd;
+    }
+    _processLineBuffer(data, strBuffer, onLine) {
+        try {
+            let s = strBuffer + data.toString();
+            let n = s.indexOf(os.EOL);
+            while (n > -1) {
+                const line = s.substring(0, n);
+                onLine(line);
+                // the rest of the string ...
+                s = s.substring(n + os.EOL.length);
+                n = s.indexOf(os.EOL);
+            }
+            return s;
+        }
+        catch (err) {
+            // streaming lines to console is best effort.  Don't fail a build.
+            this._debug(`error processing line. Failed with error ${err}`);
+            return '';
+        }
+    }
+    _getSpawnFileName() {
+        if (IS_WINDOWS) {
+            if (this._isCmdFile()) {
+                return process.env['COMSPEC'] || 'cmd.exe';
+            }
+        }
+        return this.toolPath;
+    }
+    _getSpawnArgs(options) {
+        if (IS_WINDOWS) {
+            if (this._isCmdFile()) {
+                let argline = `/D /S /C "${this._windowsQuoteCmdArg(this.toolPath)}`;
+                for (const a of this.args) {
+                    argline += ' ';
+                    argline += options.windowsVerbatimArguments
+                        ? a
+                        : this._windowsQuoteCmdArg(a);
+                }
+                argline += '"';
+                return [argline];
+            }
+        }
+        return this.args;
+    }
+    _endsWith(str, end) {
+        return str.endsWith(end);
+    }
+    _isCmdFile() {
+        const upperToolPath = this.toolPath.toUpperCase();
+        return (this._endsWith(upperToolPath, '.CMD') ||
+            this._endsWith(upperToolPath, '.BAT'));
+    }
+    _windowsQuoteCmdArg(arg) {
+        // for .exe, apply the normal quoting rules that libuv applies
+        if (!this._isCmdFile()) {
+            return this._uvQuoteCmdArg(arg);
+        }
+        // otherwise apply quoting rules specific to the cmd.exe command line parser.
+        // the libuv rules are generic and are not designed specifically for cmd.exe
+        // command line parser.
+        //
+        // for a detailed description of the cmd.exe command line parser, refer to
+        // http://stackoverflow.com/questions/4094699/how-does-the-windows-command-interpreter-cmd-exe-parse-scripts/7970912#7970912
+        // need quotes for empty arg
+        if (!arg) {
+            return '""';
+        }
+        // determine whether the arg needs to be quoted
+        const cmdSpecialChars = [
+            ' ',
+            '\t',
+            '&',
+            '(',
+            ')',
+            '[',
+            ']',
+            '{',
+            '}',
+            '^',
+            '=',
+            ';',
+            '!',
+            "'",
+            '+',
+            ',',
+            '`',
+            '~',
+            '|',
+            '<',
+            '>',
+            '"'
+        ];
+        let needsQuotes = false;
+        for (const char of arg) {
+            if (cmdSpecialChars.some(x => x === char)) {
+                needsQuotes = true;
+                break;
+            }
+        }
+        // short-circuit if quotes not needed
+        if (!needsQuotes) {
+            return arg;
+        }
+        // the following quoting rules are very similar to the rules that by libuv applies.
+        //
+        // 1) wrap the string in quotes
+        //
+        // 2) double-up quotes - i.e. " => ""
+        //
+        //    this is different from the libuv quoting rules. libuv replaces " with \", which unfortunately
+        //    doesn't work well with a cmd.exe command line.
+        //
+        //    note, replacing " with "" also works well if the arg is passed to a downstream .NET console app.
+        //    for example, the command line:
+        //          foo.exe "myarg:""my val"""
+        //    is parsed by a .NET console app into an arg array:
+        //          [ "myarg:\"my val\"" ]
+        //    which is the same end result when applying libuv quoting rules. although the actual
+        //    command line from libuv quoting rules would look like:
+        //          foo.exe "myarg:\"my val\""
+        //
+        // 3) double-up slashes that precede a quote,
+        //    e.g.  hello \world    => "hello \world"
+        //          hello\"world    => "hello\\""world"
+        //          hello\\"world   => "hello\\\\""world"
+        //          hello world\    => "hello world\\"
+        //
+        //    technically this is not required for a cmd.exe command line, or the batch argument parser.
+        //    the reasons for including this as a .cmd quoting rule are:
+        //
+        //    a) this is optimized for the scenario where the argument is passed from the .cmd file to an
+        //       external program. many programs (e.g. .NET console apps) rely on the slash-doubling rule.
+        //
+        //    b) it's what we've been doing previously (by deferring to node default behavior) and we
+        //       haven't heard any complaints about that aspect.
+        //
+        // note, a weakness of the quoting rules chosen here, is that % is not escaped. in fact, % cannot be
+        // escaped when used on the command line directly - even though within a .cmd file % can be escaped
+        // by using %%.
+        //
+        // the saving grace is, on the command line, %var% is left as-is if var is not defined. this contrasts
+        // the line parsing rules within a .cmd file, where if var is not defined it is replaced with nothing.
+        //
+        // one option that was explored was replacing % with ^% - i.e. %var% => ^%var^%. this hack would
+        // often work, since it is unlikely that var^ would exist, and the ^ character is removed when the
+        // variable is used. the problem, however, is that ^ is not removed when %* is used to pass the args
+        // to an external program.
+        //
+        // an unexplored potential solution for the % escaping problem, is to create a wrapper .cmd file.
+        // % can be escaped within a .cmd file.
+        let reverse = '"';
+        let quoteHit = true;
+        for (let i = arg.length; i > 0; i--) {
+            // walk the string in reverse
+            reverse += arg[i - 1];
+            if (quoteHit && arg[i - 1] === '\\') {
+                reverse += '\\'; // double the slash
+            }
+            else if (arg[i - 1] === '"') {
+                quoteHit = true;
+                reverse += '"'; // double the quote
+            }
+            else {
+                quoteHit = false;
+            }
+        }
+        reverse += '"';
+        return reverse
+            .split('')
+            .reverse()
+            .join('');
+    }
+    _uvQuoteCmdArg(arg) {
+        // Tool runner wraps child_process.spawn() and needs to apply the same quoting as
+        // Node in certain cases where the undocumented spawn option windowsVerbatimArguments
+        // is used.
+        //
+        // Since this function is a port of quote_cmd_arg from Node 4.x (technically, lib UV,
+        // see https://github.com/nodejs/node/blob/v4.x/deps/uv/src/win/process.c for details),
+        // pasting copyright notice from Node within this function:
+        //
+        //      Copyright Joyent, Inc. and other Node contributors. All rights reserved.
+        //
+        //      Permission is hereby granted, free of charge, to any person obtaining a copy
+        //      of this software and associated documentation files (the "Software"), to
+        //      deal in the Software without restriction, including without limitation the
+        //      rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+        //      sell copies of the Software, and to permit persons to whom the Software is
+        //      furnished to do so, subject to the following conditions:
+        //
+        //      The above copyright notice and this permission notice shall be included in
+        //      all copies or substantial portions of the Software.
+        //
+        //      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        //      IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        //      FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        //      AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        //      LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+        //      FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+        //      IN THE SOFTWARE.
+        if (!arg) {
+            // Need double quotation for empty argument
+            return '""';
+        }
+        if (!arg.includes(' ') && !arg.includes('\t') && !arg.includes('"')) {
+            // No quotation needed
+            return arg;
+        }
+        if (!arg.includes('"') && !arg.includes('\\')) {
+            // No embedded double quotes or backslashes, so I can just wrap
+            // quote marks around the whole thing.
+            return `"${arg}"`;
+        }
+        // Expected input/output:
+        //   input : hello"world
+        //   output: "hello\"world"
+        //   input : hello""world
+        //   output: "hello\"\"world"
+        //   input : hello\world
+        //   output: hello\world
+        //   input : hello\\world
+        //   output: hello\\world
+        //   input : hello\"world
+        //   output: "hello\\\"world"
+        //   input : hello\\"world
+        //   output: "hello\\\\\"world"
+        //   input : hello world\
+        //   output: "hello world\\" - note the comment in libuv actually reads "hello world\"
+        //                             but it appears the comment is wrong, it should be "hello world\\"
+        let reverse = '"';
+        let quoteHit = true;
+        for (let i = arg.length; i > 0; i--) {
+            // walk the string in reverse
+            reverse += arg[i - 1];
+            if (quoteHit && arg[i - 1] === '\\') {
+                reverse += '\\';
+            }
+            else if (arg[i - 1] === '"') {
+                quoteHit = true;
+                reverse += '\\';
+            }
+            else {
+                quoteHit = false;
+            }
+        }
+        reverse += '"';
+        return reverse
+            .split('')
+            .reverse()
+            .join('');
+    }
+    _cloneExecOptions(options) {
+        options = options || {};
+        const result = {
+            cwd: options.cwd || process.cwd(),
+            env: options.env || process.env,
+            silent: options.silent || false,
+            windowsVerbatimArguments: options.windowsVerbatimArguments || false,
+            failOnStdErr: options.failOnStdErr || false,
+            ignoreReturnCode: options.ignoreReturnCode || false,
+            delay: options.delay || 10000
+        };
+        result.outStream = options.outStream || process.stdout;
+        result.errStream = options.errStream || process.stderr;
+        return result;
+    }
+    _getSpawnOptions(options, toolPath) {
+        options = options || {};
+        const result = {};
+        result.cwd = options.cwd;
+        result.env = options.env;
+        result['windowsVerbatimArguments'] =
+            options.windowsVerbatimArguments || this._isCmdFile();
+        if (options.windowsVerbatimArguments) {
+            result.argv0 = `"${toolPath}"`;
+        }
+        return result;
+    }
+    /**
+     * Exec a tool.
+     * Output will be streamed to the live console.
+     * Returns promise with return code
+     *
+     * @param     tool     path to tool to exec
+     * @param     options  optional exec options.  See ExecOptions
+     * @returns   number
+     */
+    exec() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // root the tool path if it is unrooted and contains relative pathing
+            if (!ioUtil.isRooted(this.toolPath) &&
+                (this.toolPath.includes('/') ||
+                    (IS_WINDOWS && this.toolPath.includes('\\')))) {
+                // prefer options.cwd if it is specified, however options.cwd may also need to be rooted
+                this.toolPath = path.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
+            }
+            // if the tool is only a file name, then resolve it from the PATH
+            // otherwise verify it exists (add extension on Windows if necessary)
+            this.toolPath = yield io.which(this.toolPath, true);
+            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+                this._debug(`exec tool: ${this.toolPath}`);
+                this._debug('arguments:');
+                for (const arg of this.args) {
+                    this._debug(`   ${arg}`);
+                }
+                const optionsNonNull = this._cloneExecOptions(this.options);
+                if (!optionsNonNull.silent && optionsNonNull.outStream) {
+                    optionsNonNull.outStream.write(this._getCommandString(optionsNonNull) + os.EOL);
+                }
+                const state = new ExecState(optionsNonNull, this.toolPath);
+                state.on('debug', (message) => {
+                    this._debug(message);
+                });
+                if (this.options.cwd && !(yield ioUtil.exists(this.options.cwd))) {
+                    return reject(new Error(`The cwd: ${this.options.cwd} does not exist!`));
+                }
+                const fileName = this._getSpawnFileName();
+                const cp = child.spawn(fileName, this._getSpawnArgs(optionsNonNull), this._getSpawnOptions(this.options, fileName));
+                let stdbuffer = '';
+                if (cp.stdout) {
+                    cp.stdout.on('data', (data) => {
+                        if (this.options.listeners && this.options.listeners.stdout) {
+                            this.options.listeners.stdout(data);
+                        }
+                        if (!optionsNonNull.silent && optionsNonNull.outStream) {
+                            optionsNonNull.outStream.write(data);
+                        }
+                        stdbuffer = this._processLineBuffer(data, stdbuffer, (line) => {
+                            if (this.options.listeners && this.options.listeners.stdline) {
+                                this.options.listeners.stdline(line);
+                            }
+                        });
+                    });
+                }
+                let errbuffer = '';
+                if (cp.stderr) {
+                    cp.stderr.on('data', (data) => {
+                        state.processStderr = true;
+                        if (this.options.listeners && this.options.listeners.stderr) {
+                            this.options.listeners.stderr(data);
+                        }
+                        if (!optionsNonNull.silent &&
+                            optionsNonNull.errStream &&
+                            optionsNonNull.outStream) {
+                            const s = optionsNonNull.failOnStdErr
+                                ? optionsNonNull.errStream
+                                : optionsNonNull.outStream;
+                            s.write(data);
+                        }
+                        errbuffer = this._processLineBuffer(data, errbuffer, (line) => {
+                            if (this.options.listeners && this.options.listeners.errline) {
+                                this.options.listeners.errline(line);
+                            }
+                        });
+                    });
+                }
+                cp.on('error', (err) => {
+                    state.processError = err.message;
+                    state.processExited = true;
+                    state.processClosed = true;
+                    state.CheckComplete();
+                });
+                cp.on('exit', (code) => {
+                    state.processExitCode = code;
+                    state.processExited = true;
+                    this._debug(`Exit code ${code} received from tool '${this.toolPath}'`);
+                    state.CheckComplete();
+                });
+                cp.on('close', (code) => {
+                    state.processExitCode = code;
+                    state.processExited = true;
+                    state.processClosed = true;
+                    this._debug(`STDIO streams have closed for tool '${this.toolPath}'`);
+                    state.CheckComplete();
+                });
+                state.on('done', (error, exitCode) => {
+                    if (stdbuffer.length > 0) {
+                        this.emit('stdline', stdbuffer);
+                    }
+                    if (errbuffer.length > 0) {
+                        this.emit('errline', errbuffer);
+                    }
+                    cp.removeAllListeners();
+                    if (error) {
+                        reject(error);
+                    }
+                    else {
+                        resolve(exitCode);
+                    }
+                });
+                if (this.options.input) {
+                    if (!cp.stdin) {
+                        throw new Error('child process missing stdin');
+                    }
+                    cp.stdin.end(this.options.input);
+                }
+            }));
+        });
+    }
+}
+exports.ToolRunner = ToolRunner;
+/**
+ * Convert an arg string to an array of args. Handles escaping
+ *
+ * @param    argString   string of arguments
+ * @returns  string[]    array of arguments
+ */
+function argStringToArray(argString) {
+    const args = [];
+    let inQuotes = false;
+    let escaped = false;
+    let arg = '';
+    function append(c) {
+        // we only escape double quotes.
+        if (escaped && c !== '"') {
+            arg += '\\';
+        }
+        arg += c;
+        escaped = false;
+    }
+    for (let i = 0; i < argString.length; i++) {
+        const c = argString.charAt(i);
+        if (c === '"') {
+            if (!escaped) {
+                inQuotes = !inQuotes;
+            }
+            else {
+                append(c);
+            }
+            continue;
+        }
+        if (c === '\\' && escaped) {
+            append(c);
+            continue;
+        }
+        if (c === '\\' && inQuotes) {
+            escaped = true;
+            continue;
+        }
+        if (c === ' ' && !inQuotes) {
+            if (arg.length > 0) {
+                args.push(arg);
+                arg = '';
+            }
+            continue;
+        }
+        append(c);
+    }
+    if (arg.length > 0) {
+        args.push(arg.trim());
+    }
+    return args;
+}
+exports.argStringToArray = argStringToArray;
+class ExecState extends events.EventEmitter {
+    constructor(options, toolPath) {
+        super();
+        this.processClosed = false; // tracks whether the process has exited and stdio is closed
+        this.processError = '';
+        this.processExitCode = 0;
+        this.processExited = false; // tracks whether the process has exited
+        this.processStderr = false; // tracks whether stderr was written to
+        this.delay = 10000; // 10 seconds
+        this.done = false;
+        this.timeout = null;
+        if (!toolPath) {
+            throw new Error('toolPath must not be empty');
+        }
+        this.options = options;
+        this.toolPath = toolPath;
+        if (options.delay) {
+            this.delay = options.delay;
+        }
+    }
+    CheckComplete() {
+        if (this.done) {
+            return;
+        }
+        if (this.processClosed) {
+            this._setResult();
+        }
+        else if (this.processExited) {
+            this.timeout = timers_1.setTimeout(ExecState.HandleTimeout, this.delay, this);
+        }
+    }
+    _debug(message) {
+        this.emit('debug', message);
+    }
+    _setResult() {
+        // determine whether there is an error
+        let error;
+        if (this.processExited) {
+            if (this.processError) {
+                error = new Error(`There was an error when attempting to execute the process '${this.toolPath}'. This may indicate the process failed to start. Error: ${this.processError}`);
+            }
+            else if (this.processExitCode !== 0 && !this.options.ignoreReturnCode) {
+                error = new Error(`The process '${this.toolPath}' failed with exit code ${this.processExitCode}`);
+            }
+            else if (this.processStderr && this.options.failOnStdErr) {
+                error = new Error(`The process '${this.toolPath}' failed because one or more lines were written to the STDERR stream`);
+            }
+        }
+        // clear the timeout
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+            this.timeout = null;
+        }
+        this.done = true;
+        this.emit('done', error, this.processExitCode);
+    }
+    static HandleTimeout(state) {
+        if (state.done) {
+            return;
+        }
+        if (!state.processClosed && state.processExited) {
+            const message = `The STDIO streams did not close within ${state.delay /
+                1000} seconds of the exit event from process '${state.toolPath}'. This may indicate a child process inherited the STDIO streams and has not yet exited.`;
+            state._debug(message);
+        }
+        state._setResult();
+    }
+}
+//# sourceMappingURL=toolrunner.js.map
+
+/***/ }),
+
 /***/ 5526:
 /***/ (function(__unused_webpack_module, exports) {
 
@@ -1831,6 +2566,22589 @@ function isLoopbackAddress(host) {
         hostLower.startsWith('[0:0:0:0:0:0:0:1]'));
 }
 //# sourceMappingURL=proxy.js.map
+
+/***/ }),
+
+/***/ 1962:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
+const fs = __importStar(__nccwpck_require__(7147));
+const path = __importStar(__nccwpck_require__(1017));
+_a = fs.promises
+// export const {open} = 'fs'
+, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
+// export const {open} = 'fs'
+exports.IS_WINDOWS = process.platform === 'win32';
+// See https://github.com/nodejs/node/blob/d0153aee367422d0858105abec186da4dff0a0c5/deps/uv/include/uv/win.h#L691
+exports.UV_FS_O_EXLOCK = 0x10000000;
+exports.READONLY = fs.constants.O_RDONLY;
+function exists(fsPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield exports.stat(fsPath);
+        }
+        catch (err) {
+            if (err.code === 'ENOENT') {
+                return false;
+            }
+            throw err;
+        }
+        return true;
+    });
+}
+exports.exists = exists;
+function isDirectory(fsPath, useStat = false) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const stats = useStat ? yield exports.stat(fsPath) : yield exports.lstat(fsPath);
+        return stats.isDirectory();
+    });
+}
+exports.isDirectory = isDirectory;
+/**
+ * On OSX/Linux, true if path starts with '/'. On Windows, true for paths like:
+ * \, \hello, \\hello\share, C:, and C:\hello (and corresponding alternate separator cases).
+ */
+function isRooted(p) {
+    p = normalizeSeparators(p);
+    if (!p) {
+        throw new Error('isRooted() parameter "p" cannot be empty');
+    }
+    if (exports.IS_WINDOWS) {
+        return (p.startsWith('\\') || /^[A-Z]:/i.test(p) // e.g. \ or \hello or \\hello
+        ); // e.g. C: or C:\hello
+    }
+    return p.startsWith('/');
+}
+exports.isRooted = isRooted;
+/**
+ * Best effort attempt to determine whether a file exists and is executable.
+ * @param filePath    file path to check
+ * @param extensions  additional file extensions to try
+ * @return if file exists and is executable, returns the file path. otherwise empty string.
+ */
+function tryGetExecutablePath(filePath, extensions) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let stats = undefined;
+        try {
+            // test file exists
+            stats = yield exports.stat(filePath);
+        }
+        catch (err) {
+            if (err.code !== 'ENOENT') {
+                // eslint-disable-next-line no-console
+                console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
+            }
+        }
+        if (stats && stats.isFile()) {
+            if (exports.IS_WINDOWS) {
+                // on Windows, test for valid extension
+                const upperExt = path.extname(filePath).toUpperCase();
+                if (extensions.some(validExt => validExt.toUpperCase() === upperExt)) {
+                    return filePath;
+                }
+            }
+            else {
+                if (isUnixExecutable(stats)) {
+                    return filePath;
+                }
+            }
+        }
+        // try each extension
+        const originalFilePath = filePath;
+        for (const extension of extensions) {
+            filePath = originalFilePath + extension;
+            stats = undefined;
+            try {
+                stats = yield exports.stat(filePath);
+            }
+            catch (err) {
+                if (err.code !== 'ENOENT') {
+                    // eslint-disable-next-line no-console
+                    console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
+                }
+            }
+            if (stats && stats.isFile()) {
+                if (exports.IS_WINDOWS) {
+                    // preserve the case of the actual file (since an extension was appended)
+                    try {
+                        const directory = path.dirname(filePath);
+                        const upperName = path.basename(filePath).toUpperCase();
+                        for (const actualName of yield exports.readdir(directory)) {
+                            if (upperName === actualName.toUpperCase()) {
+                                filePath = path.join(directory, actualName);
+                                break;
+                            }
+                        }
+                    }
+                    catch (err) {
+                        // eslint-disable-next-line no-console
+                        console.log(`Unexpected error attempting to determine the actual case of the file '${filePath}': ${err}`);
+                    }
+                    return filePath;
+                }
+                else {
+                    if (isUnixExecutable(stats)) {
+                        return filePath;
+                    }
+                }
+            }
+        }
+        return '';
+    });
+}
+exports.tryGetExecutablePath = tryGetExecutablePath;
+function normalizeSeparators(p) {
+    p = p || '';
+    if (exports.IS_WINDOWS) {
+        // convert slashes on Windows
+        p = p.replace(/\//g, '\\');
+        // remove redundant slashes
+        return p.replace(/\\\\+/g, '\\');
+    }
+    // remove redundant slashes
+    return p.replace(/\/\/+/g, '/');
+}
+// on Mac/Linux, test the execute bit
+//     R   W  X  R  W X R W X
+//   256 128 64 32 16 8 4 2 1
+function isUnixExecutable(stats) {
+    return ((stats.mode & 1) > 0 ||
+        ((stats.mode & 8) > 0 && stats.gid === process.getgid()) ||
+        ((stats.mode & 64) > 0 && stats.uid === process.getuid()));
+}
+// Get the path of cmd.exe in windows
+function getCmdPath() {
+    var _a;
+    return (_a = process.env['COMSPEC']) !== null && _a !== void 0 ? _a : `cmd.exe`;
+}
+exports.getCmdPath = getCmdPath;
+//# sourceMappingURL=io-util.js.map
+
+/***/ }),
+
+/***/ 7436:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.findInPath = exports.which = exports.mkdirP = exports.rmRF = exports.mv = exports.cp = void 0;
+const assert_1 = __nccwpck_require__(9491);
+const path = __importStar(__nccwpck_require__(1017));
+const ioUtil = __importStar(__nccwpck_require__(1962));
+/**
+ * Copies a file or folder.
+ * Based off of shelljs - https://github.com/shelljs/shelljs/blob/9237f66c52e5daa40458f94f9565e18e8132f5a6/src/cp.js
+ *
+ * @param     source    source path
+ * @param     dest      destination path
+ * @param     options   optional. See CopyOptions.
+ */
+function cp(source, dest, options = {}) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { force, recursive, copySourceDirectory } = readCopyOptions(options);
+        const destStat = (yield ioUtil.exists(dest)) ? yield ioUtil.stat(dest) : null;
+        // Dest is an existing file, but not forcing
+        if (destStat && destStat.isFile() && !force) {
+            return;
+        }
+        // If dest is an existing directory, should copy inside.
+        const newDest = destStat && destStat.isDirectory() && copySourceDirectory
+            ? path.join(dest, path.basename(source))
+            : dest;
+        if (!(yield ioUtil.exists(source))) {
+            throw new Error(`no such file or directory: ${source}`);
+        }
+        const sourceStat = yield ioUtil.stat(source);
+        if (sourceStat.isDirectory()) {
+            if (!recursive) {
+                throw new Error(`Failed to copy. ${source} is a directory, but tried to copy without recursive flag.`);
+            }
+            else {
+                yield cpDirRecursive(source, newDest, 0, force);
+            }
+        }
+        else {
+            if (path.relative(source, newDest) === '') {
+                // a file cannot be copied to itself
+                throw new Error(`'${newDest}' and '${source}' are the same file`);
+            }
+            yield copyFile(source, newDest, force);
+        }
+    });
+}
+exports.cp = cp;
+/**
+ * Moves a path.
+ *
+ * @param     source    source path
+ * @param     dest      destination path
+ * @param     options   optional. See MoveOptions.
+ */
+function mv(source, dest, options = {}) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (yield ioUtil.exists(dest)) {
+            let destExists = true;
+            if (yield ioUtil.isDirectory(dest)) {
+                // If dest is directory copy src into dest
+                dest = path.join(dest, path.basename(source));
+                destExists = yield ioUtil.exists(dest);
+            }
+            if (destExists) {
+                if (options.force == null || options.force) {
+                    yield rmRF(dest);
+                }
+                else {
+                    throw new Error('Destination already exists');
+                }
+            }
+        }
+        yield mkdirP(path.dirname(dest));
+        yield ioUtil.rename(source, dest);
+    });
+}
+exports.mv = mv;
+/**
+ * Remove a path recursively with force
+ *
+ * @param inputPath path to remove
+ */
+function rmRF(inputPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (ioUtil.IS_WINDOWS) {
+            // Check for invalid characters
+            // https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+            if (/[*"<>|]/.test(inputPath)) {
+                throw new Error('File path must not contain `*`, `"`, `<`, `>` or `|` on Windows');
+            }
+        }
+        try {
+            // note if path does not exist, error is silent
+            yield ioUtil.rm(inputPath, {
+                force: true,
+                maxRetries: 3,
+                recursive: true,
+                retryDelay: 300
+            });
+        }
+        catch (err) {
+            throw new Error(`File was unable to be removed ${err}`);
+        }
+    });
+}
+exports.rmRF = rmRF;
+/**
+ * Make a directory.  Creates the full path with folders in between
+ * Will throw if it fails
+ *
+ * @param   fsPath        path to create
+ * @returns Promise<void>
+ */
+function mkdirP(fsPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        assert_1.ok(fsPath, 'a path argument must be provided');
+        yield ioUtil.mkdir(fsPath, { recursive: true });
+    });
+}
+exports.mkdirP = mkdirP;
+/**
+ * Returns path of a tool had the tool actually been invoked.  Resolves via paths.
+ * If you check and the tool does not exist, it will throw.
+ *
+ * @param     tool              name of the tool
+ * @param     check             whether to check if tool exists
+ * @returns   Promise<string>   path to tool
+ */
+function which(tool, check) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!tool) {
+            throw new Error("parameter 'tool' is required");
+        }
+        // recursive when check=true
+        if (check) {
+            const result = yield which(tool, false);
+            if (!result) {
+                if (ioUtil.IS_WINDOWS) {
+                    throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
+                }
+                else {
+                    throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
+                }
+            }
+            return result;
+        }
+        const matches = yield findInPath(tool);
+        if (matches && matches.length > 0) {
+            return matches[0];
+        }
+        return '';
+    });
+}
+exports.which = which;
+/**
+ * Returns a list of all occurrences of the given tool on the system path.
+ *
+ * @returns   Promise<string[]>  the paths of the tool
+ */
+function findInPath(tool) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!tool) {
+            throw new Error("parameter 'tool' is required");
+        }
+        // build the list of extensions to try
+        const extensions = [];
+        if (ioUtil.IS_WINDOWS && process.env['PATHEXT']) {
+            for (const extension of process.env['PATHEXT'].split(path.delimiter)) {
+                if (extension) {
+                    extensions.push(extension);
+                }
+            }
+        }
+        // if it's rooted, return it if exists. otherwise return empty.
+        if (ioUtil.isRooted(tool)) {
+            const filePath = yield ioUtil.tryGetExecutablePath(tool, extensions);
+            if (filePath) {
+                return [filePath];
+            }
+            return [];
+        }
+        // if any path separators, return empty
+        if (tool.includes(path.sep)) {
+            return [];
+        }
+        // build the list of directories
+        //
+        // Note, technically "where" checks the current directory on Windows. From a toolkit perspective,
+        // it feels like we should not do this. Checking the current directory seems like more of a use
+        // case of a shell, and the which() function exposed by the toolkit should strive for consistency
+        // across platforms.
+        const directories = [];
+        if (process.env.PATH) {
+            for (const p of process.env.PATH.split(path.delimiter)) {
+                if (p) {
+                    directories.push(p);
+                }
+            }
+        }
+        // find all matches
+        const matches = [];
+        for (const directory of directories) {
+            const filePath = yield ioUtil.tryGetExecutablePath(path.join(directory, tool), extensions);
+            if (filePath) {
+                matches.push(filePath);
+            }
+        }
+        return matches;
+    });
+}
+exports.findInPath = findInPath;
+function readCopyOptions(options) {
+    const force = options.force == null ? true : options.force;
+    const recursive = Boolean(options.recursive);
+    const copySourceDirectory = options.copySourceDirectory == null
+        ? true
+        : Boolean(options.copySourceDirectory);
+    return { force, recursive, copySourceDirectory };
+}
+function cpDirRecursive(sourceDir, destDir, currentDepth, force) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Ensure there is not a run away recursive copy
+        if (currentDepth >= 255)
+            return;
+        currentDepth++;
+        yield mkdirP(destDir);
+        const files = yield ioUtil.readdir(sourceDir);
+        for (const fileName of files) {
+            const srcFile = `${sourceDir}/${fileName}`;
+            const destFile = `${destDir}/${fileName}`;
+            const srcFileStat = yield ioUtil.lstat(srcFile);
+            if (srcFileStat.isDirectory()) {
+                // Recurse
+                yield cpDirRecursive(srcFile, destFile, currentDepth, force);
+            }
+            else {
+                yield copyFile(srcFile, destFile, force);
+            }
+        }
+        // Change the mode for the newly created directory
+        yield ioUtil.chmod(destDir, (yield ioUtil.stat(sourceDir)).mode);
+    });
+}
+// Buffered file copy
+function copyFile(srcFile, destFile, force) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if ((yield ioUtil.lstat(srcFile)).isSymbolicLink()) {
+            // unlink/re-link it
+            try {
+                yield ioUtil.lstat(destFile);
+                yield ioUtil.unlink(destFile);
+            }
+            catch (e) {
+                // Try to override file permission
+                if (e.code === 'EPERM') {
+                    yield ioUtil.chmod(destFile, '0666');
+                    yield ioUtil.unlink(destFile);
+                }
+                // other errors = it doesn't exist, no work to do
+            }
+            // Copy over symlink
+            const symlinkFull = yield ioUtil.readlink(srcFile);
+            yield ioUtil.symlink(symlinkFull, destFile, ioUtil.IS_WINDOWS ? 'junction' : null);
+        }
+        else if (!(yield ioUtil.exists(destFile)) || force) {
+            yield ioUtil.copyFile(srcFile, destFile);
+        }
+    });
+}
+//# sourceMappingURL=io.js.map
+
+/***/ }),
+
+/***/ 2473:
+/***/ (function(module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports._readLinuxVersionFile = exports._getOsVersion = exports._findMatch = void 0;
+const semver = __importStar(__nccwpck_require__(562));
+const core_1 = __nccwpck_require__(2186);
+// needs to be require for core node modules to be mocked
+/* eslint @typescript-eslint/no-require-imports: 0 */
+const os = __nccwpck_require__(2037);
+const cp = __nccwpck_require__(2081);
+const fs = __nccwpck_require__(7147);
+function _findMatch(versionSpec, stable, candidates, archFilter) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const platFilter = os.platform();
+        let result;
+        let match;
+        let file;
+        for (const candidate of candidates) {
+            const version = candidate.version;
+            core_1.debug(`check ${version} satisfies ${versionSpec}`);
+            if (semver.satisfies(version, versionSpec) &&
+                (!stable || candidate.stable === stable)) {
+                file = candidate.files.find(item => {
+                    core_1.debug(`${item.arch}===${archFilter} && ${item.platform}===${platFilter}`);
+                    let chk = item.arch === archFilter && item.platform === platFilter;
+                    if (chk && item.platform_version) {
+                        const osVersion = module.exports._getOsVersion();
+                        if (osVersion === item.platform_version) {
+                            chk = true;
+                        }
+                        else {
+                            chk = semver.satisfies(osVersion, item.platform_version);
+                        }
+                    }
+                    return chk;
+                });
+                if (file) {
+                    core_1.debug(`matched ${candidate.version}`);
+                    match = candidate;
+                    break;
+                }
+            }
+        }
+        if (match && file) {
+            // clone since we're mutating the file list to be only the file that matches
+            result = Object.assign({}, match);
+            result.files = [file];
+        }
+        return result;
+    });
+}
+exports._findMatch = _findMatch;
+function _getOsVersion() {
+    // TODO: add windows and other linux, arm variants
+    // right now filtering on version is only an ubuntu and macos scenario for tools we build for hosted (python)
+    const plat = os.platform();
+    let version = '';
+    if (plat === 'darwin') {
+        version = cp.execSync('sw_vers -productVersion').toString();
+    }
+    else if (plat === 'linux') {
+        // lsb_release process not in some containers, readfile
+        // Run cat /etc/lsb-release
+        // DISTRIB_ID=Ubuntu
+        // DISTRIB_RELEASE=18.04
+        // DISTRIB_CODENAME=bionic
+        // DISTRIB_DESCRIPTION="Ubuntu 18.04.4 LTS"
+        const lsbContents = module.exports._readLinuxVersionFile();
+        if (lsbContents) {
+            const lines = lsbContents.split('\n');
+            for (const line of lines) {
+                const parts = line.split('=');
+                if (parts.length === 2 &&
+                    (parts[0].trim() === 'VERSION_ID' ||
+                        parts[0].trim() === 'DISTRIB_RELEASE')) {
+                    version = parts[1]
+                        .trim()
+                        .replace(/^"/, '')
+                        .replace(/"$/, '');
+                    break;
+                }
+            }
+        }
+    }
+    return version;
+}
+exports._getOsVersion = _getOsVersion;
+function _readLinuxVersionFile() {
+    const lsbReleaseFile = '/etc/lsb-release';
+    const osReleaseFile = '/etc/os-release';
+    let contents = '';
+    if (fs.existsSync(lsbReleaseFile)) {
+        contents = fs.readFileSync(lsbReleaseFile).toString();
+    }
+    else if (fs.existsSync(osReleaseFile)) {
+        contents = fs.readFileSync(osReleaseFile).toString();
+    }
+    return contents;
+}
+exports._readLinuxVersionFile = _readLinuxVersionFile;
+//# sourceMappingURL=manifest.js.map
+
+/***/ }),
+
+/***/ 8279:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RetryHelper = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+/**
+ * Internal class for retries
+ */
+class RetryHelper {
+    constructor(maxAttempts, minSeconds, maxSeconds) {
+        if (maxAttempts < 1) {
+            throw new Error('max attempts should be greater than or equal to 1');
+        }
+        this.maxAttempts = maxAttempts;
+        this.minSeconds = Math.floor(minSeconds);
+        this.maxSeconds = Math.floor(maxSeconds);
+        if (this.minSeconds > this.maxSeconds) {
+            throw new Error('min seconds should be less than or equal to max seconds');
+        }
+    }
+    execute(action, isRetryable) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let attempt = 1;
+            while (attempt < this.maxAttempts) {
+                // Try
+                try {
+                    return yield action();
+                }
+                catch (err) {
+                    if (isRetryable && !isRetryable(err)) {
+                        throw err;
+                    }
+                    core.info(err.message);
+                }
+                // Sleep
+                const seconds = this.getSleepAmount();
+                core.info(`Waiting ${seconds} seconds before trying again`);
+                yield this.sleep(seconds);
+                attempt++;
+            }
+            // Last attempt
+            return yield action();
+        });
+    }
+    getSleepAmount() {
+        return (Math.floor(Math.random() * (this.maxSeconds - this.minSeconds + 1)) +
+            this.minSeconds);
+    }
+    sleep(seconds) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+        });
+    }
+}
+exports.RetryHelper = RetryHelper;
+//# sourceMappingURL=retry-helper.js.map
+
+/***/ }),
+
+/***/ 7784:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.evaluateVersions = exports.isExplicitVersion = exports.findFromManifest = exports.getManifestFromRepo = exports.findAllVersions = exports.find = exports.cacheFile = exports.cacheDir = exports.extractZip = exports.extractXar = exports.extractTar = exports.extract7z = exports.downloadTool = exports.HTTPError = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const io = __importStar(__nccwpck_require__(7436));
+const fs = __importStar(__nccwpck_require__(7147));
+const mm = __importStar(__nccwpck_require__(2473));
+const os = __importStar(__nccwpck_require__(2037));
+const path = __importStar(__nccwpck_require__(1017));
+const httpm = __importStar(__nccwpck_require__(6255));
+const semver = __importStar(__nccwpck_require__(562));
+const stream = __importStar(__nccwpck_require__(2781));
+const util = __importStar(__nccwpck_require__(3837));
+const assert_1 = __nccwpck_require__(9491);
+const v4_1 = __importDefault(__nccwpck_require__(7468));
+const exec_1 = __nccwpck_require__(1514);
+const retry_helper_1 = __nccwpck_require__(8279);
+class HTTPError extends Error {
+    constructor(httpStatusCode) {
+        super(`Unexpected HTTP response: ${httpStatusCode}`);
+        this.httpStatusCode = httpStatusCode;
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+exports.HTTPError = HTTPError;
+const IS_WINDOWS = process.platform === 'win32';
+const IS_MAC = process.platform === 'darwin';
+const userAgent = 'actions/tool-cache';
+/**
+ * Download a tool from an url and stream it into a file
+ *
+ * @param url       url of tool to download
+ * @param dest      path to download tool
+ * @param auth      authorization header
+ * @param headers   other headers
+ * @returns         path to downloaded tool
+ */
+function downloadTool(url, dest, auth, headers) {
+    return __awaiter(this, void 0, void 0, function* () {
+        dest = dest || path.join(_getTempDirectory(), v4_1.default());
+        yield io.mkdirP(path.dirname(dest));
+        core.debug(`Downloading ${url}`);
+        core.debug(`Destination ${dest}`);
+        const maxAttempts = 3;
+        const minSeconds = _getGlobal('TEST_DOWNLOAD_TOOL_RETRY_MIN_SECONDS', 10);
+        const maxSeconds = _getGlobal('TEST_DOWNLOAD_TOOL_RETRY_MAX_SECONDS', 20);
+        const retryHelper = new retry_helper_1.RetryHelper(maxAttempts, minSeconds, maxSeconds);
+        return yield retryHelper.execute(() => __awaiter(this, void 0, void 0, function* () {
+            return yield downloadToolAttempt(url, dest || '', auth, headers);
+        }), (err) => {
+            if (err instanceof HTTPError && err.httpStatusCode) {
+                // Don't retry anything less than 500, except 408 Request Timeout and 429 Too Many Requests
+                if (err.httpStatusCode < 500 &&
+                    err.httpStatusCode !== 408 &&
+                    err.httpStatusCode !== 429) {
+                    return false;
+                }
+            }
+            // Otherwise retry
+            return true;
+        });
+    });
+}
+exports.downloadTool = downloadTool;
+function downloadToolAttempt(url, dest, auth, headers) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (fs.existsSync(dest)) {
+            throw new Error(`Destination file path ${dest} already exists`);
+        }
+        // Get the response headers
+        const http = new httpm.HttpClient(userAgent, [], {
+            allowRetries: false
+        });
+        if (auth) {
+            core.debug('set auth');
+            if (headers === undefined) {
+                headers = {};
+            }
+            headers.authorization = auth;
+        }
+        const response = yield http.get(url, headers);
+        if (response.message.statusCode !== 200) {
+            const err = new HTTPError(response.message.statusCode);
+            core.debug(`Failed to download from "${url}". Code(${response.message.statusCode}) Message(${response.message.statusMessage})`);
+            throw err;
+        }
+        // Download the response body
+        const pipeline = util.promisify(stream.pipeline);
+        const responseMessageFactory = _getGlobal('TEST_DOWNLOAD_TOOL_RESPONSE_MESSAGE_FACTORY', () => response.message);
+        const readStream = responseMessageFactory();
+        let succeeded = false;
+        try {
+            yield pipeline(readStream, fs.createWriteStream(dest));
+            core.debug('download complete');
+            succeeded = true;
+            return dest;
+        }
+        finally {
+            // Error, delete dest before retry
+            if (!succeeded) {
+                core.debug('download failed');
+                try {
+                    yield io.rmRF(dest);
+                }
+                catch (err) {
+                    core.debug(`Failed to delete '${dest}'. ${err.message}`);
+                }
+            }
+        }
+    });
+}
+/**
+ * Extract a .7z file
+ *
+ * @param file     path to the .7z file
+ * @param dest     destination directory. Optional.
+ * @param _7zPath  path to 7zr.exe. Optional, for long path support. Most .7z archives do not have this
+ * problem. If your .7z archive contains very long paths, you can pass the path to 7zr.exe which will
+ * gracefully handle long paths. By default 7zdec.exe is used because it is a very small program and is
+ * bundled with the tool lib. However it does not support long paths. 7zr.exe is the reduced command line
+ * interface, it is smaller than the full command line interface, and it does support long paths. At the
+ * time of this writing, it is freely available from the LZMA SDK that is available on the 7zip website.
+ * Be sure to check the current license agreement. If 7zr.exe is bundled with your action, then the path
+ * to 7zr.exe can be pass to this function.
+ * @returns        path to the destination directory
+ */
+function extract7z(file, dest, _7zPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        assert_1.ok(IS_WINDOWS, 'extract7z() not supported on current OS');
+        assert_1.ok(file, 'parameter "file" is required');
+        dest = yield _createExtractFolder(dest);
+        const originalCwd = process.cwd();
+        process.chdir(dest);
+        if (_7zPath) {
+            try {
+                const logLevel = core.isDebug() ? '-bb1' : '-bb0';
+                const args = [
+                    'x',
+                    logLevel,
+                    '-bd',
+                    '-sccUTF-8',
+                    file
+                ];
+                const options = {
+                    silent: true
+                };
+                yield exec_1.exec(`"${_7zPath}"`, args, options);
+            }
+            finally {
+                process.chdir(originalCwd);
+            }
+        }
+        else {
+            const escapedScript = path
+                .join(__dirname, '..', 'scripts', 'Invoke-7zdec.ps1')
+                .replace(/'/g, "''")
+                .replace(/"|\n|\r/g, ''); // double-up single quotes, remove double quotes and newlines
+            const escapedFile = file.replace(/'/g, "''").replace(/"|\n|\r/g, '');
+            const escapedTarget = dest.replace(/'/g, "''").replace(/"|\n|\r/g, '');
+            const command = `& '${escapedScript}' -Source '${escapedFile}' -Target '${escapedTarget}'`;
+            const args = [
+                '-NoLogo',
+                '-Sta',
+                '-NoProfile',
+                '-NonInteractive',
+                '-ExecutionPolicy',
+                'Unrestricted',
+                '-Command',
+                command
+            ];
+            const options = {
+                silent: true
+            };
+            try {
+                const powershellPath = yield io.which('powershell', true);
+                yield exec_1.exec(`"${powershellPath}"`, args, options);
+            }
+            finally {
+                process.chdir(originalCwd);
+            }
+        }
+        return dest;
+    });
+}
+exports.extract7z = extract7z;
+/**
+ * Extract a compressed tar archive
+ *
+ * @param file     path to the tar
+ * @param dest     destination directory. Optional.
+ * @param flags    flags for the tar command to use for extraction. Defaults to 'xz' (extracting gzipped tars). Optional.
+ * @returns        path to the destination directory
+ */
+function extractTar(file, dest, flags = 'xz') {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!file) {
+            throw new Error("parameter 'file' is required");
+        }
+        // Create dest
+        dest = yield _createExtractFolder(dest);
+        // Determine whether GNU tar
+        core.debug('Checking tar --version');
+        let versionOutput = '';
+        yield exec_1.exec('tar --version', [], {
+            ignoreReturnCode: true,
+            silent: true,
+            listeners: {
+                stdout: (data) => (versionOutput += data.toString()),
+                stderr: (data) => (versionOutput += data.toString())
+            }
+        });
+        core.debug(versionOutput.trim());
+        const isGnuTar = versionOutput.toUpperCase().includes('GNU TAR');
+        // Initialize args
+        let args;
+        if (flags instanceof Array) {
+            args = flags;
+        }
+        else {
+            args = [flags];
+        }
+        if (core.isDebug() && !flags.includes('v')) {
+            args.push('-v');
+        }
+        let destArg = dest;
+        let fileArg = file;
+        if (IS_WINDOWS && isGnuTar) {
+            args.push('--force-local');
+            destArg = dest.replace(/\\/g, '/');
+            // Technically only the dest needs to have `/` but for aesthetic consistency
+            // convert slashes in the file arg too.
+            fileArg = file.replace(/\\/g, '/');
+        }
+        if (isGnuTar) {
+            // Suppress warnings when using GNU tar to extract archives created by BSD tar
+            args.push('--warning=no-unknown-keyword');
+            args.push('--overwrite');
+        }
+        args.push('-C', destArg, '-f', fileArg);
+        yield exec_1.exec(`tar`, args);
+        return dest;
+    });
+}
+exports.extractTar = extractTar;
+/**
+ * Extract a xar compatible archive
+ *
+ * @param file     path to the archive
+ * @param dest     destination directory. Optional.
+ * @param flags    flags for the xar. Optional.
+ * @returns        path to the destination directory
+ */
+function extractXar(file, dest, flags = []) {
+    return __awaiter(this, void 0, void 0, function* () {
+        assert_1.ok(IS_MAC, 'extractXar() not supported on current OS');
+        assert_1.ok(file, 'parameter "file" is required');
+        dest = yield _createExtractFolder(dest);
+        let args;
+        if (flags instanceof Array) {
+            args = flags;
+        }
+        else {
+            args = [flags];
+        }
+        args.push('-x', '-C', dest, '-f', file);
+        if (core.isDebug()) {
+            args.push('-v');
+        }
+        const xarPath = yield io.which('xar', true);
+        yield exec_1.exec(`"${xarPath}"`, _unique(args));
+        return dest;
+    });
+}
+exports.extractXar = extractXar;
+/**
+ * Extract a zip
+ *
+ * @param file     path to the zip
+ * @param dest     destination directory. Optional.
+ * @returns        path to the destination directory
+ */
+function extractZip(file, dest) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!file) {
+            throw new Error("parameter 'file' is required");
+        }
+        dest = yield _createExtractFolder(dest);
+        if (IS_WINDOWS) {
+            yield extractZipWin(file, dest);
+        }
+        else {
+            yield extractZipNix(file, dest);
+        }
+        return dest;
+    });
+}
+exports.extractZip = extractZip;
+function extractZipWin(file, dest) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // build the powershell command
+        const escapedFile = file.replace(/'/g, "''").replace(/"|\n|\r/g, ''); // double-up single quotes, remove double quotes and newlines
+        const escapedDest = dest.replace(/'/g, "''").replace(/"|\n|\r/g, '');
+        const pwshPath = yield io.which('pwsh', false);
+        //To match the file overwrite behavior on nix systems, we use the overwrite = true flag for ExtractToDirectory
+        //and the -Force flag for Expand-Archive as a fallback
+        if (pwshPath) {
+            //attempt to use pwsh with ExtractToDirectory, if this fails attempt Expand-Archive
+            const pwshCommand = [
+                `$ErrorActionPreference = 'Stop' ;`,
+                `try { Add-Type -AssemblyName System.IO.Compression.ZipFile } catch { } ;`,
+                `try { [System.IO.Compression.ZipFile]::ExtractToDirectory('${escapedFile}', '${escapedDest}', $true) }`,
+                `catch { if (($_.Exception.GetType().FullName -eq 'System.Management.Automation.MethodException') -or ($_.Exception.GetType().FullName -eq 'System.Management.Automation.RuntimeException') ){ Expand-Archive -LiteralPath '${escapedFile}' -DestinationPath '${escapedDest}' -Force } else { throw $_ } } ;`
+            ].join(' ');
+            const args = [
+                '-NoLogo',
+                '-NoProfile',
+                '-NonInteractive',
+                '-ExecutionPolicy',
+                'Unrestricted',
+                '-Command',
+                pwshCommand
+            ];
+            core.debug(`Using pwsh at path: ${pwshPath}`);
+            yield exec_1.exec(`"${pwshPath}"`, args);
+        }
+        else {
+            const powershellCommand = [
+                `$ErrorActionPreference = 'Stop' ;`,
+                `try { Add-Type -AssemblyName System.IO.Compression.FileSystem } catch { } ;`,
+                `if ((Get-Command -Name Expand-Archive -Module Microsoft.PowerShell.Archive -ErrorAction Ignore)) { Expand-Archive -LiteralPath '${escapedFile}' -DestinationPath '${escapedDest}' -Force }`,
+                `else {[System.IO.Compression.ZipFile]::ExtractToDirectory('${escapedFile}', '${escapedDest}', $true) }`
+            ].join(' ');
+            const args = [
+                '-NoLogo',
+                '-Sta',
+                '-NoProfile',
+                '-NonInteractive',
+                '-ExecutionPolicy',
+                'Unrestricted',
+                '-Command',
+                powershellCommand
+            ];
+            const powershellPath = yield io.which('powershell', true);
+            core.debug(`Using powershell at path: ${powershellPath}`);
+            yield exec_1.exec(`"${powershellPath}"`, args);
+        }
+    });
+}
+function extractZipNix(file, dest) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const unzipPath = yield io.which('unzip', true);
+        const args = [file];
+        if (!core.isDebug()) {
+            args.unshift('-q');
+        }
+        args.unshift('-o'); //overwrite with -o, otherwise a prompt is shown which freezes the run
+        yield exec_1.exec(`"${unzipPath}"`, args, { cwd: dest });
+    });
+}
+/**
+ * Caches a directory and installs it into the tool cacheDir
+ *
+ * @param sourceDir    the directory to cache into tools
+ * @param tool          tool name
+ * @param version       version of the tool.  semver format
+ * @param arch          architecture of the tool.  Optional.  Defaults to machine architecture
+ */
+function cacheDir(sourceDir, tool, version, arch) {
+    return __awaiter(this, void 0, void 0, function* () {
+        version = semver.clean(version) || version;
+        arch = arch || os.arch();
+        core.debug(`Caching tool ${tool} ${version} ${arch}`);
+        core.debug(`source dir: ${sourceDir}`);
+        if (!fs.statSync(sourceDir).isDirectory()) {
+            throw new Error('sourceDir is not a directory');
+        }
+        // Create the tool dir
+        const destPath = yield _createToolPath(tool, version, arch);
+        // copy each child item. do not move. move can fail on Windows
+        // due to anti-virus software having an open handle on a file.
+        for (const itemName of fs.readdirSync(sourceDir)) {
+            const s = path.join(sourceDir, itemName);
+            yield io.cp(s, destPath, { recursive: true });
+        }
+        // write .complete
+        _completeToolPath(tool, version, arch);
+        return destPath;
+    });
+}
+exports.cacheDir = cacheDir;
+/**
+ * Caches a downloaded file (GUID) and installs it
+ * into the tool cache with a given targetName
+ *
+ * @param sourceFile    the file to cache into tools.  Typically a result of downloadTool which is a guid.
+ * @param targetFile    the name of the file name in the tools directory
+ * @param tool          tool name
+ * @param version       version of the tool.  semver format
+ * @param arch          architecture of the tool.  Optional.  Defaults to machine architecture
+ */
+function cacheFile(sourceFile, targetFile, tool, version, arch) {
+    return __awaiter(this, void 0, void 0, function* () {
+        version = semver.clean(version) || version;
+        arch = arch || os.arch();
+        core.debug(`Caching tool ${tool} ${version} ${arch}`);
+        core.debug(`source file: ${sourceFile}`);
+        if (!fs.statSync(sourceFile).isFile()) {
+            throw new Error('sourceFile is not a file');
+        }
+        // create the tool dir
+        const destFolder = yield _createToolPath(tool, version, arch);
+        // copy instead of move. move can fail on Windows due to
+        // anti-virus software having an open handle on a file.
+        const destPath = path.join(destFolder, targetFile);
+        core.debug(`destination file ${destPath}`);
+        yield io.cp(sourceFile, destPath);
+        // write .complete
+        _completeToolPath(tool, version, arch);
+        return destFolder;
+    });
+}
+exports.cacheFile = cacheFile;
+/**
+ * Finds the path to a tool version in the local installed tool cache
+ *
+ * @param toolName      name of the tool
+ * @param versionSpec   version of the tool
+ * @param arch          optional arch.  defaults to arch of computer
+ */
+function find(toolName, versionSpec, arch) {
+    if (!toolName) {
+        throw new Error('toolName parameter is required');
+    }
+    if (!versionSpec) {
+        throw new Error('versionSpec parameter is required');
+    }
+    arch = arch || os.arch();
+    // attempt to resolve an explicit version
+    if (!isExplicitVersion(versionSpec)) {
+        const localVersions = findAllVersions(toolName, arch);
+        const match = evaluateVersions(localVersions, versionSpec);
+        versionSpec = match;
+    }
+    // check for the explicit version in the cache
+    let toolPath = '';
+    if (versionSpec) {
+        versionSpec = semver.clean(versionSpec) || '';
+        const cachePath = path.join(_getCacheDirectory(), toolName, versionSpec, arch);
+        core.debug(`checking cache: ${cachePath}`);
+        if (fs.existsSync(cachePath) && fs.existsSync(`${cachePath}.complete`)) {
+            core.debug(`Found tool in cache ${toolName} ${versionSpec} ${arch}`);
+            toolPath = cachePath;
+        }
+        else {
+            core.debug('not found');
+        }
+    }
+    return toolPath;
+}
+exports.find = find;
+/**
+ * Finds the paths to all versions of a tool that are installed in the local tool cache
+ *
+ * @param toolName  name of the tool
+ * @param arch      optional arch.  defaults to arch of computer
+ */
+function findAllVersions(toolName, arch) {
+    const versions = [];
+    arch = arch || os.arch();
+    const toolPath = path.join(_getCacheDirectory(), toolName);
+    if (fs.existsSync(toolPath)) {
+        const children = fs.readdirSync(toolPath);
+        for (const child of children) {
+            if (isExplicitVersion(child)) {
+                const fullPath = path.join(toolPath, child, arch || '');
+                if (fs.existsSync(fullPath) && fs.existsSync(`${fullPath}.complete`)) {
+                    versions.push(child);
+                }
+            }
+        }
+    }
+    return versions;
+}
+exports.findAllVersions = findAllVersions;
+function getManifestFromRepo(owner, repo, auth, branch = 'master') {
+    return __awaiter(this, void 0, void 0, function* () {
+        let releases = [];
+        const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}`;
+        const http = new httpm.HttpClient('tool-cache');
+        const headers = {};
+        if (auth) {
+            core.debug('set auth');
+            headers.authorization = auth;
+        }
+        const response = yield http.getJson(treeUrl, headers);
+        if (!response.result) {
+            return releases;
+        }
+        let manifestUrl = '';
+        for (const item of response.result.tree) {
+            if (item.path === 'versions-manifest.json') {
+                manifestUrl = item.url;
+                break;
+            }
+        }
+        headers['accept'] = 'application/vnd.github.VERSION.raw';
+        let versionsRaw = yield (yield http.get(manifestUrl, headers)).readBody();
+        if (versionsRaw) {
+            // shouldn't be needed but protects against invalid json saved with BOM
+            versionsRaw = versionsRaw.replace(/^\uFEFF/, '');
+            try {
+                releases = JSON.parse(versionsRaw);
+            }
+            catch (_a) {
+                core.debug('Invalid json');
+            }
+        }
+        return releases;
+    });
+}
+exports.getManifestFromRepo = getManifestFromRepo;
+function findFromManifest(versionSpec, stable, manifest, archFilter = os.arch()) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // wrap the internal impl
+        const match = yield mm._findMatch(versionSpec, stable, manifest, archFilter);
+        return match;
+    });
+}
+exports.findFromManifest = findFromManifest;
+function _createExtractFolder(dest) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!dest) {
+            // create a temp dir
+            dest = path.join(_getTempDirectory(), v4_1.default());
+        }
+        yield io.mkdirP(dest);
+        return dest;
+    });
+}
+function _createToolPath(tool, version, arch) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const folderPath = path.join(_getCacheDirectory(), tool, semver.clean(version) || version, arch || '');
+        core.debug(`destination ${folderPath}`);
+        const markerPath = `${folderPath}.complete`;
+        yield io.rmRF(folderPath);
+        yield io.rmRF(markerPath);
+        yield io.mkdirP(folderPath);
+        return folderPath;
+    });
+}
+function _completeToolPath(tool, version, arch) {
+    const folderPath = path.join(_getCacheDirectory(), tool, semver.clean(version) || version, arch || '');
+    const markerPath = `${folderPath}.complete`;
+    fs.writeFileSync(markerPath, '');
+    core.debug('finished caching tool');
+}
+/**
+ * Check if version string is explicit
+ *
+ * @param versionSpec      version string to check
+ */
+function isExplicitVersion(versionSpec) {
+    const c = semver.clean(versionSpec) || '';
+    core.debug(`isExplicit: ${c}`);
+    const valid = semver.valid(c) != null;
+    core.debug(`explicit? ${valid}`);
+    return valid;
+}
+exports.isExplicitVersion = isExplicitVersion;
+/**
+ * Get the highest satisfiying semantic version in `versions` which satisfies `versionSpec`
+ *
+ * @param versions        array of versions to evaluate
+ * @param versionSpec     semantic version spec to satisfy
+ */
+function evaluateVersions(versions, versionSpec) {
+    let version = '';
+    core.debug(`evaluating ${versions.length} versions`);
+    versions = versions.sort((a, b) => {
+        if (semver.gt(a, b)) {
+            return 1;
+        }
+        return -1;
+    });
+    for (let i = versions.length - 1; i >= 0; i--) {
+        const potential = versions[i];
+        const satisfied = semver.satisfies(potential, versionSpec);
+        if (satisfied) {
+            version = potential;
+            break;
+        }
+    }
+    if (version) {
+        core.debug(`matched: ${version}`);
+    }
+    else {
+        core.debug('match not found');
+    }
+    return version;
+}
+exports.evaluateVersions = evaluateVersions;
+/**
+ * Gets RUNNER_TOOL_CACHE
+ */
+function _getCacheDirectory() {
+    const cacheDirectory = process.env['RUNNER_TOOL_CACHE'] || '';
+    assert_1.ok(cacheDirectory, 'Expected RUNNER_TOOL_CACHE to be defined');
+    return cacheDirectory;
+}
+/**
+ * Gets RUNNER_TEMP
+ */
+function _getTempDirectory() {
+    const tempDirectory = process.env['RUNNER_TEMP'] || '';
+    assert_1.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
+    return tempDirectory;
+}
+/**
+ * Gets a global variable
+ */
+function _getGlobal(key, defaultValue) {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const value = global[key];
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+    return value !== undefined ? value : defaultValue;
+}
+/**
+ * Returns an array of unique values.
+ * @param values Values to make unique.
+ */
+function _unique(values) {
+    return Array.from(new Set(values));
+}
+//# sourceMappingURL=tool-cache.js.map
+
+/***/ }),
+
+/***/ 562:
+/***/ ((module, exports) => {
+
+exports = module.exports = SemVer
+
+var debug
+/* istanbul ignore next */
+if (typeof process === 'object' &&
+    process.env &&
+    process.env.NODE_DEBUG &&
+    /\bsemver\b/i.test(process.env.NODE_DEBUG)) {
+  debug = function () {
+    var args = Array.prototype.slice.call(arguments, 0)
+    args.unshift('SEMVER')
+    console.log.apply(console, args)
+  }
+} else {
+  debug = function () {}
+}
+
+// Note: this is the semver.org version of the spec that it implements
+// Not necessarily the package version of this code.
+exports.SEMVER_SPEC_VERSION = '2.0.0'
+
+var MAX_LENGTH = 256
+var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER ||
+  /* istanbul ignore next */ 9007199254740991
+
+// Max safe segment length for coercion.
+var MAX_SAFE_COMPONENT_LENGTH = 16
+
+var MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6
+
+// The actual regexps go on exports.re
+var re = exports.re = []
+var safeRe = exports.safeRe = []
+var src = exports.src = []
+var t = exports.tokens = {}
+var R = 0
+
+function tok (n) {
+  t[n] = R++
+}
+
+var LETTERDASHNUMBER = '[a-zA-Z0-9-]'
+
+// Replace some greedy regex tokens to prevent regex dos issues. These regex are
+// used internally via the safeRe object since all inputs in this library get
+// normalized first to trim and collapse all extra whitespace. The original
+// regexes are exported for userland consumption and lower level usage. A
+// future breaking change could export the safer regex only with a note that
+// all input should have extra whitespace removed.
+var safeRegexReplacements = [
+  ['\\s', 1],
+  ['\\d', MAX_LENGTH],
+  [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH],
+]
+
+function makeSafeRe (value) {
+  for (var i = 0; i < safeRegexReplacements.length; i++) {
+    var token = safeRegexReplacements[i][0]
+    var max = safeRegexReplacements[i][1]
+    value = value
+      .split(token + '*').join(token + '{0,' + max + '}')
+      .split(token + '+').join(token + '{1,' + max + '}')
+  }
+  return value
+}
+
+// The following Regular Expressions can be used for tokenizing,
+// validating, and parsing SemVer version strings.
+
+// ## Numeric Identifier
+// A single `0`, or a non-zero digit followed by zero or more digits.
+
+tok('NUMERICIDENTIFIER')
+src[t.NUMERICIDENTIFIER] = '0|[1-9]\\d*'
+tok('NUMERICIDENTIFIERLOOSE')
+src[t.NUMERICIDENTIFIERLOOSE] = '\\d+'
+
+// ## Non-numeric Identifier
+// Zero or more digits, followed by a letter or hyphen, and then zero or
+// more letters, digits, or hyphens.
+
+tok('NONNUMERICIDENTIFIER')
+src[t.NONNUMERICIDENTIFIER] = '\\d*[a-zA-Z-]' + LETTERDASHNUMBER + '*'
+
+// ## Main Version
+// Three dot-separated numeric identifiers.
+
+tok('MAINVERSION')
+src[t.MAINVERSION] = '(' + src[t.NUMERICIDENTIFIER] + ')\\.' +
+                   '(' + src[t.NUMERICIDENTIFIER] + ')\\.' +
+                   '(' + src[t.NUMERICIDENTIFIER] + ')'
+
+tok('MAINVERSIONLOOSE')
+src[t.MAINVERSIONLOOSE] = '(' + src[t.NUMERICIDENTIFIERLOOSE] + ')\\.' +
+                        '(' + src[t.NUMERICIDENTIFIERLOOSE] + ')\\.' +
+                        '(' + src[t.NUMERICIDENTIFIERLOOSE] + ')'
+
+// ## Pre-release Version Identifier
+// A numeric identifier, or a non-numeric identifier.
+
+tok('PRERELEASEIDENTIFIER')
+src[t.PRERELEASEIDENTIFIER] = '(?:' + src[t.NUMERICIDENTIFIER] +
+                            '|' + src[t.NONNUMERICIDENTIFIER] + ')'
+
+tok('PRERELEASEIDENTIFIERLOOSE')
+src[t.PRERELEASEIDENTIFIERLOOSE] = '(?:' + src[t.NUMERICIDENTIFIERLOOSE] +
+                                 '|' + src[t.NONNUMERICIDENTIFIER] + ')'
+
+// ## Pre-release Version
+// Hyphen, followed by one or more dot-separated pre-release version
+// identifiers.
+
+tok('PRERELEASE')
+src[t.PRERELEASE] = '(?:-(' + src[t.PRERELEASEIDENTIFIER] +
+                  '(?:\\.' + src[t.PRERELEASEIDENTIFIER] + ')*))'
+
+tok('PRERELEASELOOSE')
+src[t.PRERELEASELOOSE] = '(?:-?(' + src[t.PRERELEASEIDENTIFIERLOOSE] +
+                       '(?:\\.' + src[t.PRERELEASEIDENTIFIERLOOSE] + ')*))'
+
+// ## Build Metadata Identifier
+// Any combination of digits, letters, or hyphens.
+
+tok('BUILDIDENTIFIER')
+src[t.BUILDIDENTIFIER] = LETTERDASHNUMBER + '+'
+
+// ## Build Metadata
+// Plus sign, followed by one or more period-separated build metadata
+// identifiers.
+
+tok('BUILD')
+src[t.BUILD] = '(?:\\+(' + src[t.BUILDIDENTIFIER] +
+             '(?:\\.' + src[t.BUILDIDENTIFIER] + ')*))'
+
+// ## Full Version String
+// A main version, followed optionally by a pre-release version and
+// build metadata.
+
+// Note that the only major, minor, patch, and pre-release sections of
+// the version string are capturing groups.  The build metadata is not a
+// capturing group, because it should not ever be used in version
+// comparison.
+
+tok('FULL')
+tok('FULLPLAIN')
+src[t.FULLPLAIN] = 'v?' + src[t.MAINVERSION] +
+                  src[t.PRERELEASE] + '?' +
+                  src[t.BUILD] + '?'
+
+src[t.FULL] = '^' + src[t.FULLPLAIN] + '$'
+
+// like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
+// also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
+// common in the npm registry.
+tok('LOOSEPLAIN')
+src[t.LOOSEPLAIN] = '[v=\\s]*' + src[t.MAINVERSIONLOOSE] +
+                  src[t.PRERELEASELOOSE] + '?' +
+                  src[t.BUILD] + '?'
+
+tok('LOOSE')
+src[t.LOOSE] = '^' + src[t.LOOSEPLAIN] + '$'
+
+tok('GTLT')
+src[t.GTLT] = '((?:<|>)?=?)'
+
+// Something like "2.*" or "1.2.x".
+// Note that "x.x" is a valid xRange identifer, meaning "any version"
+// Only the first item is strictly required.
+tok('XRANGEIDENTIFIERLOOSE')
+src[t.XRANGEIDENTIFIERLOOSE] = src[t.NUMERICIDENTIFIERLOOSE] + '|x|X|\\*'
+tok('XRANGEIDENTIFIER')
+src[t.XRANGEIDENTIFIER] = src[t.NUMERICIDENTIFIER] + '|x|X|\\*'
+
+tok('XRANGEPLAIN')
+src[t.XRANGEPLAIN] = '[v=\\s]*(' + src[t.XRANGEIDENTIFIER] + ')' +
+                   '(?:\\.(' + src[t.XRANGEIDENTIFIER] + ')' +
+                   '(?:\\.(' + src[t.XRANGEIDENTIFIER] + ')' +
+                   '(?:' + src[t.PRERELEASE] + ')?' +
+                   src[t.BUILD] + '?' +
+                   ')?)?'
+
+tok('XRANGEPLAINLOOSE')
+src[t.XRANGEPLAINLOOSE] = '[v=\\s]*(' + src[t.XRANGEIDENTIFIERLOOSE] + ')' +
+                        '(?:\\.(' + src[t.XRANGEIDENTIFIERLOOSE] + ')' +
+                        '(?:\\.(' + src[t.XRANGEIDENTIFIERLOOSE] + ')' +
+                        '(?:' + src[t.PRERELEASELOOSE] + ')?' +
+                        src[t.BUILD] + '?' +
+                        ')?)?'
+
+tok('XRANGE')
+src[t.XRANGE] = '^' + src[t.GTLT] + '\\s*' + src[t.XRANGEPLAIN] + '$'
+tok('XRANGELOOSE')
+src[t.XRANGELOOSE] = '^' + src[t.GTLT] + '\\s*' + src[t.XRANGEPLAINLOOSE] + '$'
+
+// Coercion.
+// Extract anything that could conceivably be a part of a valid semver
+tok('COERCE')
+src[t.COERCE] = '(^|[^\\d])' +
+              '(\\d{1,' + MAX_SAFE_COMPONENT_LENGTH + '})' +
+              '(?:\\.(\\d{1,' + MAX_SAFE_COMPONENT_LENGTH + '}))?' +
+              '(?:\\.(\\d{1,' + MAX_SAFE_COMPONENT_LENGTH + '}))?' +
+              '(?:$|[^\\d])'
+tok('COERCERTL')
+re[t.COERCERTL] = new RegExp(src[t.COERCE], 'g')
+safeRe[t.COERCERTL] = new RegExp(makeSafeRe(src[t.COERCE]), 'g')
+
+// Tilde ranges.
+// Meaning is "reasonably at or greater than"
+tok('LONETILDE')
+src[t.LONETILDE] = '(?:~>?)'
+
+tok('TILDETRIM')
+src[t.TILDETRIM] = '(\\s*)' + src[t.LONETILDE] + '\\s+'
+re[t.TILDETRIM] = new RegExp(src[t.TILDETRIM], 'g')
+safeRe[t.TILDETRIM] = new RegExp(makeSafeRe(src[t.TILDETRIM]), 'g')
+var tildeTrimReplace = '$1~'
+
+tok('TILDE')
+src[t.TILDE] = '^' + src[t.LONETILDE] + src[t.XRANGEPLAIN] + '$'
+tok('TILDELOOSE')
+src[t.TILDELOOSE] = '^' + src[t.LONETILDE] + src[t.XRANGEPLAINLOOSE] + '$'
+
+// Caret ranges.
+// Meaning is "at least and backwards compatible with"
+tok('LONECARET')
+src[t.LONECARET] = '(?:\\^)'
+
+tok('CARETTRIM')
+src[t.CARETTRIM] = '(\\s*)' + src[t.LONECARET] + '\\s+'
+re[t.CARETTRIM] = new RegExp(src[t.CARETTRIM], 'g')
+safeRe[t.CARETTRIM] = new RegExp(makeSafeRe(src[t.CARETTRIM]), 'g')
+var caretTrimReplace = '$1^'
+
+tok('CARET')
+src[t.CARET] = '^' + src[t.LONECARET] + src[t.XRANGEPLAIN] + '$'
+tok('CARETLOOSE')
+src[t.CARETLOOSE] = '^' + src[t.LONECARET] + src[t.XRANGEPLAINLOOSE] + '$'
+
+// A simple gt/lt/eq thing, or just "" to indicate "any version"
+tok('COMPARATORLOOSE')
+src[t.COMPARATORLOOSE] = '^' + src[t.GTLT] + '\\s*(' + src[t.LOOSEPLAIN] + ')$|^$'
+tok('COMPARATOR')
+src[t.COMPARATOR] = '^' + src[t.GTLT] + '\\s*(' + src[t.FULLPLAIN] + ')$|^$'
+
+// An expression to strip any whitespace between the gtlt and the thing
+// it modifies, so that `> 1.2.3` ==> `>1.2.3`
+tok('COMPARATORTRIM')
+src[t.COMPARATORTRIM] = '(\\s*)' + src[t.GTLT] +
+                      '\\s*(' + src[t.LOOSEPLAIN] + '|' + src[t.XRANGEPLAIN] + ')'
+
+// this one has to use the /g flag
+re[t.COMPARATORTRIM] = new RegExp(src[t.COMPARATORTRIM], 'g')
+safeRe[t.COMPARATORTRIM] = new RegExp(makeSafeRe(src[t.COMPARATORTRIM]), 'g')
+var comparatorTrimReplace = '$1$2$3'
+
+// Something like `1.2.3 - 1.2.4`
+// Note that these all use the loose form, because they'll be
+// checked against either the strict or loose comparator form
+// later.
+tok('HYPHENRANGE')
+src[t.HYPHENRANGE] = '^\\s*(' + src[t.XRANGEPLAIN] + ')' +
+                   '\\s+-\\s+' +
+                   '(' + src[t.XRANGEPLAIN] + ')' +
+                   '\\s*$'
+
+tok('HYPHENRANGELOOSE')
+src[t.HYPHENRANGELOOSE] = '^\\s*(' + src[t.XRANGEPLAINLOOSE] + ')' +
+                        '\\s+-\\s+' +
+                        '(' + src[t.XRANGEPLAINLOOSE] + ')' +
+                        '\\s*$'
+
+// Star ranges basically just allow anything at all.
+tok('STAR')
+src[t.STAR] = '(<|>)?=?\\s*\\*'
+
+// Compile to actual regexp objects.
+// All are flag-free, unless they were created above with a flag.
+for (var i = 0; i < R; i++) {
+  debug(i, src[i])
+  if (!re[i]) {
+    re[i] = new RegExp(src[i])
+
+    // Replace all greedy whitespace to prevent regex dos issues. These regex are
+    // used internally via the safeRe object since all inputs in this library get
+    // normalized first to trim and collapse all extra whitespace. The original
+    // regexes are exported for userland consumption and lower level usage. A
+    // future breaking change could export the safer regex only with a note that
+    // all input should have extra whitespace removed.
+    safeRe[i] = new RegExp(makeSafeRe(src[i]))
+  }
+}
+
+exports.parse = parse
+function parse (version, options) {
+  if (!options || typeof options !== 'object') {
+    options = {
+      loose: !!options,
+      includePrerelease: false
+    }
+  }
+
+  if (version instanceof SemVer) {
+    return version
+  }
+
+  if (typeof version !== 'string') {
+    return null
+  }
+
+  if (version.length > MAX_LENGTH) {
+    return null
+  }
+
+  var r = options.loose ? safeRe[t.LOOSE] : safeRe[t.FULL]
+  if (!r.test(version)) {
+    return null
+  }
+
+  try {
+    return new SemVer(version, options)
+  } catch (er) {
+    return null
+  }
+}
+
+exports.valid = valid
+function valid (version, options) {
+  var v = parse(version, options)
+  return v ? v.version : null
+}
+
+exports.clean = clean
+function clean (version, options) {
+  var s = parse(version.trim().replace(/^[=v]+/, ''), options)
+  return s ? s.version : null
+}
+
+exports.SemVer = SemVer
+
+function SemVer (version, options) {
+  if (!options || typeof options !== 'object') {
+    options = {
+      loose: !!options,
+      includePrerelease: false
+    }
+  }
+  if (version instanceof SemVer) {
+    if (version.loose === options.loose) {
+      return version
+    } else {
+      version = version.version
+    }
+  } else if (typeof version !== 'string') {
+    throw new TypeError('Invalid Version: ' + version)
+  }
+
+  if (version.length > MAX_LENGTH) {
+    throw new TypeError('version is longer than ' + MAX_LENGTH + ' characters')
+  }
+
+  if (!(this instanceof SemVer)) {
+    return new SemVer(version, options)
+  }
+
+  debug('SemVer', version, options)
+  this.options = options
+  this.loose = !!options.loose
+
+  var m = version.trim().match(options.loose ? safeRe[t.LOOSE] : safeRe[t.FULL])
+
+  if (!m) {
+    throw new TypeError('Invalid Version: ' + version)
+  }
+
+  this.raw = version
+
+  // these are actually numbers
+  this.major = +m[1]
+  this.minor = +m[2]
+  this.patch = +m[3]
+
+  if (this.major > MAX_SAFE_INTEGER || this.major < 0) {
+    throw new TypeError('Invalid major version')
+  }
+
+  if (this.minor > MAX_SAFE_INTEGER || this.minor < 0) {
+    throw new TypeError('Invalid minor version')
+  }
+
+  if (this.patch > MAX_SAFE_INTEGER || this.patch < 0) {
+    throw new TypeError('Invalid patch version')
+  }
+
+  // numberify any prerelease numeric ids
+  if (!m[4]) {
+    this.prerelease = []
+  } else {
+    this.prerelease = m[4].split('.').map(function (id) {
+      if (/^[0-9]+$/.test(id)) {
+        var num = +id
+        if (num >= 0 && num < MAX_SAFE_INTEGER) {
+          return num
+        }
+      }
+      return id
+    })
+  }
+
+  this.build = m[5] ? m[5].split('.') : []
+  this.format()
+}
+
+SemVer.prototype.format = function () {
+  this.version = this.major + '.' + this.minor + '.' + this.patch
+  if (this.prerelease.length) {
+    this.version += '-' + this.prerelease.join('.')
+  }
+  return this.version
+}
+
+SemVer.prototype.toString = function () {
+  return this.version
+}
+
+SemVer.prototype.compare = function (other) {
+  debug('SemVer.compare', this.version, this.options, other)
+  if (!(other instanceof SemVer)) {
+    other = new SemVer(other, this.options)
+  }
+
+  return this.compareMain(other) || this.comparePre(other)
+}
+
+SemVer.prototype.compareMain = function (other) {
+  if (!(other instanceof SemVer)) {
+    other = new SemVer(other, this.options)
+  }
+
+  return compareIdentifiers(this.major, other.major) ||
+         compareIdentifiers(this.minor, other.minor) ||
+         compareIdentifiers(this.patch, other.patch)
+}
+
+SemVer.prototype.comparePre = function (other) {
+  if (!(other instanceof SemVer)) {
+    other = new SemVer(other, this.options)
+  }
+
+  // NOT having a prerelease is > having one
+  if (this.prerelease.length && !other.prerelease.length) {
+    return -1
+  } else if (!this.prerelease.length && other.prerelease.length) {
+    return 1
+  } else if (!this.prerelease.length && !other.prerelease.length) {
+    return 0
+  }
+
+  var i = 0
+  do {
+    var a = this.prerelease[i]
+    var b = other.prerelease[i]
+    debug('prerelease compare', i, a, b)
+    if (a === undefined && b === undefined) {
+      return 0
+    } else if (b === undefined) {
+      return 1
+    } else if (a === undefined) {
+      return -1
+    } else if (a === b) {
+      continue
+    } else {
+      return compareIdentifiers(a, b)
+    }
+  } while (++i)
+}
+
+SemVer.prototype.compareBuild = function (other) {
+  if (!(other instanceof SemVer)) {
+    other = new SemVer(other, this.options)
+  }
+
+  var i = 0
+  do {
+    var a = this.build[i]
+    var b = other.build[i]
+    debug('prerelease compare', i, a, b)
+    if (a === undefined && b === undefined) {
+      return 0
+    } else if (b === undefined) {
+      return 1
+    } else if (a === undefined) {
+      return -1
+    } else if (a === b) {
+      continue
+    } else {
+      return compareIdentifiers(a, b)
+    }
+  } while (++i)
+}
+
+// preminor will bump the version up to the next minor release, and immediately
+// down to pre-release. premajor and prepatch work the same way.
+SemVer.prototype.inc = function (release, identifier) {
+  switch (release) {
+    case 'premajor':
+      this.prerelease.length = 0
+      this.patch = 0
+      this.minor = 0
+      this.major++
+      this.inc('pre', identifier)
+      break
+    case 'preminor':
+      this.prerelease.length = 0
+      this.patch = 0
+      this.minor++
+      this.inc('pre', identifier)
+      break
+    case 'prepatch':
+      // If this is already a prerelease, it will bump to the next version
+      // drop any prereleases that might already exist, since they are not
+      // relevant at this point.
+      this.prerelease.length = 0
+      this.inc('patch', identifier)
+      this.inc('pre', identifier)
+      break
+    // If the input is a non-prerelease version, this acts the same as
+    // prepatch.
+    case 'prerelease':
+      if (this.prerelease.length === 0) {
+        this.inc('patch', identifier)
+      }
+      this.inc('pre', identifier)
+      break
+
+    case 'major':
+      // If this is a pre-major version, bump up to the same major version.
+      // Otherwise increment major.
+      // 1.0.0-5 bumps to 1.0.0
+      // 1.1.0 bumps to 2.0.0
+      if (this.minor !== 0 ||
+          this.patch !== 0 ||
+          this.prerelease.length === 0) {
+        this.major++
+      }
+      this.minor = 0
+      this.patch = 0
+      this.prerelease = []
+      break
+    case 'minor':
+      // If this is a pre-minor version, bump up to the same minor version.
+      // Otherwise increment minor.
+      // 1.2.0-5 bumps to 1.2.0
+      // 1.2.1 bumps to 1.3.0
+      if (this.patch !== 0 || this.prerelease.length === 0) {
+        this.minor++
+      }
+      this.patch = 0
+      this.prerelease = []
+      break
+    case 'patch':
+      // If this is not a pre-release version, it will increment the patch.
+      // If it is a pre-release it will bump up to the same patch version.
+      // 1.2.0-5 patches to 1.2.0
+      // 1.2.0 patches to 1.2.1
+      if (this.prerelease.length === 0) {
+        this.patch++
+      }
+      this.prerelease = []
+      break
+    // This probably shouldn't be used publicly.
+    // 1.0.0 "pre" would become 1.0.0-0 which is the wrong direction.
+    case 'pre':
+      if (this.prerelease.length === 0) {
+        this.prerelease = [0]
+      } else {
+        var i = this.prerelease.length
+        while (--i >= 0) {
+          if (typeof this.prerelease[i] === 'number') {
+            this.prerelease[i]++
+            i = -2
+          }
+        }
+        if (i === -1) {
+          // didn't increment anything
+          this.prerelease.push(0)
+        }
+      }
+      if (identifier) {
+        // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+        // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+        if (this.prerelease[0] === identifier) {
+          if (isNaN(this.prerelease[1])) {
+            this.prerelease = [identifier, 0]
+          }
+        } else {
+          this.prerelease = [identifier, 0]
+        }
+      }
+      break
+
+    default:
+      throw new Error('invalid increment argument: ' + release)
+  }
+  this.format()
+  this.raw = this.version
+  return this
+}
+
+exports.inc = inc
+function inc (version, release, loose, identifier) {
+  if (typeof (loose) === 'string') {
+    identifier = loose
+    loose = undefined
+  }
+
+  try {
+    return new SemVer(version, loose).inc(release, identifier).version
+  } catch (er) {
+    return null
+  }
+}
+
+exports.diff = diff
+function diff (version1, version2) {
+  if (eq(version1, version2)) {
+    return null
+  } else {
+    var v1 = parse(version1)
+    var v2 = parse(version2)
+    var prefix = ''
+    if (v1.prerelease.length || v2.prerelease.length) {
+      prefix = 'pre'
+      var defaultResult = 'prerelease'
+    }
+    for (var key in v1) {
+      if (key === 'major' || key === 'minor' || key === 'patch') {
+        if (v1[key] !== v2[key]) {
+          return prefix + key
+        }
+      }
+    }
+    return defaultResult // may be undefined
+  }
+}
+
+exports.compareIdentifiers = compareIdentifiers
+
+var numeric = /^[0-9]+$/
+function compareIdentifiers (a, b) {
+  var anum = numeric.test(a)
+  var bnum = numeric.test(b)
+
+  if (anum && bnum) {
+    a = +a
+    b = +b
+  }
+
+  return a === b ? 0
+    : (anum && !bnum) ? -1
+    : (bnum && !anum) ? 1
+    : a < b ? -1
+    : 1
+}
+
+exports.rcompareIdentifiers = rcompareIdentifiers
+function rcompareIdentifiers (a, b) {
+  return compareIdentifiers(b, a)
+}
+
+exports.major = major
+function major (a, loose) {
+  return new SemVer(a, loose).major
+}
+
+exports.minor = minor
+function minor (a, loose) {
+  return new SemVer(a, loose).minor
+}
+
+exports.patch = patch
+function patch (a, loose) {
+  return new SemVer(a, loose).patch
+}
+
+exports.compare = compare
+function compare (a, b, loose) {
+  return new SemVer(a, loose).compare(new SemVer(b, loose))
+}
+
+exports.compareLoose = compareLoose
+function compareLoose (a, b) {
+  return compare(a, b, true)
+}
+
+exports.compareBuild = compareBuild
+function compareBuild (a, b, loose) {
+  var versionA = new SemVer(a, loose)
+  var versionB = new SemVer(b, loose)
+  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+}
+
+exports.rcompare = rcompare
+function rcompare (a, b, loose) {
+  return compare(b, a, loose)
+}
+
+exports.sort = sort
+function sort (list, loose) {
+  return list.sort(function (a, b) {
+    return exports.compareBuild(a, b, loose)
+  })
+}
+
+exports.rsort = rsort
+function rsort (list, loose) {
+  return list.sort(function (a, b) {
+    return exports.compareBuild(b, a, loose)
+  })
+}
+
+exports.gt = gt
+function gt (a, b, loose) {
+  return compare(a, b, loose) > 0
+}
+
+exports.lt = lt
+function lt (a, b, loose) {
+  return compare(a, b, loose) < 0
+}
+
+exports.eq = eq
+function eq (a, b, loose) {
+  return compare(a, b, loose) === 0
+}
+
+exports.neq = neq
+function neq (a, b, loose) {
+  return compare(a, b, loose) !== 0
+}
+
+exports.gte = gte
+function gte (a, b, loose) {
+  return compare(a, b, loose) >= 0
+}
+
+exports.lte = lte
+function lte (a, b, loose) {
+  return compare(a, b, loose) <= 0
+}
+
+exports.cmp = cmp
+function cmp (a, op, b, loose) {
+  switch (op) {
+    case '===':
+      if (typeof a === 'object')
+        a = a.version
+      if (typeof b === 'object')
+        b = b.version
+      return a === b
+
+    case '!==':
+      if (typeof a === 'object')
+        a = a.version
+      if (typeof b === 'object')
+        b = b.version
+      return a !== b
+
+    case '':
+    case '=':
+    case '==':
+      return eq(a, b, loose)
+
+    case '!=':
+      return neq(a, b, loose)
+
+    case '>':
+      return gt(a, b, loose)
+
+    case '>=':
+      return gte(a, b, loose)
+
+    case '<':
+      return lt(a, b, loose)
+
+    case '<=':
+      return lte(a, b, loose)
+
+    default:
+      throw new TypeError('Invalid operator: ' + op)
+  }
+}
+
+exports.Comparator = Comparator
+function Comparator (comp, options) {
+  if (!options || typeof options !== 'object') {
+    options = {
+      loose: !!options,
+      includePrerelease: false
+    }
+  }
+
+  if (comp instanceof Comparator) {
+    if (comp.loose === !!options.loose) {
+      return comp
+    } else {
+      comp = comp.value
+    }
+  }
+
+  if (!(this instanceof Comparator)) {
+    return new Comparator(comp, options)
+  }
+
+  comp = comp.trim().split(/\s+/).join(' ')
+  debug('comparator', comp, options)
+  this.options = options
+  this.loose = !!options.loose
+  this.parse(comp)
+
+  if (this.semver === ANY) {
+    this.value = ''
+  } else {
+    this.value = this.operator + this.semver.version
+  }
+
+  debug('comp', this)
+}
+
+var ANY = {}
+Comparator.prototype.parse = function (comp) {
+  var r = this.options.loose ? safeRe[t.COMPARATORLOOSE] : safeRe[t.COMPARATOR]
+  var m = comp.match(r)
+
+  if (!m) {
+    throw new TypeError('Invalid comparator: ' + comp)
+  }
+
+  this.operator = m[1] !== undefined ? m[1] : ''
+  if (this.operator === '=') {
+    this.operator = ''
+  }
+
+  // if it literally is just '>' or '' then allow anything.
+  if (!m[2]) {
+    this.semver = ANY
+  } else {
+    this.semver = new SemVer(m[2], this.options.loose)
+  }
+}
+
+Comparator.prototype.toString = function () {
+  return this.value
+}
+
+Comparator.prototype.test = function (version) {
+  debug('Comparator.test', version, this.options.loose)
+
+  if (this.semver === ANY || version === ANY) {
+    return true
+  }
+
+  if (typeof version === 'string') {
+    try {
+      version = new SemVer(version, this.options)
+    } catch (er) {
+      return false
+    }
+  }
+
+  return cmp(version, this.operator, this.semver, this.options)
+}
+
+Comparator.prototype.intersects = function (comp, options) {
+  if (!(comp instanceof Comparator)) {
+    throw new TypeError('a Comparator is required')
+  }
+
+  if (!options || typeof options !== 'object') {
+    options = {
+      loose: !!options,
+      includePrerelease: false
+    }
+  }
+
+  var rangeTmp
+
+  if (this.operator === '') {
+    if (this.value === '') {
+      return true
+    }
+    rangeTmp = new Range(comp.value, options)
+    return satisfies(this.value, rangeTmp, options)
+  } else if (comp.operator === '') {
+    if (comp.value === '') {
+      return true
+    }
+    rangeTmp = new Range(this.value, options)
+    return satisfies(comp.semver, rangeTmp, options)
+  }
+
+  var sameDirectionIncreasing =
+    (this.operator === '>=' || this.operator === '>') &&
+    (comp.operator === '>=' || comp.operator === '>')
+  var sameDirectionDecreasing =
+    (this.operator === '<=' || this.operator === '<') &&
+    (comp.operator === '<=' || comp.operator === '<')
+  var sameSemVer = this.semver.version === comp.semver.version
+  var differentDirectionsInclusive =
+    (this.operator === '>=' || this.operator === '<=') &&
+    (comp.operator === '>=' || comp.operator === '<=')
+  var oppositeDirectionsLessThan =
+    cmp(this.semver, '<', comp.semver, options) &&
+    ((this.operator === '>=' || this.operator === '>') &&
+    (comp.operator === '<=' || comp.operator === '<'))
+  var oppositeDirectionsGreaterThan =
+    cmp(this.semver, '>', comp.semver, options) &&
+    ((this.operator === '<=' || this.operator === '<') &&
+    (comp.operator === '>=' || comp.operator === '>'))
+
+  return sameDirectionIncreasing || sameDirectionDecreasing ||
+    (sameSemVer && differentDirectionsInclusive) ||
+    oppositeDirectionsLessThan || oppositeDirectionsGreaterThan
+}
+
+exports.Range = Range
+function Range (range, options) {
+  if (!options || typeof options !== 'object') {
+    options = {
+      loose: !!options,
+      includePrerelease: false
+    }
+  }
+
+  if (range instanceof Range) {
+    if (range.loose === !!options.loose &&
+        range.includePrerelease === !!options.includePrerelease) {
+      return range
+    } else {
+      return new Range(range.raw, options)
+    }
+  }
+
+  if (range instanceof Comparator) {
+    return new Range(range.value, options)
+  }
+
+  if (!(this instanceof Range)) {
+    return new Range(range, options)
+  }
+
+  this.options = options
+  this.loose = !!options.loose
+  this.includePrerelease = !!options.includePrerelease
+
+  // First reduce all whitespace as much as possible so we do not have to rely
+  // on potentially slow regexes like \s*. This is then stored and used for
+  // future error messages as well.
+  this.raw = range
+    .trim()
+    .split(/\s+/)
+    .join(' ')
+
+  // First, split based on boolean or ||
+  this.set = this.raw.split('||').map(function (range) {
+    return this.parseRange(range.trim())
+  }, this).filter(function (c) {
+    // throw out any that are not relevant for whatever reason
+    return c.length
+  })
+
+  if (!this.set.length) {
+    throw new TypeError('Invalid SemVer Range: ' + this.raw)
+  }
+
+  this.format()
+}
+
+Range.prototype.format = function () {
+  this.range = this.set.map(function (comps) {
+    return comps.join(' ').trim()
+  }).join('||').trim()
+  return this.range
+}
+
+Range.prototype.toString = function () {
+  return this.range
+}
+
+Range.prototype.parseRange = function (range) {
+  var loose = this.options.loose
+  // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
+  var hr = loose ? safeRe[t.HYPHENRANGELOOSE] : safeRe[t.HYPHENRANGE]
+  range = range.replace(hr, hyphenReplace)
+  debug('hyphen replace', range)
+  // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
+  range = range.replace(safeRe[t.COMPARATORTRIM], comparatorTrimReplace)
+  debug('comparator trim', range, safeRe[t.COMPARATORTRIM])
+
+  // `~ 1.2.3` => `~1.2.3`
+  range = range.replace(safeRe[t.TILDETRIM], tildeTrimReplace)
+
+  // `^ 1.2.3` => `^1.2.3`
+  range = range.replace(safeRe[t.CARETTRIM], caretTrimReplace)
+
+  // normalize spaces
+  range = range.split(/\s+/).join(' ')
+
+  // At this point, the range is completely trimmed and
+  // ready to be split into comparators.
+
+  var compRe = loose ? safeRe[t.COMPARATORLOOSE] : safeRe[t.COMPARATOR]
+  var set = range.split(' ').map(function (comp) {
+    return parseComparator(comp, this.options)
+  }, this).join(' ').split(/\s+/)
+  if (this.options.loose) {
+    // in loose mode, throw out any that are not valid comparators
+    set = set.filter(function (comp) {
+      return !!comp.match(compRe)
+    })
+  }
+  set = set.map(function (comp) {
+    return new Comparator(comp, this.options)
+  }, this)
+
+  return set
+}
+
+Range.prototype.intersects = function (range, options) {
+  if (!(range instanceof Range)) {
+    throw new TypeError('a Range is required')
+  }
+
+  return this.set.some(function (thisComparators) {
+    return (
+      isSatisfiable(thisComparators, options) &&
+      range.set.some(function (rangeComparators) {
+        return (
+          isSatisfiable(rangeComparators, options) &&
+          thisComparators.every(function (thisComparator) {
+            return rangeComparators.every(function (rangeComparator) {
+              return thisComparator.intersects(rangeComparator, options)
+            })
+          })
+        )
+      })
+    )
+  })
+}
+
+// take a set of comparators and determine whether there
+// exists a version which can satisfy it
+function isSatisfiable (comparators, options) {
+  var result = true
+  var remainingComparators = comparators.slice()
+  var testComparator = remainingComparators.pop()
+
+  while (result && remainingComparators.length) {
+    result = remainingComparators.every(function (otherComparator) {
+      return testComparator.intersects(otherComparator, options)
+    })
+
+    testComparator = remainingComparators.pop()
+  }
+
+  return result
+}
+
+// Mostly just for testing and legacy API reasons
+exports.toComparators = toComparators
+function toComparators (range, options) {
+  return new Range(range, options).set.map(function (comp) {
+    return comp.map(function (c) {
+      return c.value
+    }).join(' ').trim().split(' ')
+  })
+}
+
+// comprised of xranges, tildes, stars, and gtlt's at this point.
+// already replaced the hyphen ranges
+// turn into a set of JUST comparators.
+function parseComparator (comp, options) {
+  debug('comp', comp, options)
+  comp = replaceCarets(comp, options)
+  debug('caret', comp)
+  comp = replaceTildes(comp, options)
+  debug('tildes', comp)
+  comp = replaceXRanges(comp, options)
+  debug('xrange', comp)
+  comp = replaceStars(comp, options)
+  debug('stars', comp)
+  return comp
+}
+
+function isX (id) {
+  return !id || id.toLowerCase() === 'x' || id === '*'
+}
+
+// ~, ~> --> * (any, kinda silly)
+// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0
+// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0
+// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0
+// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0
+// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0
+function replaceTildes (comp, options) {
+  return comp.trim().split(/\s+/).map(function (comp) {
+    return replaceTilde(comp, options)
+  }).join(' ')
+}
+
+function replaceTilde (comp, options) {
+  var r = options.loose ? safeRe[t.TILDELOOSE] : safeRe[t.TILDE]
+  return comp.replace(r, function (_, M, m, p, pr) {
+    debug('tilde', comp, _, M, m, p, pr)
+    var ret
+
+    if (isX(M)) {
+      ret = ''
+    } else if (isX(m)) {
+      ret = '>=' + M + '.0.0 <' + (+M + 1) + '.0.0'
+    } else if (isX(p)) {
+      // ~1.2 == >=1.2.0 <1.3.0
+      ret = '>=' + M + '.' + m + '.0 <' + M + '.' + (+m + 1) + '.0'
+    } else if (pr) {
+      debug('replaceTilde pr', pr)
+      ret = '>=' + M + '.' + m + '.' + p + '-' + pr +
+            ' <' + M + '.' + (+m + 1) + '.0'
+    } else {
+      // ~1.2.3 == >=1.2.3 <1.3.0
+      ret = '>=' + M + '.' + m + '.' + p +
+            ' <' + M + '.' + (+m + 1) + '.0'
+    }
+
+    debug('tilde return', ret)
+    return ret
+  })
+}
+
+// ^ --> * (any, kinda silly)
+// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0
+// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0
+// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0
+// ^1.2.3 --> >=1.2.3 <2.0.0
+// ^1.2.0 --> >=1.2.0 <2.0.0
+function replaceCarets (comp, options) {
+  return comp.trim().split(/\s+/).map(function (comp) {
+    return replaceCaret(comp, options)
+  }).join(' ')
+}
+
+function replaceCaret (comp, options) {
+  debug('caret', comp, options)
+  var r = options.loose ? safeRe[t.CARETLOOSE] : safeRe[t.CARET]
+  return comp.replace(r, function (_, M, m, p, pr) {
+    debug('caret', comp, _, M, m, p, pr)
+    var ret
+
+    if (isX(M)) {
+      ret = ''
+    } else if (isX(m)) {
+      ret = '>=' + M + '.0.0 <' + (+M + 1) + '.0.0'
+    } else if (isX(p)) {
+      if (M === '0') {
+        ret = '>=' + M + '.' + m + '.0 <' + M + '.' + (+m + 1) + '.0'
+      } else {
+        ret = '>=' + M + '.' + m + '.0 <' + (+M + 1) + '.0.0'
+      }
+    } else if (pr) {
+      debug('replaceCaret pr', pr)
+      if (M === '0') {
+        if (m === '0') {
+          ret = '>=' + M + '.' + m + '.' + p + '-' + pr +
+                ' <' + M + '.' + m + '.' + (+p + 1)
+        } else {
+          ret = '>=' + M + '.' + m + '.' + p + '-' + pr +
+                ' <' + M + '.' + (+m + 1) + '.0'
+        }
+      } else {
+        ret = '>=' + M + '.' + m + '.' + p + '-' + pr +
+              ' <' + (+M + 1) + '.0.0'
+      }
+    } else {
+      debug('no pr')
+      if (M === '0') {
+        if (m === '0') {
+          ret = '>=' + M + '.' + m + '.' + p +
+                ' <' + M + '.' + m + '.' + (+p + 1)
+        } else {
+          ret = '>=' + M + '.' + m + '.' + p +
+                ' <' + M + '.' + (+m + 1) + '.0'
+        }
+      } else {
+        ret = '>=' + M + '.' + m + '.' + p +
+              ' <' + (+M + 1) + '.0.0'
+      }
+    }
+
+    debug('caret return', ret)
+    return ret
+  })
+}
+
+function replaceXRanges (comp, options) {
+  debug('replaceXRanges', comp, options)
+  return comp.split(/\s+/).map(function (comp) {
+    return replaceXRange(comp, options)
+  }).join(' ')
+}
+
+function replaceXRange (comp, options) {
+  comp = comp.trim()
+  var r = options.loose ? safeRe[t.XRANGELOOSE] : safeRe[t.XRANGE]
+  return comp.replace(r, function (ret, gtlt, M, m, p, pr) {
+    debug('xRange', comp, ret, gtlt, M, m, p, pr)
+    var xM = isX(M)
+    var xm = xM || isX(m)
+    var xp = xm || isX(p)
+    var anyX = xp
+
+    if (gtlt === '=' && anyX) {
+      gtlt = ''
+    }
+
+    // if we're including prereleases in the match, then we need
+    // to fix this to -0, the lowest possible prerelease value
+    pr = options.includePrerelease ? '-0' : ''
+
+    if (xM) {
+      if (gtlt === '>' || gtlt === '<') {
+        // nothing is allowed
+        ret = '<0.0.0-0'
+      } else {
+        // nothing is forbidden
+        ret = '*'
+      }
+    } else if (gtlt && anyX) {
+      // we know patch is an x, because we have any x at all.
+      // replace X with 0
+      if (xm) {
+        m = 0
+      }
+      p = 0
+
+      if (gtlt === '>') {
+        // >1 => >=2.0.0
+        // >1.2 => >=1.3.0
+        // >1.2.3 => >= 1.2.4
+        gtlt = '>='
+        if (xm) {
+          M = +M + 1
+          m = 0
+          p = 0
+        } else {
+          m = +m + 1
+          p = 0
+        }
+      } else if (gtlt === '<=') {
+        // <=0.7.x is actually <0.8.0, since any 0.7.x should
+        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
+        gtlt = '<'
+        if (xm) {
+          M = +M + 1
+        } else {
+          m = +m + 1
+        }
+      }
+
+      ret = gtlt + M + '.' + m + '.' + p + pr
+    } else if (xm) {
+      ret = '>=' + M + '.0.0' + pr + ' <' + (+M + 1) + '.0.0' + pr
+    } else if (xp) {
+      ret = '>=' + M + '.' + m + '.0' + pr +
+        ' <' + M + '.' + (+m + 1) + '.0' + pr
+    }
+
+    debug('xRange return', ret)
+
+    return ret
+  })
+}
+
+// Because * is AND-ed with everything else in the comparator,
+// and '' means "any version", just remove the *s entirely.
+function replaceStars (comp, options) {
+  debug('replaceStars', comp, options)
+  // Looseness is ignored here.  star is always as loose as it gets!
+  return comp.trim().replace(safeRe[t.STAR], '')
+}
+
+// This function is passed to string.replace(re[t.HYPHENRANGE])
+// M, m, patch, prerelease, build
+// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
+// 1.2.3 - 3.4 => >=1.2.0 <3.5.0 Any 3.4.x will do
+// 1.2 - 3.4 => >=1.2.0 <3.5.0
+function hyphenReplace ($0,
+  from, fM, fm, fp, fpr, fb,
+  to, tM, tm, tp, tpr, tb) {
+  if (isX(fM)) {
+    from = ''
+  } else if (isX(fm)) {
+    from = '>=' + fM + '.0.0'
+  } else if (isX(fp)) {
+    from = '>=' + fM + '.' + fm + '.0'
+  } else {
+    from = '>=' + from
+  }
+
+  if (isX(tM)) {
+    to = ''
+  } else if (isX(tm)) {
+    to = '<' + (+tM + 1) + '.0.0'
+  } else if (isX(tp)) {
+    to = '<' + tM + '.' + (+tm + 1) + '.0'
+  } else if (tpr) {
+    to = '<=' + tM + '.' + tm + '.' + tp + '-' + tpr
+  } else {
+    to = '<=' + to
+  }
+
+  return (from + ' ' + to).trim()
+}
+
+// if ANY of the sets match ALL of its comparators, then pass
+Range.prototype.test = function (version) {
+  if (!version) {
+    return false
+  }
+
+  if (typeof version === 'string') {
+    try {
+      version = new SemVer(version, this.options)
+    } catch (er) {
+      return false
+    }
+  }
+
+  for (var i = 0; i < this.set.length; i++) {
+    if (testSet(this.set[i], version, this.options)) {
+      return true
+    }
+  }
+  return false
+}
+
+function testSet (set, version, options) {
+  for (var i = 0; i < set.length; i++) {
+    if (!set[i].test(version)) {
+      return false
+    }
+  }
+
+  if (version.prerelease.length && !options.includePrerelease) {
+    // Find the set of versions that are allowed to have prereleases
+    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
+    // That should allow `1.2.3-pr.2` to pass.
+    // However, `1.2.4-alpha.notready` should NOT be allowed,
+    // even though it's within the range set by the comparators.
+    for (i = 0; i < set.length; i++) {
+      debug(set[i].semver)
+      if (set[i].semver === ANY) {
+        continue
+      }
+
+      if (set[i].semver.prerelease.length > 0) {
+        var allowed = set[i].semver
+        if (allowed.major === version.major &&
+            allowed.minor === version.minor &&
+            allowed.patch === version.patch) {
+          return true
+        }
+      }
+    }
+
+    // Version has a -pre, but it's not one of the ones we like.
+    return false
+  }
+
+  return true
+}
+
+exports.satisfies = satisfies
+function satisfies (version, range, options) {
+  try {
+    range = new Range(range, options)
+  } catch (er) {
+    return false
+  }
+  return range.test(version)
+}
+
+exports.maxSatisfying = maxSatisfying
+function maxSatisfying (versions, range, options) {
+  var max = null
+  var maxSV = null
+  try {
+    var rangeObj = new Range(range, options)
+  } catch (er) {
+    return null
+  }
+  versions.forEach(function (v) {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!max || maxSV.compare(v) === -1) {
+        // compare(max, v, true)
+        max = v
+        maxSV = new SemVer(max, options)
+      }
+    }
+  })
+  return max
+}
+
+exports.minSatisfying = minSatisfying
+function minSatisfying (versions, range, options) {
+  var min = null
+  var minSV = null
+  try {
+    var rangeObj = new Range(range, options)
+  } catch (er) {
+    return null
+  }
+  versions.forEach(function (v) {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!min || minSV.compare(v) === 1) {
+        // compare(min, v, true)
+        min = v
+        minSV = new SemVer(min, options)
+      }
+    }
+  })
+  return min
+}
+
+exports.minVersion = minVersion
+function minVersion (range, loose) {
+  range = new Range(range, loose)
+
+  var minver = new SemVer('0.0.0')
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = new SemVer('0.0.0-0')
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = null
+  for (var i = 0; i < range.set.length; ++i) {
+    var comparators = range.set[i]
+
+    comparators.forEach(function (comparator) {
+      // Clone to avoid manipulating the comparator's semver object.
+      var compver = new SemVer(comparator.semver.version)
+      switch (comparator.operator) {
+        case '>':
+          if (compver.prerelease.length === 0) {
+            compver.patch++
+          } else {
+            compver.prerelease.push(0)
+          }
+          compver.raw = compver.format()
+          /* fallthrough */
+        case '':
+        case '>=':
+          if (!minver || gt(minver, compver)) {
+            minver = compver
+          }
+          break
+        case '<':
+        case '<=':
+          /* Ignore maximum versions */
+          break
+        /* istanbul ignore next */
+        default:
+          throw new Error('Unexpected operation: ' + comparator.operator)
+      }
+    })
+  }
+
+  if (minver && range.test(minver)) {
+    return minver
+  }
+
+  return null
+}
+
+exports.validRange = validRange
+function validRange (range, options) {
+  try {
+    // Return '*' instead of '' so that truthiness works.
+    // This will throw if it's invalid anyway
+    return new Range(range, options).range || '*'
+  } catch (er) {
+    return null
+  }
+}
+
+// Determine if version is less than all the versions possible in the range
+exports.ltr = ltr
+function ltr (version, range, options) {
+  return outside(version, range, '<', options)
+}
+
+// Determine if version is greater than all the versions possible in the range.
+exports.gtr = gtr
+function gtr (version, range, options) {
+  return outside(version, range, '>', options)
+}
+
+exports.outside = outside
+function outside (version, range, hilo, options) {
+  version = new SemVer(version, options)
+  range = new Range(range, options)
+
+  var gtfn, ltefn, ltfn, comp, ecomp
+  switch (hilo) {
+    case '>':
+      gtfn = gt
+      ltefn = lte
+      ltfn = lt
+      comp = '>'
+      ecomp = '>='
+      break
+    case '<':
+      gtfn = lt
+      ltefn = gte
+      ltfn = gt
+      comp = '<'
+      ecomp = '<='
+      break
+    default:
+      throw new TypeError('Must provide a hilo val of "<" or ">"')
+  }
+
+  // If it satisifes the range it is not outside
+  if (satisfies(version, range, options)) {
+    return false
+  }
+
+  // From now on, variable terms are as if we're in "gtr" mode.
+  // but note that everything is flipped for the "ltr" function.
+
+  for (var i = 0; i < range.set.length; ++i) {
+    var comparators = range.set[i]
+
+    var high = null
+    var low = null
+
+    comparators.forEach(function (comparator) {
+      if (comparator.semver === ANY) {
+        comparator = new Comparator('>=0.0.0')
+      }
+      high = high || comparator
+      low = low || comparator
+      if (gtfn(comparator.semver, high.semver, options)) {
+        high = comparator
+      } else if (ltfn(comparator.semver, low.semver, options)) {
+        low = comparator
+      }
+    })
+
+    // If the edge version comparator has a operator then our version
+    // isn't outside it
+    if (high.operator === comp || high.operator === ecomp) {
+      return false
+    }
+
+    // If the lowest version comparator has an operator and our version
+    // is less than it then it isn't higher than the range
+    if ((!low.operator || low.operator === comp) &&
+        ltefn(version, low.semver)) {
+      return false
+    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+      return false
+    }
+  }
+  return true
+}
+
+exports.prerelease = prerelease
+function prerelease (version, options) {
+  var parsed = parse(version, options)
+  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
+}
+
+exports.intersects = intersects
+function intersects (r1, r2, options) {
+  r1 = new Range(r1, options)
+  r2 = new Range(r2, options)
+  return r1.intersects(r2)
+}
+
+exports.coerce = coerce
+function coerce (version, options) {
+  if (version instanceof SemVer) {
+    return version
+  }
+
+  if (typeof version === 'number') {
+    version = String(version)
+  }
+
+  if (typeof version !== 'string') {
+    return null
+  }
+
+  options = options || {}
+
+  var match = null
+  if (!options.rtl) {
+    match = version.match(safeRe[t.COERCE])
+  } else {
+    // Find the right-most coercible string that does not share
+    // a terminus with a more left-ward coercible string.
+    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+    //
+    // Walk through the string checking with a /g regexp
+    // Manually set the index so as to pick up overlapping matches.
+    // Stop when we get a match that ends at the string end, since no
+    // coercible string can be more right-ward without the same terminus.
+    var next
+    while ((next = safeRe[t.COERCERTL].exec(version)) &&
+      (!match || match.index + match[0].length !== version.length)
+    ) {
+      if (!match ||
+          next.index + next[0].length !== match.index + match[0].length) {
+        match = next
+      }
+      safeRe[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
+    }
+    // leave it in a clean state
+    safeRe[t.COERCERTL].lastIndex = -1
+  }
+
+  if (match === null) {
+    return null
+  }
+
+  return parse(match[2] +
+    '.' + (match[3] || '0') +
+    '.' + (match[4] || '0'), options)
+}
+
+
+/***/ }),
+
+/***/ 7701:
+/***/ ((module) => {
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+for (var i = 0; i < 256; ++i) {
+  byteToHex[i] = (i + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex;
+  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+  return ([
+    bth[buf[i++]], bth[buf[i++]],
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]],
+    bth[buf[i++]], bth[buf[i++]],
+    bth[buf[i++]], bth[buf[i++]]
+  ]).join('');
+}
+
+module.exports = bytesToUuid;
+
+
+/***/ }),
+
+/***/ 7269:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// Unique ID creation requires a high quality random # generator.  In node.js
+// this is pretty straight-forward - we use the crypto API.
+
+var crypto = __nccwpck_require__(6113);
+
+module.exports = function nodeRNG() {
+  return crypto.randomBytes(16);
+};
+
+
+/***/ }),
+
+/***/ 7468:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var rng = __nccwpck_require__(7269);
+var bytesToUuid = __nccwpck_require__(7701);
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rng)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid(rnds);
+}
+
+module.exports = v4;
+
+
+/***/ }),
+
+/***/ 7756:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var requesterUtils = __nccwpck_require__(77);
+var xcase = __nccwpck_require__(7020);
+var QS = __nccwpck_require__(2760);
+
+function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
+
+var QS__default = /*#__PURE__*/_interopDefault(QS);
+
+// src/resources/Agents.ts
+function appendFormFromObject(object) {
+  const form = new FormData();
+  Object.entries(object).forEach(([k, v]) => {
+    if (!v)
+      return;
+    if (Array.isArray(v))
+      form.append(k, v[0], v[1]);
+    else
+      form.append(k, v);
+  });
+  return form;
+}
+function endpoint(strings, ...values) {
+  return values.reduce(
+    (string, value, index) => string + encodeURIComponent(value) + strings[index + 1],
+    strings[0]
+  );
+}
+function parseLinkHeader(linkString) {
+  const output = {};
+  const regex = /<([^>]+)>; rel="([^"]+)"/g;
+  let m;
+  while (m = regex.exec(linkString)) {
+    const [, v, k] = m;
+    output[k] = v;
+  }
+  return output;
+}
+function reformatObjectOptions(obj, prefixKey, decamelizeValues = false) {
+  const formatted = decamelizeValues ? xcase.decamelizeKeys(obj) : obj;
+  return QS__default.default.stringify({ [prefixKey]: formatted }, { encode: false }).split("&").reduce((acc, cur) => {
+    const [key, val] = cur.split("=");
+    acc[key] = val;
+    return acc;
+  }, {});
+}
+function packageResponse(response, showExpanded) {
+  return showExpanded ? {
+    data: response.body,
+    status: response.status,
+    headers: response.headers
+  } : response.body;
+}
+function getStream(response, showExpanded) {
+  return packageResponse(response, showExpanded);
+}
+function getSingle(camelize, response, showExpanded) {
+  const { status, headers } = response;
+  let { body } = response;
+  if (camelize)
+    body = xcase.camelizeKeys(body);
+  return packageResponse({ body, status, headers }, showExpanded);
+}
+async function getManyMore(camelize, getFn, endpoint2, response, requestOptions, acc) {
+  const { sudo, showExpanded, maxPages, pagination, page, perPage, idAfter, orderBy, sort } = requestOptions;
+  if (camelize)
+    response.body = xcase.camelizeKeys(response?.body);
+  const newAcc = [...acc || [], ...response.body];
+  const withinBounds = maxPages && perPage ? newAcc.length / +perPage < maxPages : true;
+  const { next = "" } = parseLinkHeader(response.headers.link);
+  if (!(page && (acc || []).length === 0) && next && withinBounds) {
+    const parsedQueryString = QS.parse(next.split("?")[1]);
+    const qs = { ...xcase.camelizeKeys(parsedQueryString) };
+    const newOpts = {
+      ...qs,
+      maxPages,
+      sudo,
+      showExpanded
+    };
+    const nextResponse = await getFn(endpoint2, {
+      searchParams: qs,
+      sudo
+    });
+    return getManyMore(camelize, getFn, endpoint2, nextResponse, newOpts, newAcc);
+  }
+  if (!showExpanded)
+    return newAcc;
+  const paginationInfo = pagination === "keyset" ? {
+    idAfter: idAfter ? +idAfter : null,
+    perPage: perPage ? +perPage : null,
+    orderBy,
+    sort
+  } : {
+    total: parseInt(response.headers["x-total"], 10),
+    next: parseInt(response.headers["x-next-page"], 10) || null,
+    current: parseInt(response.headers["x-page"], 10) || 1,
+    previous: parseInt(response.headers["x-prev-page"], 10) || null,
+    perPage: parseInt(response.headers["x-per-page"], 10),
+    totalPages: parseInt(response.headers["x-total-pages"], 10)
+  };
+  return {
+    data: newAcc,
+    paginationInfo
+  };
+}
+function get() {
+  return async (service, endpoint2, options) => {
+    const { asStream, sudo, showExpanded, maxPages, ...searchParams } = options || {};
+    const signal = service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0;
+    const response = await service.requester.get(endpoint2, {
+      searchParams,
+      sudo,
+      asStream,
+      signal
+    });
+    const camelizeResponseBody = service.camelize || false;
+    if (asStream)
+      return getStream(response, showExpanded);
+    if (!Array.isArray(response.body))
+      return getSingle(
+        camelizeResponseBody,
+        response,
+        showExpanded
+      );
+    const reqOpts = {
+      sudo,
+      showExpanded,
+      maxPages,
+      ...searchParams
+    };
+    return getManyMore(
+      camelizeResponseBody,
+      (ep, op) => service.requester.get(ep, { ...op, signal }),
+      endpoint2,
+      response,
+      reqOpts
+    );
+  };
+}
+function post() {
+  return async (service, endpoint2, { searchParams, isForm, sudo, showExpanded, ...options } = {}) => {
+    const body = isForm ? appendFormFromObject(options) : options;
+    const response = await service.requester.post(endpoint2, {
+      searchParams,
+      body,
+      sudo,
+      signal: service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0
+    });
+    if (service.camelize)
+      response.body = xcase.camelizeKeys(response.body);
+    return packageResponse(response, showExpanded);
+  };
+}
+function put() {
+  return async (service, endpoint2, { searchParams, isForm, sudo, showExpanded, ...options } = {}) => {
+    const body = isForm ? appendFormFromObject(options) : options;
+    const response = await service.requester.put(endpoint2, {
+      body,
+      searchParams,
+      sudo,
+      signal: service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0
+    });
+    if (service.camelize)
+      response.body = xcase.camelizeKeys(response.body);
+    return packageResponse(response, showExpanded);
+  };
+}
+function patch() {
+  return async (service, endpoint2, { searchParams, isForm, sudo, showExpanded, ...options } = {}) => {
+    const body = isForm ? appendFormFromObject(options) : options;
+    const response = await service.requester.patch(endpoint2, {
+      body,
+      searchParams,
+      sudo,
+      signal: service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0
+    });
+    if (service.camelize)
+      response.body = xcase.camelizeKeys(response.body);
+    return packageResponse(response, showExpanded);
+  };
+}
+function del() {
+  return async (service, endpoint2, { sudo, showExpanded, searchParams, ...options } = {}) => {
+    const response = await service.requester.delete(endpoint2, {
+      body: options,
+      searchParams,
+      sudo,
+      signal: service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0
+    });
+    return packageResponse(response, showExpanded);
+  };
+}
+var RequestHelper = {
+  post,
+  put,
+  patch,
+  get,
+  del
+};
+
+// src/resources/Agents.ts
+var Agents = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents`,
+      options
+    );
+  }
+  allTokens(projectId, agentId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents/${agentId}/tokens`,
+      options
+    );
+  }
+  createToken(projectId, agentId, name, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents/${agentId}/tokens`,
+      {
+        name,
+        ...options
+      }
+    );
+  }
+  show(projectId, agentId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents/${agentId}`,
+      options
+    );
+  }
+  showToken(projectId, agentId, tokenId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents/${agentId}/tokens/${tokenId}`,
+      options
+    );
+  }
+  register(projectId, name, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents`,
+      {
+        name,
+        ...options
+      }
+    );
+  }
+  removeToken(projectId, agentId, tokenId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents/${agentId}/tokens/${tokenId}`,
+      options
+    );
+  }
+  unregister(projectId, agentId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/cluster_agents/${agentId}`,
+      options
+    );
+  }
+};
+var AlertManagement = class extends requesterUtils.BaseResource {
+  allMetricImages(projectId, alertIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/alert_management_alerts/${alertIId}/metric_images`,
+      options
+    );
+  }
+  editMetricImage(projectId, alertIId, imageId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/alert_management_alerts/${alertIId}/metric_images/${imageId}`,
+      options
+    );
+  }
+  removeMetricImage(projectId, alertIId, imageId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/alert_management_alerts/${alertIId}/metric_images/${imageId}`,
+      options
+    );
+  }
+  uploadMetricImage(projectId, alertIId, metricImage, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/alert_management_alerts/${alertIId}/metric_images`,
+      {
+        isForm: true,
+        file: [metricImage.content, metricImage.filename],
+        ...options
+      }
+    );
+  }
+};
+var ApplicationAppearance = class extends requesterUtils.BaseResource {
+  show(options) {
+    return RequestHelper.get()(
+      this,
+      "application/appearence",
+      options
+    );
+  }
+  edit({
+    logo,
+    pwaIcon,
+    ...options
+  } = {}) {
+    if (logo || pwaIcon) {
+      const opts = {
+        ...options,
+        isForm: true
+      };
+      if (logo)
+        opts.logo = [logo.content, logo.filename];
+      if (pwaIcon)
+        opts.pwaIcon = [pwaIcon.content, pwaIcon.filename];
+      return RequestHelper.put()(this, "application/appearence", opts);
+    }
+    return RequestHelper.put()(
+      this,
+      "application/appearence",
+      options
+    );
+  }
+};
+var ApplicationPlanLimits = class extends requesterUtils.BaseResource {
+  show(options) {
+    return RequestHelper.get()(
+      this,
+      "application/plan_limits",
+      options
+    );
+  }
+  edit(planName, options = {}) {
+    const {
+      ciPipelineSize,
+      ciActiveJobs,
+      ciActivePipelines,
+      ciProjectSubscriptions,
+      ciPipelineSchedules,
+      ciNeedsSizeLimit,
+      ciRegisteredGroupRunners,
+      ciRegisteredProjectRunners,
+      conanMaxFileSize,
+      genericPackagesMaxFileSize,
+      helmMaxFileSize,
+      mavenMaxFileSize,
+      npmMaxFileSize,
+      nugetMaxFileSize,
+      pypiMaxFileSize,
+      terraformModuleMaxFileSize,
+      storageSizeLimit,
+      ...opts
+    } = options;
+    return RequestHelper.put()(this, "application/plan_limits", {
+      ...opts,
+      searchParams: {
+        planName,
+        ciPipelineSize,
+        ciActiveJobs,
+        ciActivePipelines,
+        ciProjectSubscriptions,
+        ciPipelineSchedules,
+        ciNeedsSizeLimit,
+        ciRegisteredGroupRunners,
+        ciRegisteredProjectRunners,
+        conanMaxFileSize,
+        genericPackagesMaxFileSize,
+        helmMaxFileSize,
+        mavenMaxFileSize,
+        npmMaxFileSize,
+        nugetMaxFileSize,
+        pypiMaxFileSize,
+        terraformModuleMaxFileSize,
+        storageSizeLimit
+      }
+    });
+  }
+};
+var ApplicationSettings = class extends requesterUtils.BaseResource {
+  show(options) {
+    return RequestHelper.get()(this, "application/settings", options);
+  }
+  edit(options) {
+    return RequestHelper.put()(this, "application/settings", options);
+  }
+};
+var ApplicationStatistics = class extends requesterUtils.BaseResource {
+  show(options) {
+    return RequestHelper.get()(this, "application/statistics", options);
+  }
+};
+var Applications = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "applications", options);
+  }
+  create(name, redirectUri, scopes, options) {
+    return RequestHelper.post()(this, "applications", {
+      name,
+      redirectUri,
+      scopes,
+      ...options
+    });
+  }
+  remove(applicationId, options) {
+    return RequestHelper.del()(this, `applications/${applicationId}`, options);
+  }
+};
+function url({
+  projectId,
+  groupId
+} = {}) {
+  let prefix = "";
+  if (projectId)
+    prefix = endpoint`projects/${projectId}/`;
+  else if (groupId)
+    prefix = endpoint`groups/${groupId}/`;
+  return `${prefix}audit_events`;
+}
+var AuditEvents = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    const uri = url({ projectId, groupId });
+    return RequestHelper.get()(
+      this,
+      uri,
+      options
+    );
+  }
+  show(auditEventId, {
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    const uri = url({ projectId, groupId });
+    return RequestHelper.get()(this, `${uri}/${auditEventId}`, options);
+  }
+};
+var Avatar = class extends requesterUtils.BaseResource {
+  show(email, options) {
+    return RequestHelper.get()(this, "avatar", { email, ...options });
+  }
+};
+var BroadcastMessages = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "broadcast_messages", options);
+  }
+  create(options) {
+    return RequestHelper.post()(this, "broadcast_messages", options);
+  }
+  edit(broadcastMessageId, options) {
+    return RequestHelper.put()(
+      this,
+      `broadcast_messages/${broadcastMessageId}`,
+      options
+    );
+  }
+  remove(broadcastMessageId, options) {
+    return RequestHelper.del()(this, `broadcast_messages/${broadcastMessageId}`, options);
+  }
+  show(broadcastMessageId, options) {
+    return RequestHelper.get()(
+      this,
+      `broadcast_messages/${broadcastMessageId}`,
+      options
+    );
+  }
+};
+var CodeSuggestions = class extends requesterUtils.BaseResource {
+  createAccessToken(options) {
+    return RequestHelper.post()(this, "code_suggestions/tokens", options);
+  }
+  generateCompletion(options) {
+    return RequestHelper.post()(
+      this,
+      "code_suggestions/completions",
+      options
+    );
+  }
+};
+var Composer = class extends requesterUtils.BaseResource {
+  create(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/packages/composer`,
+      options
+    );
+  }
+  download(projectId, packageName, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/composer/archives/${packageName}`,
+      {
+        searchParams: { sha },
+        ...options
+      }
+    );
+  }
+  showMetadata(groupId, packageName, options) {
+    let url12;
+    if (options && options.sha) {
+      url12 = endpoint`groups/${groupId}/-/packages/composer/${packageName}$${options.sha}`;
+    } else {
+      url12 = endpoint`groups/${groupId}/-/packages/composer/p2/${packageName}`;
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+  showPackages(groupId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/-/packages/composer/p/${sha}`,
+      options
+    );
+  }
+  showBaseRepository(groupId, options) {
+    const clonedService = { ...this };
+    if (options && options.composerVersion === "2") {
+      clonedService.headers["User-Agent"] = "Composer/2";
+    }
+    return RequestHelper.get()(
+      clonedService,
+      endpoint`groups/${groupId}/-/packages/composer/packages`,
+      options
+    );
+  }
+};
+function url2(projectId) {
+  return projectId ? endpoint`projects/${projectId}/packages/conan/v1` : "packages/conan/v1";
+}
+var Conan = class extends requesterUtils.BaseResource {
+  authenticate({
+    projectId,
+    ...options
+  } = {}) {
+    return RequestHelper.get()(this, `${url2(projectId)}/users/authenticate`, options);
+  }
+  checkCredentials({
+    projectId,
+    ...options
+  } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(this, `${prefix}/users/check_credentials`, options);
+  }
+  downloadPackageFile(packageName, packageVersion, packageUsername, packageChannel, conanPackageReference, recipeRevision, packageRevision, filename, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/${recipeRevision}/package/${conanPackageReference}/${packageRevision}/${filename}`,
+      options
+    );
+  }
+  downloadRecipeFile(packageName, packageVersion, packageUsername, packageChannel, recipeRevision, filename, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/${recipeRevision}/export/${filename}`,
+      options
+    );
+  }
+  showPackageUploadUrls(packageName, packageVersion, packageUsername, packageChannel, conanPackageReference, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/packages/${conanPackageReference}/upload_urls`,
+      options
+    );
+  }
+  showPackageDownloadUrls(packageName, packageVersion, packageUsername, packageChannel, conanPackageReference, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/packages/${conanPackageReference}/download_urls`,
+      options
+    );
+  }
+  showPackageManifest(packageName, packageVersion, packageUsername, packageChannel, conanPackageReference, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/packages/${conanPackageReference}/digest`,
+      options
+    );
+  }
+  showPackageSnapshot(packageName, packageVersion, packageUsername, packageChannel, conanPackageReference, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/packages/${conanPackageReference}`,
+      options
+    );
+  }
+  ping({
+    projectId,
+    ...options
+  } = {}) {
+    return RequestHelper.post()(this, `${url2(projectId)}/ping`, options);
+  }
+  showRecipeUploadUrls(packageName, packageVersion, packageUsername, packageChannel, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/upload_urls`,
+      options
+    );
+  }
+  showRecipeDownloadUrls(packageName, packageVersion, packageUsername, packageChannel, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/download_urls`,
+      options
+    );
+  }
+  showRecipeManifest(packageName, packageVersion, packageUsername, packageChannel, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/digest`,
+      options
+    );
+  }
+  showRecipeSnapshot(packageName, packageVersion, packageUsername, packageChannel, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}`,
+      options
+    );
+  }
+  removePackageFile(packageName, packageVersion, packageUsername, packageChannel, { projectId, ...options } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}`,
+      options
+    );
+  }
+  search({
+    projectId,
+    ...options
+  } = {}) {
+    const prefix = url2(projectId);
+    return RequestHelper.get()(this, `${prefix}/conans/search`, options);
+  }
+  uploadPackageFile(packageFile, packageName, packageVersion, packageUsername, packageChannel, conanPackageReference, recipeRevision, packageRevision, options) {
+    const prefix = url2();
+    return RequestHelper.get()(
+      this,
+      `${prefix}/files/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/${recipeRevision}/package/${conanPackageReference}/${packageRevision}/${packageFile.filename}`,
+      {
+        isForm: true,
+        ...options,
+        file: [packageFile.content, packageFile.filename]
+      }
+    );
+  }
+  uploadRecipeFile(packageFile, packageName, packageVersion, packageUsername, packageChannel, recipeRevision, options) {
+    const prefix = url2();
+    return RequestHelper.get()(
+      this,
+      `${prefix}/files/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/${recipeRevision}/export/${packageFile.filename}`,
+      {
+        isForm: true,
+        ...options,
+        file: [packageFile.content, packageFile.filename]
+      }
+    );
+  }
+};
+var DashboardAnnotations = class extends requesterUtils.BaseResource {
+  create(dashboardPath, startingAt, description, {
+    environmentId,
+    clusterId,
+    ...options
+  } = {}) {
+    let url12;
+    if (environmentId)
+      url12 = endpoint`environments/${environmentId}/metrics_dashboard/annotations`;
+    else if (clusterId)
+      url12 = endpoint`clusters/${clusterId}/metrics_dashboard/annotations`;
+    else
+      throw new Error(
+        "Missing required argument. Please supply a environmentId or a cluserId in the options parameter."
+      );
+    return RequestHelper.post()(this, url12, {
+      dashboardPath,
+      startingAt,
+      description,
+      ...options
+    });
+  }
+};
+function url3({
+  projectId,
+  groupId
+} = {}) {
+  if (projectId)
+    return endpoint`/projects/${projectId}/packages/debian`;
+  if (groupId)
+    return endpoint`/groups/${groupId}/-/packages/debian`;
+  throw new Error(
+    "Missing required argument. Please supply a projectId or a groupId in the options parameter"
+  );
+}
+var Debian = class extends requesterUtils.BaseResource {
+  downloadBinaryFileIndex(distribution, component, architecture, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const prefix = url3({
+      projectId,
+      groupId
+    });
+    return RequestHelper.get()(
+      this,
+      `${prefix}/dists/${distribution}/${component}/binary-${architecture}/Packages`,
+      options
+    );
+  }
+  downloadDistributionReleaseFile(distribution, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const prefix = url3({
+      projectId,
+      groupId
+    });
+    return RequestHelper.get()(
+      this,
+      `${prefix}/dists/${distribution}/Release`,
+      options
+    );
+  }
+  downloadSignedDistributionReleaseFile(distribution, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const prefix = url3({
+      projectId,
+      groupId
+    });
+    return RequestHelper.get()(
+      this,
+      `${prefix}/dists/${distribution}/InRelease`,
+      options
+    );
+  }
+  downloadReleaseFileSignature(distribution, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const prefix = url3({
+      projectId,
+      groupId
+    });
+    return RequestHelper.get()(
+      this,
+      `${prefix}/dists/${distribution}/Release.gpg`,
+      options
+    );
+  }
+  downloadPackageFile(projectId, distribution, letter, packageName, packageVersion, filename, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/debian/pool/${distribution}/${letter}/${packageName}/${packageVersion}/${filename}`,
+      options
+    );
+  }
+  uploadPackageFile(projectId, packageFile, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/packages/debian/${packageFile.filename}`,
+      {
+        isForm: true,
+        ...options,
+        file: [packageFile.content, packageFile.filename]
+      }
+    );
+  }
+};
+var DependencyProxy = class extends requesterUtils.BaseResource {
+  remove(groupId, options) {
+    return RequestHelper.post()(this, `groups/${groupId}/dependency_proxy/cache`, options);
+  }
+};
+var DeployKeys = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    userId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId) {
+      url12 = endpoint`projects/${projectId}/deploy_keys`;
+    } else if (userId) {
+      url12 = endpoint`users/${userId}/project_deploy_keys`;
+    } else {
+      url12 = "deploy_keys";
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+  create(projectId, title, key, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/deploy_keys`,
+      {
+        title,
+        key,
+        ...options
+      }
+    );
+  }
+  edit(projectId, keyId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/deploy_keys/${keyId}`,
+      options
+    );
+  }
+  enable(projectId, keyId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/deploy_keys/${keyId}/enable`,
+      options
+    );
+  }
+  remove(projectId, keyId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/deploy_keys/${keyId}`, options);
+  }
+  show(projectId, keyId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/deploy_keys/${keyId}`,
+      options
+    );
+  }
+};
+var DeployTokens = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/deploy_tokens`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/deploy_tokens`;
+    else
+      url12 = "deploy_tokens";
+    return RequestHelper.get()(this, url12, options);
+  }
+  create(name, scopes, {
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/deploy_tokens`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/deploy_tokens`;
+    else {
+      throw new Error(
+        "Missing required argument. Please supply a projectId or a groupId in the options parameter."
+      );
+    }
+    return RequestHelper.post()(this, url12, {
+      name,
+      scopes,
+      ...options
+    });
+  }
+  remove(tokenId, {
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/deploy_tokens/${tokenId}`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/deploy_tokens/${tokenId}`;
+    else {
+      throw new Error(
+        "Missing required argument. Please supply a projectId or a groupId in the options parameter."
+      );
+    }
+    return RequestHelper.del()(this, url12, options);
+  }
+  show(tokenId, {
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/deploy_tokens/${tokenId}`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/deploy_tokens/${tokenId}`;
+    else {
+      throw new Error(
+        "Missing required argument. Please supply a projectId or a groupId in the options parameter."
+      );
+    }
+    return RequestHelper.get()(
+      this,
+      url12,
+      options
+    );
+  }
+};
+var ResourceAccessRequests = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/access_requests`,
+      options
+    );
+  }
+  request(resourceId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/access_requests`,
+      options
+    );
+  }
+  approve(resourceId, userId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/access_requests/${userId}/approve`,
+      options
+    );
+  }
+  deny(resourceId, userId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/access_requests/${userId}`, options);
+  }
+};
+var ResourceAccessTokens = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/access_tokens`,
+      options
+    );
+  }
+  create(resourceId, name, scopes, expiresAt, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/access_tokens`,
+      {
+        name,
+        scopes,
+        expiresAt,
+        ...options
+      }
+    );
+  }
+  revoke(resourceId, tokenId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/access_tokens/${tokenId}`, options);
+  }
+  rotate(resourceId, tokenId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/access_tokens/${tokenId}/rotate`,
+      options
+    );
+  }
+  show(resourceId, tokenId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/access_tokens/${tokenId}`,
+      options
+    );
+  }
+};
+function url4(resourceId, resourceType2, resourceId2, awardId) {
+  const [rId, rId2] = [resourceId, resourceId2].map(encodeURIComponent);
+  const output = [rId, resourceType2, rId2];
+  output.push("award_emoji");
+  if (awardId)
+    output.push(awardId);
+  return output.join("/");
+}
+var ResourceAwardEmojis = class extends requesterUtils.BaseResource {
+  resourceType2;
+  constructor(resourceType1, resourceType2, options) {
+    super({ prefixUrl: resourceType1, ...options });
+    this.resourceType2 = resourceType2;
+  }
+  all(resourceId, resourceIId, options) {
+    return RequestHelper.get()(
+      this,
+      url4(resourceId, this.resourceType2, resourceIId),
+      options
+    );
+  }
+  award(resourceId, resourceIId, name, options) {
+    return RequestHelper.post()(
+      this,
+      url4(resourceId, this.resourceType2, resourceIId),
+      {
+        name,
+        ...options
+      }
+    );
+  }
+  remove(resourceId, resourceIId, awardId, options) {
+    return RequestHelper.del()(
+      this,
+      url4(resourceId, this.resourceType2, resourceIId, awardId),
+      options
+    );
+  }
+  show(resourceId, resourceIId, awardId, options) {
+    return RequestHelper.get()(
+      this,
+      url4(resourceId, this.resourceType2, resourceIId, awardId),
+      options
+    );
+  }
+};
+function url5(resourceId, resourceType2, resourceId2, noteId, awardId) {
+  const [rId, rId2] = [resourceId, resourceId2].map(encodeURIComponent);
+  const output = [rId, resourceType2, rId2];
+  output.push("notes");
+  output.push(noteId);
+  output.push("award_emoji");
+  if (awardId)
+    output.push(awardId);
+  return output.join("/");
+}
+var ResourceNoteAwardEmojis = class extends requesterUtils.BaseResource {
+  resourceType;
+  constructor(resourceType, options) {
+    super({ prefixUrl: "projects", ...options });
+    this.resourceType = resourceType;
+  }
+  all(projectId, resourceIId, noteId, options) {
+    return RequestHelper.get()(
+      this,
+      url5(projectId, this.resourceType, resourceIId, noteId),
+      options
+    );
+  }
+  award(projectId, resourceIId, noteId, name, options) {
+    return RequestHelper.post()(
+      this,
+      url5(projectId, this.resourceType, resourceIId, noteId),
+      {
+        name,
+        ...options
+      }
+    );
+  }
+  remove(projectId, resourceIId, noteId, awardId, options) {
+    return RequestHelper.del()(
+      this,
+      url5(projectId, this.resourceType, resourceIId, noteId, awardId),
+      options
+    );
+  }
+  show(projectId, resourceIId, noteId, awardId, options) {
+    return RequestHelper.get()(
+      this,
+      url5(projectId, this.resourceType, resourceIId, noteId, awardId),
+      options
+    );
+  }
+};
+var ResourceBadges = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  add(resourceId, linkUrl, imageUrl, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/badges`, {
+      linkUrl,
+      imageUrl,
+      ...options
+    });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/badges`, options);
+  }
+  edit(resourceId, badgeId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/badges/${badgeId}`,
+      options
+    );
+  }
+  preview(resourceId, linkUrl, imageUrl, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/badges/render`, {
+      linkUrl,
+      imageUrl,
+      ...options
+    });
+  }
+  remove(resourceId, badgeId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/badges/${badgeId}`, options);
+  }
+  show(resourceId, badgeId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/badges/${badgeId}`,
+      options
+    );
+  }
+};
+var ResourceCustomAttributes = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/custom_attributes`,
+      options
+    );
+  }
+  remove(resourceId, customAttributeId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${resourceId}/custom_attributes/${customAttributeId}`,
+      options
+    );
+  }
+  set(resourceId, customAttributeId, value, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/custom_attributes/${customAttributeId}`,
+      {
+        value,
+        ...options
+      }
+    );
+  }
+  show(resourceId, customAttributeId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/custom_attributes/${customAttributeId}`,
+      options
+    );
+  }
+};
+var ResourceDORA4Metrics = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, metric, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/dora/metrics`, {
+      metric,
+      ...options
+    });
+  }
+};
+var ResourceDiscussions = class extends requesterUtils.BaseResource {
+  resource2Type;
+  constructor(resourceType, resource2Type, options) {
+    super({ prefixUrl: resourceType, ...options });
+    this.resource2Type = resource2Type;
+  }
+  addNote(resourceId, resource2Id, discussionId, noteId, body, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/discussions/${discussionId}/notes`,
+      { ...options, body, noteId }
+    );
+  }
+  all(resourceId, resource2Id, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/discussions`,
+      options
+    );
+  }
+  create(resourceId, resource2Id, body, {
+    position,
+    ...options
+  } = {}) {
+    const opts = { ...options, body };
+    if (position) {
+      Object.assign(opts, reformatObjectOptions(position, "position", true));
+      opts.isForm = true;
+    }
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/discussions`,
+      opts
+    );
+  }
+  editNote(resourceId, resource2Id, discussionId, noteId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/discussions/${discussionId}/notes/${noteId}`,
+      options
+    );
+  }
+  removeNote(resourceId, resource2Id, discussionId, noteId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/discussions/${discussionId}/notes/${noteId}`,
+      options
+    );
+  }
+  show(resourceId, resource2Id, discussionId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/discussions/${discussionId}`,
+      options
+    );
+  }
+};
+var ResourceIssueBoards = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/boards`, options);
+  }
+  allLists(resourceId, boardId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/boards/${boardId}/lists`,
+      options
+    );
+  }
+  create(resourceId, name, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/boards`, {
+      name,
+      ...options
+    });
+  }
+  createList(resourceId, boardId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/boards/${boardId}/lists`,
+      options
+    );
+  }
+  edit(resourceId, boardId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/boards/${boardId}`,
+      options
+    );
+  }
+  editList(resourceId, boardId, listId, position, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/boards/${boardId}/lists/${listId}`,
+      {
+        position,
+        ...options
+      }
+    );
+  }
+  remove(resourceId, boardId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/boards/${boardId}`, options);
+  }
+  removeList(resourceId, boardId, listId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${resourceId}/boards/${boardId}/lists/${listId}`,
+      options
+    );
+  }
+  show(resourceId, boardId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/boards/${boardId}`,
+      options
+    );
+  }
+  showList(resourceId, boardId, listId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/boards/${boardId}/lists/${listId}`,
+      options
+    );
+  }
+};
+var ResourceLabels = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/labels`, options);
+  }
+  create(resourceId, labelName, color, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/labels`, {
+      name: labelName,
+      color,
+      ...options
+    });
+  }
+  edit(resourceId, labelId, options) {
+    if (!options?.newName && !options?.color)
+      throw new Error(
+        "Missing required argument. Please supply a color or a newName in the options parameter."
+      );
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/labels/${labelId}`,
+      options
+    );
+  }
+  promote(resourceId, labelId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/labels/${labelId}/promote`,
+      options
+    );
+  }
+  remove(resourceId, labelId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/labels/${labelId}`, options);
+  }
+  show(resourceId, labelId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/labels/${labelId}`,
+      options
+    );
+  }
+  subscribe(resourceId, labelId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/issues/${labelId}/subscribe`,
+      options
+    );
+  }
+  unsubscribe(resourceId, labelId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/issues/${labelId}/unsubscribe`,
+      options
+    );
+  }
+};
+var ResourceMembers = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  add(resourceId, userId, accessLevel, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/members`, {
+      userId: String(userId),
+      accessLevel,
+      ...options
+    });
+  }
+  all(resourceId, {
+    includeInherited,
+    ...options
+  } = {}) {
+    let url12 = endpoint`${resourceId}/members`;
+    if (includeInherited)
+      url12 += "/all";
+    return RequestHelper.get()(this, url12, options);
+  }
+  edit(resourceId, userId, accessLevel, options) {
+    return RequestHelper.put()(this, endpoint`${resourceId}/members/${userId}`, {
+      accessLevel,
+      ...options
+    });
+  }
+  show(resourceId, userId, { includeInherited, ...options } = {}) {
+    const [rId, uId] = [resourceId, userId].map(encodeURIComponent);
+    const url12 = [rId, "members"];
+    if (includeInherited)
+      url12.push("all");
+    url12.push(uId);
+    return RequestHelper.get()(this, url12.join("/"), options);
+  }
+  remove(resourceId, userId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/members/${userId}`, options);
+  }
+};
+var ResourceMilestones = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/milestones`,
+      options
+    );
+  }
+  allAssignedIssues(resourceId, milestoneId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/milestones/${milestoneId}/issues`,
+      options
+    );
+  }
+  allAssignedMergeRequests(resourceId, milestoneId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/milestones/${milestoneId}/merge_requests`,
+      options
+    );
+  }
+  allBurndownChartEvents(resourceId, milestoneId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/milestones/${milestoneId}/burndown_events`,
+      options
+    );
+  }
+  create(resourceId, title, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/milestones`, {
+      title,
+      ...options
+    });
+  }
+  edit(resourceId, milestoneId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/milestones/${milestoneId}`,
+      options
+    );
+  }
+  remove(resourceId, milestoneId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/milestones/${milestoneId}`, options);
+  }
+  show(resourceId, milestoneId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/milestones/${milestoneId}`,
+      options
+    );
+  }
+};
+var ResourceNotes = class extends requesterUtils.BaseResource {
+  resource2Type;
+  constructor(resourceType, resource2Type, options) {
+    super({ prefixUrl: resourceType, ...options });
+    this.resource2Type = resource2Type;
+  }
+  all(resourceId, resource2Id, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/notes`,
+      options
+    );
+  }
+  create(resourceId, resource2Id, body, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/notes`,
+      {
+        body,
+        ...options
+      }
+    );
+  }
+  edit(resourceId, resource2Id, noteId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/notes/${noteId}`,
+      options
+    );
+  }
+  remove(resourceId, resource2Id, noteId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/notes/${noteId}`,
+      options
+    );
+  }
+  show(resourceId, resource2Id, noteId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/notes/${noteId}`,
+      options
+    );
+  }
+};
+var ResourceTemplates = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: ["templates", resourceType].join("/"), ...options });
+  }
+  all(options) {
+    process.emitWarning(
+      'This API will be deprecated as of Gitlabs v5 API. Please make the switch to "ProjectTemplates".',
+      "DeprecationWarning"
+    );
+    return RequestHelper.get()(this, "", options);
+  }
+  show(key, options) {
+    process.emitWarning(
+      'This API will be deprecated as of Gitlabs v5 API. Please make the switch to "ProjectTemplates".',
+      "DeprecationWarning"
+    );
+    return RequestHelper.get()(this, encodeURIComponent(key), options);
+  }
+};
+var ResourceVariables = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/variables`, options);
+  }
+  create(resourceId, key, value, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/variables`, {
+      key,
+      value,
+      ...options
+    });
+  }
+  edit(resourceId, key, value, options) {
+    return RequestHelper.put()(this, endpoint`${resourceId}/variables/${key}`, {
+      value,
+      ...options
+    });
+  }
+  show(resourceId, key, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/variables/${key}`,
+      options
+    );
+  }
+  remove(resourceId, key, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/variables/${key}`, options);
+  }
+};
+var ResourceWikis = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/wikis`, options);
+  }
+  create(resourceId, content, title, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/wikis`, {
+      content,
+      title,
+      ...options
+    });
+  }
+  edit(resourceId, slug, options) {
+    return RequestHelper.put()(this, endpoint`${resourceId}/wikis/${slug}`, options);
+  }
+  remove(resourceId, slug, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/wikis/${slug}`, options);
+  }
+  show(resourceId, slug, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/wikis/${slug}`, options);
+  }
+  uploadAttachment(resourceId, file, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/wikis/attachments`,
+      {
+        ...options,
+        isForm: true,
+        file: [file.content, file.filename]
+      }
+    );
+  }
+};
+var ResourceHooks = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  add(resourceId, url12, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/hooks`, {
+      url: url12,
+      ...options
+    });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/hooks`, options);
+  }
+  edit(resourceId, hookId, url12, options) {
+    return RequestHelper.put()(this, endpoint`${resourceId}/hooks/${hookId}`, {
+      url: url12,
+      ...options
+    });
+  }
+  remove(resourceId, hookId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/hooks/${hookId}`, options);
+  }
+  show(resourceId, hookId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/hooks/${hookId}`,
+      options
+    );
+  }
+};
+var ResourcePushRules = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  create(resourceId, options) {
+    return RequestHelper.post()(this, endpoint`${resourceId}/push_rule`, options);
+  }
+  edit(resourceId, options) {
+    return RequestHelper.put()(this, endpoint`${resourceId}/push_rule`, options);
+  }
+  remove(resourceId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/push_rule`, options);
+  }
+  show(resourceId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/push_rule`, options);
+  }
+};
+var ResourceRepositoryStorageMoves = class extends requesterUtils.BaseResource {
+  resourceType;
+  resourceTypeSingular;
+  constructor(resourceType, options) {
+    super(options);
+    this.resourceType = resourceType;
+    this.resourceTypeSingular = resourceType.substring(0, resourceType.length - 1);
+  }
+  all(options) {
+    const resourceId = options?.[`${this.resourceTypeSingular}Id`];
+    const url12 = resourceId ? endpoint`${this.resourceType}/${resourceId}/repository_storage_moves` : `${this.resourceTypeSingular}_repository_storage_moves`;
+    return RequestHelper.get()(this, url12, options);
+  }
+  show(repositoryStorageId, options) {
+    const resourceId = options?.[`${this.resourceTypeSingular}Id`];
+    const url12 = resourceId ? endpoint`${this.resourceType}/${resourceId}/repository_storage_moves` : `${this.resourceTypeSingular}_repository_storage_moves`;
+    return RequestHelper.get()(
+      this,
+      `${url12}/${repositoryStorageId}`,
+      options
+    );
+  }
+  schedule(sourceStorageName, options) {
+    const resourceId = options?.[`${this.resourceTypeSingular}Id`];
+    const url12 = resourceId ? endpoint`${this.resourceType}/${resourceId}/repository_storage_moves` : `${this.resourceTypeSingular}_repository_storage_moves`;
+    return RequestHelper.post()(this, url12, {
+      sourceStorageName,
+      ...options
+    });
+  }
+};
+var ResourceInvitations = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  add(resourceId, accessLevel, options) {
+    if (!options?.email && !options?.userId)
+      throw new Error(
+        "Missing required argument. Please supply a email or a userId in the options parameter."
+      );
+    return RequestHelper.post()(this, endpoint`${resourceId}/invitations`, {
+      accessLevel,
+      ...options
+    });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/invitations`,
+      options
+    );
+  }
+  edit(resourceId, email, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/invitations/${email}`,
+      options
+    );
+  }
+  remove(resourceId, email, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${resourceId}/invitations/${email}`,
+      options
+    );
+  }
+};
+var ResourceIterations = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/iterations`,
+      options
+    );
+  }
+};
+var ResourceProtectedEnvironments = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      `${resourceId}/protected_environments`,
+      options
+    );
+  }
+  create(resourceId, name, deployAccessLevel, options) {
+    return RequestHelper.post()(
+      this,
+      `${resourceId}/protected_environments`,
+      {
+        name,
+        deployAccessLevel,
+        ...options
+      }
+    );
+  }
+  edit(resourceId, name, options) {
+    return RequestHelper.put()(
+      this,
+      `${resourceId}/protected_environments/${name}`,
+      options
+    );
+  }
+  show(resourceId, name, options) {
+    return RequestHelper.get()(
+      this,
+      `${resourceId}/protected_environments/${name}`,
+      options
+    );
+  }
+  remove(resourceId, name, options) {
+    return RequestHelper.del()(this, `${resourceId}/protected_environments/${name}`, options);
+  }
+};
+var ResourceIterationEvents = class extends requesterUtils.BaseResource {
+  resource2Type;
+  constructor(resourceType, resource2Type, options) {
+    super({ prefixUrl: resourceType, ...options });
+    this.resource2Type = resource2Type;
+  }
+  all(resourceId, resource2Id, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_iteration_events`,
+      options
+    );
+  }
+  show(resourceId, resource2Id, iterationEventId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_iteration_events/${iterationEventId}`,
+      options
+    );
+  }
+};
+var ResourceLabelEvents = class extends requesterUtils.BaseResource {
+  resource2Type;
+  constructor(resourceType, resource2Type, options) {
+    super({ prefixUrl: resourceType, ...options });
+    this.resource2Type = resource2Type;
+  }
+  all(resourceId, resource2Id, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_label_events`,
+      options
+    );
+  }
+  show(resourceId, resource2Id, labelEventId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_label_events/${labelEventId}`,
+      options
+    );
+  }
+};
+var ResourceMilestoneEvents = class extends requesterUtils.BaseResource {
+  resource2Type;
+  constructor(resourceType, resource2Type, options) {
+    super({ prefixUrl: resourceType, ...options });
+    this.resource2Type = resource2Type;
+  }
+  all(resourceId, resource2Id, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_milestone_events`,
+      options
+    );
+  }
+  show(resourceId, resource2Id, milestoneEventId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_milestone_events/${milestoneEventId}`,
+      options
+    );
+  }
+};
+var ResourceStateEvents = class extends requesterUtils.BaseResource {
+  resource2Type;
+  constructor(resourceType, resource2Type, options) {
+    super({ prefixUrl: resourceType, ...options });
+    this.resource2Type = resource2Type;
+  }
+  all(resourceId, resource2Id, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_state_events`,
+      options
+    );
+  }
+  show(resourceId, resource2Id, stateEventId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_state_events/${stateEventId}`,
+      options
+    );
+  }
+};
+
+// src/resources/DockerfileTemplates.ts
+var DockerfileTemplates = class extends ResourceTemplates {
+  constructor(options) {
+    super("dockerfiles", options);
+  }
+};
+var Events = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    userId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/events`;
+    else if (userId)
+      url12 = endpoint`users/${userId}/events`;
+    else
+      url12 = "events";
+    return RequestHelper.get()(this, url12, options);
+  }
+};
+var Experiments = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "experiments", options);
+  }
+};
+var GeoNodes = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "geo_nodes", options);
+  }
+  allStatuses(options) {
+    return RequestHelper.get()(this, "geo_nodes/statuses", options);
+  }
+  allFailures(options) {
+    return RequestHelper.get()(this, "geo_nodes/current/failures", options);
+  }
+  create(name, url12, options) {
+    return RequestHelper.post()(this, "geo_nodes", { name, url: url12, ...options });
+  }
+  edit(geonodeId, options) {
+    return RequestHelper.put()(this, `geo_nodes/${geonodeId}`, options);
+  }
+  repair(geonodeId, options) {
+    return RequestHelper.post()(this, `geo_nodes/${geonodeId}/repair`, options);
+  }
+  remove(geonodeId, options) {
+    return RequestHelper.del()(this, `geo_nodes/${geonodeId}`, options);
+  }
+  show(geonodeId, options) {
+    return RequestHelper.get()(this, `geo_nodes/${geonodeId}`, options);
+  }
+  showStatus(geonodeId, options) {
+    return RequestHelper.get()(this, `geo_nodes/${geonodeId}/status`, options);
+  }
+};
+var GeoSites = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "geo_sites", options);
+  }
+  allStatuses(options) {
+    return RequestHelper.get()(this, "geo_sites/statuses", options);
+  }
+  allFailures(options) {
+    return RequestHelper.get()(this, "geo_sites/current/failures", options);
+  }
+  create(name, url12, options) {
+    return RequestHelper.post()(this, "geo_sites", { name, url: url12, ...options });
+  }
+  edit(geositeId, options) {
+    return RequestHelper.put()(this, `geo_sites/${geositeId}`, options);
+  }
+  repair(geositeId, options) {
+    return RequestHelper.post()(this, `geo_sites/${geositeId}/repair`, options);
+  }
+  remove(geositeId, options) {
+    return RequestHelper.del()(this, `geo_sites/${geositeId}`, options);
+  }
+  show(geositeId, options) {
+    return RequestHelper.get()(this, `geo_sites/${geositeId}`, options);
+  }
+  showStatus(geositeId, options) {
+    return RequestHelper.get()(this, `geo_sites/${geositeId}/status`, options);
+  }
+};
+
+// src/resources/GitLabCIYMLTemplates.ts
+var GitLabCIYMLTemplates = class extends ResourceTemplates {
+  constructor(options) {
+    super("gitlab_ci_ymls", options);
+  }
+};
+
+// src/resources/GitignoreTemplates.ts
+var GitignoreTemplates = class extends ResourceTemplates {
+  constructor(options) {
+    super("gitignores", options);
+  }
+};
+var Import = class extends requesterUtils.BaseResource {
+  importGithubRepository(personalAccessToken, repositoryId, targetNamespace, options) {
+    return RequestHelper.post()(this, "import/github", {
+      personalAccessToken,
+      repoId: repositoryId,
+      targetNamespace,
+      ...options
+    });
+  }
+  cancelGithubRepositoryImport(projectId, options) {
+    return RequestHelper.post()(this, "import/github/cancel", {
+      projectId,
+      ...options
+    });
+  }
+  importGithubGists(personalAccessToken, options) {
+    return RequestHelper.post()(this, "import/github/gists", {
+      personalAccessToken,
+      ...options
+    });
+  }
+  importBitbucketServerRepository(bitbucketServerUrl, bitbucketServerUsername, personalAccessToken, bitbucketServerProject, bitbucketServerRepository, options) {
+    return RequestHelper.post()(this, "import/bitbucket_server", {
+      bitbucketServerUrl,
+      bitbucketServerUsername,
+      personalAccessToken,
+      bitbucketServerProject,
+      bitbucketServerRepo: bitbucketServerRepository,
+      ...options
+    });
+  }
+};
+var InstanceLevelCICDVariables = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "admin/ci/variables", options);
+  }
+  create(key, value, options) {
+    return RequestHelper.post()(this, "admin/ci/variables", {
+      key,
+      value,
+      ...options
+    });
+  }
+  edit(keyId, value, options) {
+    return RequestHelper.put()(this, endpoint`admin/ci/variables/${keyId}`, {
+      value,
+      ...options
+    });
+  }
+  show(keyId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`admin/ci/variables/${keyId}`,
+      options
+    );
+  }
+  remove(keyId, options) {
+    return RequestHelper.get()(this, endpoint`admin/ci/variables/${keyId}`, options);
+  }
+};
+var Keys = class extends requesterUtils.BaseResource {
+  show({
+    keyId,
+    fingerprint,
+    ...options
+  } = {}) {
+    let url12;
+    if (keyId)
+      url12 = `keys/${keyId}`;
+    else if (fingerprint)
+      url12 = `keys?fingerprint=${fingerprint}`;
+    else {
+      throw new Error(
+        "Missing required argument. Please supply a fingerprint or a keyId in the options parameter"
+      );
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+};
+var License = class extends requesterUtils.BaseResource {
+  add(license, options) {
+    return RequestHelper.post()(this, "license", {
+      searchParams: { license },
+      ...options
+    });
+  }
+  all(options) {
+    return RequestHelper.get()(this, "licenses", options);
+  }
+  show(options) {
+    return RequestHelper.get()(this, "license", options);
+  }
+  remove(licenceId, options) {
+    return RequestHelper.del()(this, `license/${licenceId}`, options);
+  }
+  recalculateBillableUsers(licenceId, options) {
+    return RequestHelper.put()(
+      this,
+      `license/${licenceId}/refresh_billable_users`,
+      options
+    );
+  }
+};
+
+// src/resources/LicenseTemplates.ts
+var LicenseTemplates = class extends ResourceTemplates {
+  constructor(options) {
+    super("Licenses", options);
+  }
+};
+var Lint = class extends requesterUtils.BaseResource {
+  check(projectId, options) {
+    return RequestHelper.get()(this, endpoint`projects/${projectId}/ci/lint`, options);
+  }
+  lint(projectId, content, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/ci/lint`, {
+      ...options,
+      content
+    });
+  }
+};
+var Markdown = class extends requesterUtils.BaseResource {
+  render(text, options) {
+    return RequestHelper.post()(this, "markdown", { text, ...options });
+  }
+};
+var Maven = class extends requesterUtils.BaseResource {
+  downloadPackageFile(path, filename, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    let url12 = endpoint`packages/maven/${path}/${filename}`;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/${url12}`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/-/${url12}`;
+    return RequestHelper.get()(this, url12, options);
+  }
+  uploadPackageFile(projectId, path, packageFile, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/packages/maven/${path}/${packageFile.filename}`,
+      {
+        isForm: true,
+        ...options,
+        file: [packageFile.content, packageFile.filename]
+      }
+    );
+  }
+};
+var Metadata = class extends requesterUtils.BaseResource {
+  show(options) {
+    return RequestHelper.get()(this, "metadata", options);
+  }
+};
+var Migrations = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "bulk_imports", options);
+  }
+  create(configuration, entities, options) {
+    return RequestHelper.post()(this, "bulk_imports", {
+      configuration,
+      entities,
+      ...options
+    });
+  }
+  allEntities({
+    bulkImportId,
+    ...options
+  } = {}) {
+    const url12 = bulkImportId ? endpoint`bulk_imports/${bulkImportId}/entities` : "bulk_imports/entities";
+    return RequestHelper.get()(this, url12, options);
+  }
+  show(bulkImportId, options) {
+    return RequestHelper.get()(
+      this,
+      `bulk_imports/${bulkImportId}`,
+      options
+    );
+  }
+  showEntity(bulkImportId, entitityId, options) {
+    return RequestHelper.get()(
+      this,
+      `bulk_imports/${bulkImportId}/entities/${entitityId}`,
+      options
+    );
+  }
+};
+function url6(projectId) {
+  return projectId ? endpoint`/projects/${projectId}/packages/npm` : "packages/npm";
+}
+var NPM = class extends requesterUtils.BaseResource {
+  downloadPackageFile(projectId, packageName, filename, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/npm/${packageName}/-/${filename}`,
+      options
+    );
+  }
+  removeDistTag(packageName, tag, options) {
+    const prefix = url6(options?.projectId);
+    return RequestHelper.del()(
+      this,
+      `${prefix}/-/package/${packageName}/dist-tags/${tag}`,
+      options
+    );
+  }
+  setDistTag(packageName, tag, options) {
+    const prefix = url6(options?.projectId);
+    return RequestHelper.put()(
+      this,
+      `${prefix}/-/package/${packageName}/dist-tags/${tag}`,
+      options
+    );
+  }
+  showDistTags(packageName, options) {
+    const prefix = url6(options?.projectId);
+    return RequestHelper.get()(
+      this,
+      `${prefix}/-/package/${packageName}/dist-tags`,
+      options
+    );
+  }
+  showMetadata(packageName, options) {
+    const prefix = url6(options?.projectId);
+    return RequestHelper.get()(this, `${prefix}/${packageName}`, options);
+  }
+  uploadPackageFile(projectId, packageName, versions, metadata, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/packages/npm/${packageName}`,
+      {
+        ...options,
+        versions,
+        ...metadata
+      }
+    );
+  }
+};
+var Namespaces = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "namespaces", options);
+  }
+  exists(namespaceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`namespaces/${namespaceId}/exists`,
+      options
+    );
+  }
+  show(namespaceId, options) {
+    return RequestHelper.get()(this, endpoint`namespaces/${namespaceId}`, options);
+  }
+};
+function url7({
+  projectId,
+  groupId
+} = {}) {
+  let prefix = "";
+  if (projectId)
+    prefix = endpoint`projects/${projectId}/`;
+  if (groupId)
+    prefix = endpoint`groups/${groupId}/`;
+  return `${prefix}notification_settings`;
+}
+var NotificationSettings = class extends requesterUtils.BaseResource {
+  edit({
+    groupId,
+    projectId,
+    ...options
+  } = {}) {
+    const uri = url7({ groupId, projectId });
+    return RequestHelper.put()(this, uri, options);
+  }
+  show({
+    groupId,
+    projectId,
+    ...options
+  } = {}) {
+    const uri = url7({ groupId, projectId });
+    return RequestHelper.get()(this, uri, options);
+  }
+};
+function url8({
+  projectId,
+  groupId
+} = {}) {
+  if (projectId)
+    return endpoint`/projects/${projectId}/packages/nuget`;
+  if (groupId)
+    return endpoint`/groups/${groupId}/-/packages/nuget`;
+  throw new Error(
+    "Missing required argument. Please supply a projectId or a groupId in the options parameter"
+  );
+}
+var NuGet = class extends requesterUtils.BaseResource {
+  downloadPackageFile(projectId, packageName, packageVersion, filename, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/nuget/download/${packageName}/${packageVersion}/${filename}`,
+      options
+    );
+  }
+  search(q, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const uri = url8({ projectId, groupId });
+    return RequestHelper.get()(this, `${uri}/query`, { q, ...options });
+  }
+  showMetadata(packageName, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const uri = url8({ projectId, groupId });
+    return RequestHelper.get()(
+      this,
+      `${uri}/metadata/${packageName}/index`,
+      options
+    );
+  }
+  showPackageIndex(projectId, packageName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/nuget/download/${packageName}/index`,
+      options
+    );
+  }
+  showServiceIndex({
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const uri = url8({ projectId, groupId });
+    return RequestHelper.get()(
+      this,
+      `${uri}/index`,
+      options
+    );
+  }
+  showVersionMetadata(packageName, packageVersion, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    const uri = url8({ projectId, groupId });
+    return RequestHelper.get()(
+      this,
+      `${uri}/metadata/${packageName}/${packageVersion}`,
+      options
+    );
+  }
+  uploadPackageFile(projectId, packageName, packageVersion, packageFile, options) {
+    return RequestHelper.put()(this, endpoint`projects/${projectId}/packages/nuget`, {
+      isForm: true,
+      ...options,
+      packageName,
+      packageVersion,
+      file: [packageFile.content, packageFile.filename]
+    });
+  }
+  uploadSymbolPackage(projectId, packageName, packageVersion, packageFile, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/packages/nuget/symbolpackage`,
+      {
+        isForm: true,
+        ...options,
+        packageName,
+        packageVersion,
+        file: [packageFile.content, packageFile.filename]
+      }
+    );
+  }
+};
+var PersonalAccessTokens = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(
+      this,
+      "personal_access_tokens",
+      options
+    );
+  }
+  // Convience method - Also located in Users
+  create(userId, name, scopes, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`users/${userId}/personal_access_tokens`,
+      {
+        name,
+        scopes,
+        ...options
+      }
+    );
+  }
+  remove({
+    tokenId,
+    ...options
+  } = {}) {
+    const url12 = tokenId ? endpoint`personal_access_tokens/${tokenId}` : "personal_access_tokens/self";
+    return RequestHelper.del()(this, url12, options);
+  }
+  rotate(tokenId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`personal_access_tokens/${tokenId}/rotate`,
+      options
+    );
+  }
+  show({
+    tokenId,
+    ...options
+  } = {}) {
+    const url12 = tokenId ? endpoint`personal_access_tokens/${tokenId}` : "personal_access_tokens/self";
+    return RequestHelper.get()(this, url12, options);
+  }
+};
+var PyPI = class extends requesterUtils.BaseResource {
+  downloadPackageFile(sha, fileIdentifier, {
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId) {
+      url12 = endpoint`projects/${projectId}/packages/pypi/files/${sha}/${fileIdentifier}`;
+    } else if (groupId) {
+      url12 = endpoint`groups/${groupId}/packages/pypi/files/${sha}/${fileIdentifier}`;
+    } else {
+      throw new Error(
+        "Missing required argument. Please supply a projectId or a groupId in the options parameter"
+      );
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+  showPackageDescriptor(packageName, {
+    projectId,
+    groupId,
+    ...options
+  }) {
+    let url12;
+    if (projectId) {
+      url12 = endpoint`projects/${projectId}/packages/pypi/simple/${packageName}`;
+    } else if (groupId) {
+      url12 = endpoint`groups/${groupId}/packages/pypi/simple/${packageName}`;
+    } else {
+      throw new Error(
+        "Missing required argument. Please supply a projectId or a groupId in the options parameter"
+      );
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+  uploadPackageFile(projectId, packageFile, options) {
+    return RequestHelper.put()(this, endpoint`projects/${projectId}/packages/pypi`, {
+      ...options,
+      isForm: true,
+      file: [packageFile.content, packageFile.filename]
+    });
+  }
+};
+var RubyGems = class extends requesterUtils.BaseResource {
+  allDependencies(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/rubygems/api/v1/dependencies`,
+      options
+    );
+  }
+  downloadGemFile(projectId, fileName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/rubygems/gems/${fileName}`,
+      options
+    );
+  }
+  uploadGemFile(projectId, packageFile, options) {
+    return RequestHelper.post()(this, `projects/${projectId}/packages/rubygems/api/v1/gems`, {
+      isForm: true,
+      ...options,
+      file: [packageFile.content, packageFile.filename]
+    });
+  }
+};
+var Search = class extends requesterUtils.BaseResource {
+  all(scope, search, options) {
+    const { projectId, groupId, ...opts } = options || {};
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/`;
+    else
+      url12 = "";
+    return RequestHelper.get()(this, `${url12}search`, {
+      scope,
+      search,
+      ...opts
+    });
+  }
+};
+var SearchAdmin = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "admin/search/migrations", options);
+  }
+  show(versionOrName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`admin/search/migrations/${versionOrName}`,
+      options
+    );
+  }
+};
+var ServiceAccounts = class extends requesterUtils.BaseResource {
+  create(options) {
+    return RequestHelper.post()(this, endpoint`service_accounts`, options);
+  }
+};
+var ServiceData = class extends requesterUtils.BaseResource {
+  showMetricDefinitions(options) {
+    return RequestHelper.get()(this, "usage_data/metric_definitions", options);
+  }
+  showServicePingSQLQueries(options) {
+    return RequestHelper.get()(this, "usage_data/queries", options);
+  }
+  showUsageDataNonSQLMetrics(options) {
+    return RequestHelper.get()(
+      this,
+      "usage_data/non_sql_metrics",
+      options
+    );
+  }
+};
+var SidekiqMetrics = class extends requesterUtils.BaseResource {
+  queueMetrics() {
+    return RequestHelper.get()(this, "sidekiq/queue_metrics");
+  }
+  processMetrics() {
+    return RequestHelper.get()(this, "sidekiq/process_metrics");
+  }
+  jobStats() {
+    return RequestHelper.get()(this, "sidekiq/job_stats");
+  }
+  compoundMetrics() {
+    return RequestHelper.get()(this, "sidekiq/compound_metrics");
+  }
+};
+var SidekiqQueues = class extends requesterUtils.BaseResource {
+  remove(queueName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`admin/sidekiq/queues/${queueName}`,
+      options
+    );
+  }
+};
+
+// src/resources/SnippetRepositoryStorageMoves.ts
+var SnippetRepositoryStorageMoves = class extends ResourceRepositoryStorageMoves {
+  constructor(options) {
+    super("snippets", options);
+  }
+};
+var Snippets = class extends requesterUtils.BaseResource {
+  all({
+    public: ppublic,
+    ...options
+  } = {}) {
+    const url12 = ppublic ? "snippets/public" : "snippets";
+    return RequestHelper.get()(this, url12, options);
+  }
+  create(title, options) {
+    return RequestHelper.post()(this, "snippets", {
+      title,
+      ...options
+    });
+  }
+  edit(snippetId, options) {
+    return RequestHelper.put()(this, `snippets/${snippetId}`, options);
+  }
+  remove(snippetId, options) {
+    return RequestHelper.del()(this, `snippets/${snippetId}`, options);
+  }
+  show(snippetId, options) {
+    return RequestHelper.get()(this, `snippets/${snippetId}`, options);
+  }
+  showContent(snippetId, options) {
+    return RequestHelper.get()(this, `snippets/${snippetId}/raw`, options);
+  }
+  showRepositoryFileContent(snippetId, ref, filePath, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`snippets/${snippetId}/files/${ref}/${filePath}/raw`,
+      options
+    );
+  }
+  showUserAgentDetails(snippetId, options) {
+    return RequestHelper.get()(
+      this,
+      `snippets/${snippetId}/user_agent_detail`,
+      options
+    );
+  }
+};
+var Suggestions = class extends requesterUtils.BaseResource {
+  edit(suggestionId, options) {
+    return RequestHelper.put()(
+      this,
+      `suggestions/${suggestionId}/apply`,
+      options
+    );
+  }
+  editBatch(suggestionIds, options) {
+    return RequestHelper.put()(this, `suggestions/batch_apply`, {
+      ...options,
+      ids: suggestionIds
+    });
+  }
+};
+var SystemHooks = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "hooks", options);
+  }
+  // Convenience method
+  add(url12, options) {
+    return this.create(url12, options);
+  }
+  create(url12, options) {
+    return RequestHelper.post()(this, "hooks", {
+      url: url12,
+      ...options
+    });
+  }
+  test(hookId, options) {
+    return RequestHelper.post()(this, `hooks/${hookId}`, options);
+  }
+  remove(hookId, options) {
+    return RequestHelper.del()(this, `hooks/${hookId}`, options);
+  }
+  show(hookId, options) {
+    return RequestHelper.post()(this, `hooks/${hookId}`, options);
+  }
+};
+var TodoLists = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "todos", options);
+  }
+  done({
+    todoId,
+    ...options
+  } = {}) {
+    let prefix = "todos";
+    if (todoId)
+      prefix += `/${todoId}`;
+    return RequestHelper.post()(
+      this,
+      `${prefix}/mark_as_done`,
+      options
+    );
+  }
+};
+var Topics = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "topics", options);
+  }
+  create(name, {
+    avatar,
+    ...options
+  } = {}) {
+    const opts = {
+      name,
+      ...options
+    };
+    if (avatar) {
+      opts.isForm = true;
+      opts.file = [avatar.content, avatar.filename];
+    }
+    return RequestHelper.post()(this, "topics", opts);
+  }
+  edit(topicId, {
+    avatar,
+    ...options
+  } = {}) {
+    const opts = { ...options };
+    if (avatar) {
+      opts.isForm = true;
+      opts.file = [avatar.content, avatar.filename];
+    }
+    return RequestHelper.put()(this, `topics/${topicId}`, opts);
+  }
+  merge(sourceTopicId, targetTopicId, options) {
+    return RequestHelper.post()(this, `topics/merge`, {
+      sourceTopicId,
+      targetTopicId,
+      ...options
+    });
+  }
+  remove(topicId, options) {
+    return RequestHelper.del()(this, `topics/${topicId}`, options);
+  }
+  show(topicId, options) {
+    return RequestHelper.get()(this, `topics/${topicId}`, options);
+  }
+};
+var Branches = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/branches`,
+      options
+    );
+  }
+  create(projectId, branchName, ref, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/repository/branches`,
+      {
+        branch: branchName,
+        ref,
+        ...options
+      }
+    );
+  }
+  remove(projectId, branchName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/repository/branches/${branchName}`,
+      options
+    );
+  }
+  removeMerged(projectId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/repository/merged_branches`,
+      options
+    );
+  }
+  show(projectId, branchName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/branches/${branchName}`,
+      options
+    );
+  }
+};
+
+// src/resources/CommitDiscussions.ts
+var CommitDiscussions = class extends ResourceDiscussions {
+  constructor(options) {
+    super("projects", "repository/commits", options);
+  }
+};
+var Commits = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits`,
+      options
+    );
+  }
+  allComments(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/comments`,
+      options
+    );
+  }
+  allDiscussions(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/discussions`,
+      options
+    );
+  }
+  allMergeRequests(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/merge_requests`,
+      options
+    );
+  }
+  allReferences(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/refs`,
+      options
+    );
+  }
+  allStatuses(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/statuses`,
+      options
+    );
+  }
+  cherryPick(projectId, sha, branch, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/cherry_pick`,
+      {
+        branch,
+        ...options
+      }
+    );
+  }
+  create(projectId, branch, message, actions = [], options = {}) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/repository/commits`,
+      {
+        branch,
+        commitMessage: message,
+        actions,
+        ...options
+      }
+    );
+  }
+  createComment(projectId, sha, note, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/comments`,
+      {
+        note,
+        ...options
+      }
+    );
+  }
+  editStatus(projectId, sha, state, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/statuses/${sha}`,
+      {
+        state,
+        ...options
+      }
+    );
+  }
+  revert(projectId, sha, branch, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/revert`,
+      {
+        ...options,
+        branch
+      }
+    );
+  }
+  show(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}`,
+      options
+    );
+  }
+  showDiff(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/diff`,
+      options
+    );
+  }
+  showGPGSignature(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/signature`,
+      options
+    );
+  }
+};
+var ContainerRegistry = class extends requesterUtils.BaseResource {
+  allRepositories({
+    groupId,
+    projectId,
+    ...options
+  } = {}) {
+    let url12;
+    if (groupId)
+      url12 = endpoint`groups/${groupId}/registry/repositories`;
+    else if (projectId)
+      url12 = endpoint`projects/${projectId}/registry/repositories`;
+    else
+      throw new Error(
+        "Missing required argument. Please supply a groupId or a projectId in the options parameter."
+      );
+    return RequestHelper.get()(this, url12, options);
+  }
+  allTags(projectId, repositoryId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/registry/repositories/${repositoryId}/tags`,
+      options
+    );
+  }
+  editRegistryVisibility(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}`,
+      options
+    );
+  }
+  removeRepository(projectId, repositoryId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/registry/repositories/${repositoryId}`,
+      options
+    );
+  }
+  removeTag(projectId, repositoryId, tagName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/registry/repositories/${repositoryId}/tags/${tagName}`,
+      options
+    );
+  }
+  removeTags(projectId, repositoryId, nameRegexDelete, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/registry/repositories/${repositoryId}/tags`,
+      {
+        nameRegexDelete,
+        ...options
+      }
+    );
+  }
+  showRepository(repositoryId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`registry/repositories/${repositoryId}`,
+      options
+    );
+  }
+  showTag(projectId, repositoryId, tagName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/registry/repositories/${repositoryId}/tags/${tagName}`,
+      options
+    );
+  }
+};
+var Deployments = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/deployments`,
+      options
+    );
+  }
+  allMergeRequests(projectId, deploymentId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/deployments/${deploymentId}/merge_requests`,
+      options
+    );
+  }
+  create(projectId, environment, sha, ref, tag, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/deployments`,
+      {
+        environment,
+        sha,
+        ref,
+        tag,
+        ...options
+      }
+    );
+  }
+  edit(projectId, deploymentId, status, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/deployments/${deploymentId}`,
+      {
+        ...options,
+        status
+      }
+    );
+  }
+  remove(projectId, deploymentId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/deployments/${deploymentId}`,
+      options
+    );
+  }
+  setApproval(projectId, deploymentId, status, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/deployments/${deploymentId}/approval`,
+      {
+        ...options,
+        status
+      }
+    );
+  }
+  show(projectId, deploymentId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/deployments/${deploymentId}`,
+      options
+    );
+  }
+};
+var Environments = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/environments`,
+      options
+    );
+  }
+  create(projectId, name, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/environments`,
+      {
+        name,
+        ...options
+      }
+    );
+  }
+  edit(projectId, environmentId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/environments/${environmentId}`,
+      options
+    );
+  }
+  remove(projectId, environmentId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/environments/${environmentId}`,
+      options
+    );
+  }
+  removeReviewApps(projectId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/environments/review_apps`, options);
+  }
+  show(projectId, environmentId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/environments/${environmentId}`,
+      options
+    );
+  }
+  stop(projectId, environmentId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/environments/${environmentId}/stop`,
+      options
+    );
+  }
+  stopStale(projectId, before, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/environments/stop_stale`,
+      {
+        searchParams: { before },
+        ...options
+      }
+    );
+  }
+};
+var ErrorTrackingClientKeys = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/error_tracking/client_keys`,
+      options
+    );
+  }
+  create(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/error_tracking/client_keys`,
+      options
+    );
+  }
+  remove(projectId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/error_tracking/client_keys`,
+      options
+    );
+  }
+};
+var ErrorTrackingSettings = class extends requesterUtils.BaseResource {
+  create(projectId, active, integrated, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/error_tracking/settings`,
+      {
+        searchParams: {
+          active,
+          integrated
+        },
+        ...options
+      }
+    );
+  }
+  edit(projectId, active, { integrated, ...options } = {}) {
+    return RequestHelper.patch()(
+      this,
+      endpoint`projects/${projectId}/error_tracking/settings`,
+      {
+        searchParams: {
+          active,
+          integrated
+        },
+        ...options
+      }
+    );
+  }
+  show(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/error_tracking/settings`,
+      options
+    );
+  }
+};
+var ExternalStatusChecks = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    const { mergerequestIId, ...opts } = options || {};
+    let url12 = endpoint`projects/${projectId}`;
+    if (mergerequestIId) {
+      url12 += endpoint`/merge_requests/${mergerequestIId}/status_checks`;
+    } else {
+      url12 += "/external_status_checks";
+    }
+    return RequestHelper.get()(this, url12, opts);
+  }
+  create(projectId, name, externalUrl, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/external_status_checks`,
+      {
+        name,
+        externalUrl,
+        ...options
+      }
+    );
+  }
+  edit(projectId, externalStatusCheckId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/external_status_checks/${externalStatusCheckId}`,
+      options
+    );
+  }
+  remove(projectId, externalStatusCheckId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/external_status_checks/${externalStatusCheckId}`,
+      options
+    );
+  }
+  set(projectId, mergerequestIId, sha, externalStatusCheckId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/status_check_responses`,
+      {
+        sha,
+        externalStatusCheckId,
+        ...options
+      }
+    );
+  }
+};
+var FeatureFlagUserLists = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/feature_flags_user_lists`,
+      options
+    );
+  }
+  create(projectId, name, userXids, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/feature_flags_user_lists`,
+      {
+        name,
+        userXids,
+        ...options
+      }
+    );
+  }
+  edit(projectId, featureFlagUserListIId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/feature_flags_user_lists/${featureFlagUserListIId}`,
+      options
+    );
+  }
+  remove(projectId, featureFlagUserListIId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/feature_flags_user_lists/${featureFlagUserListIId}`,
+      options
+    );
+  }
+  show(projectId, featureFlagUserListIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/feature_flags_user_lists/${featureFlagUserListIId}`,
+      options
+    );
+  }
+};
+var FeatureFlags = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/feature_flags`,
+      options
+    );
+  }
+  create(projectId, flagName, version, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/feature_flags`,
+      {
+        name: flagName,
+        version,
+        ...options
+      }
+    );
+  }
+  edit(projectId, featureFlagName, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/feature_flags/${featureFlagName}`,
+      options
+    );
+  }
+  remove(projectId, flagName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/feature_flags/${flagName}`,
+      options
+    );
+  }
+  show(projectId, flagName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/feature_flags/${flagName}`,
+      options
+    );
+  }
+};
+var FreezePeriods = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/freeze_periods`,
+      options
+    );
+  }
+  create(projectId, freezeStart, freezeEnd, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/freeze_periods`,
+      {
+        freezeStart,
+        freezeEnd,
+        ...options
+      }
+    );
+  }
+  edit(projectId, freezePeriodId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/freeze_periods/${freezePeriodId}`,
+      options
+    );
+  }
+  remove(projectId, freezePeriodId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/freeze_periods/${freezePeriodId}`,
+      options
+    );
+  }
+  show(projectId, freezePeriodId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/freeze_periods/${freezePeriodId}`,
+      options
+    );
+  }
+};
+var GitlabPages = class extends requesterUtils.BaseResource {
+  remove(projectId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/pages`, options);
+  }
+  showSettings(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pages`,
+      options
+    );
+  }
+};
+var GoProxy = class extends requesterUtils.BaseResource {
+  all(projectId, moduleName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/go/${moduleName}/@v/list`,
+      options
+    );
+  }
+  showVersionMetadata(projectId, moduleName, moduleVersion, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/go/${moduleName}/@v/${moduleVersion}.info`,
+      options
+    );
+  }
+  downloadModuleFile(projectId, moduleName, moduleVersion, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/go/${moduleName}/@v/${moduleVersion}.mod`,
+      options
+    );
+  }
+  downloadModuleSource(projectId, moduleName, moduleVersion, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/go/${moduleName}/@v/${moduleVersion}.zip`,
+      options
+    );
+  }
+};
+var Helm = class extends requesterUtils.BaseResource {
+  downloadChartIndex(projectId, channel, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/helm/${channel}/index.yaml`,
+      options
+    );
+  }
+  downloadChart(projectId, channel, filename, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/helm/${channel}/charts/${filename}.tgz`,
+      options
+    );
+  }
+  import(projectId, channel, chart, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/packages/helm/api/${channel}/charts`,
+      {
+        isForm: true,
+        ...options,
+        chart: [chart.content, chart.filename]
+      }
+    );
+  }
+};
+var Integrations = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/integrations`,
+      options
+    );
+  }
+  edit(projectId, integrationName, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/integrations/${integrationName}`,
+      options
+    );
+  }
+  disable(projectId, integrationName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/integrations/${integrationName}`,
+      options
+    );
+  }
+  show(projectId, integrationName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/integrations/${integrationName}`,
+      options
+    );
+  }
+};
+
+// src/resources/IssueAwardEmojis.ts
+var IssueAwardEmojis = class extends ResourceAwardEmojis {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+
+// src/resources/IssueDiscussions.ts
+var IssueDiscussions = class extends ResourceDiscussions {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+
+// src/resources/IssueIterationEvents.ts
+var IssueIterationEvents = class extends ResourceIterationEvents {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+
+// src/resources/IssueLabelEvents.ts
+var IssueLabelEvents = class extends ResourceLabelEvents {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+var IssueLinks = class extends requesterUtils.BaseResource {
+  all(projectId, issueIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/links`,
+      options
+    );
+  }
+  create(projectId, issueIId, targetProjectId, targetIssueIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/links`,
+      {
+        targetProjectId,
+        targetIssueIid: targetIssueIId,
+        ...options
+      }
+    );
+  }
+  remove(projectId, issueIId, issueLinkId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/links/${issueLinkId}`,
+      options
+    );
+  }
+};
+
+// src/resources/IssueMilestoneEvents.ts
+var IssueMilestoneEvents = class extends ResourceMilestoneEvents {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+
+// src/resources/IssueNoteAwardEmojis.ts
+var IssueNoteAwardEmojis = class extends ResourceNoteAwardEmojis {
+  constructor(options) {
+    super("issues", options);
+  }
+};
+
+// src/resources/IssueNotes.ts
+var IssueNotes = class extends ResourceNotes {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+
+// src/resources/IssueStateEvents.ts
+var IssueStateEvents = class extends ResourceStateEvents {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+
+// src/resources/IssueWeightEvents.ts
+var IssueWeightEvents = class extends ResourceStateEvents {
+  constructor(options) {
+    super("projects", "issues", options);
+  }
+};
+var Issues = class extends requesterUtils.BaseResource {
+  addSpentTime(projectId, issueIId, duration, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/add_spent_time`,
+      {
+        duration,
+        ...options
+      }
+    );
+  }
+  addTimeEstimate(projectId, issueIId, duration, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/time_estimate`,
+      {
+        duration,
+        ...options
+      }
+    );
+  }
+  all({
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/issues`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/issues`;
+    else
+      url12 = "issues";
+    return RequestHelper.get()(this, url12, options);
+  }
+  allMetricImages(projectId, issueIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/metric_images`,
+      options
+    );
+  }
+  allParticipants(projectId, issueIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/participants`,
+      options
+    );
+  }
+  allRelatedMergeRequests(projectId, issueIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/related_merge_requests`,
+      options
+    );
+  }
+  create(projectId, title, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/issues`, {
+      ...options,
+      title
+    });
+  }
+  createTodo(projectId, issueIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/todo`,
+      options
+    );
+  }
+  clone(projectId, issueIId, destinationProjectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/clone`,
+      {
+        toProjectId: destinationProjectId,
+        ...options
+      }
+    );
+  }
+  edit(projectId, issueIId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}`,
+      options
+    );
+  }
+  editMetricImage(projectId, issueIId, imageId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/metric_images/${imageId}`,
+      options
+    );
+  }
+  move(projectId, issueIId, destinationProjectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/move`,
+      {
+        toProjectId: destinationProjectId,
+        ...options
+      }
+    );
+  }
+  // Includes /promote already!
+  promote(projectId, issueIId, body, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/notes`,
+      {
+        searchParams: {
+          body: `${body} 
+ /promote`
+        },
+        ...options
+      }
+    );
+  }
+  remove(projectId, issueIId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/issues/${issueIId}`, options);
+  }
+  removeMetricImage(projectId, issueIId, imageId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/metric_images/${imageId}`,
+      options
+    );
+  }
+  reorder(projectId, issueIId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/reorder`,
+      options
+    );
+  }
+  resetSpentTime(projectId, issueIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/reset_spent_time`,
+      options
+    );
+  }
+  resetTimeEstimate(projectId, issueIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/reset_time_estimate`,
+      options
+    );
+  }
+  show(issueId, { projectId, ...options } = {}) {
+    const url12 = projectId ? endpoint`projects/${projectId}/issues/${issueId}` : `issues/${issueId}`;
+    return RequestHelper.get()(this, url12, options);
+  }
+  subscribe(projectId, issueIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/subscribe`,
+      options
+    );
+  }
+  allClosedByMergeRequestst(projectId, issueIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/closed_by`,
+      options
+    );
+  }
+  showTimeStats(projectId, issueIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/time_stats`,
+      options
+    );
+  }
+  unsubscribe(projectId, issueIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/unsubscribe`,
+      options
+    );
+  }
+  uploadMetricImage(projectId, issueIId, metricImage, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/metric_images`,
+      {
+        isForm: true,
+        ...options,
+        file: [metricImage.content, metricImage.filename]
+      }
+    );
+  }
+  showUserAgentDetails(projectId, issueIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/issues/${issueIId}/user_agent_details`,
+      options
+    );
+  }
+};
+var IssuesStatistics = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/issues_statistics`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/issues_statistics`;
+    else
+      url12 = "issues_statistics";
+    return RequestHelper.get()(this, url12, options);
+  }
+};
+function generateDownloadPathForJob(projectId, jobId, artifactPath) {
+  let url12 = endpoint`projects/${projectId}/jobs/${jobId}/artifacts`;
+  if (artifactPath)
+    url12 += `/${artifactPath}`;
+  return url12;
+}
+function generateDownloadPath(projectId, ref, artifactPath) {
+  let url12 = endpoint`projects/${projectId}/jobs/artifacts/${ref}`;
+  if (artifactPath) {
+    url12 += endpoint`/raw/${artifactPath}`;
+  } else {
+    url12 += endpoint`/download`;
+  }
+  return url12;
+}
+var JobArtifacts = class extends requesterUtils.BaseResource {
+  downloadArchive(projectId, {
+    jobId,
+    artifactPath,
+    ref,
+    ...options
+  } = {}) {
+    let url12;
+    if (jobId)
+      url12 = generateDownloadPathForJob(projectId, jobId, artifactPath);
+    else if (options?.job && ref)
+      url12 = generateDownloadPath(projectId, ref, artifactPath);
+    else
+      throw new Error(
+        "Missing one of the required parameters. See typing documentation for available arguments."
+      );
+    return RequestHelper.get()(this, url12, options);
+  }
+  keep(projectId, jobId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/jobs/${jobId}/artifacts/keep`,
+      options
+    );
+  }
+  remove(projectId, { jobId, ...options } = {}) {
+    let url12;
+    if (jobId) {
+      url12 = endpoint`projects/${projectId}/jobs/${jobId}/artifacts`;
+    } else {
+      url12 = endpoint`projects/${projectId}/artifacts`;
+    }
+    return RequestHelper.del()(this, url12, options);
+  }
+};
+var Jobs = class extends requesterUtils.BaseResource {
+  all(projectId, {
+    pipelineId,
+    ...options
+  } = {}) {
+    const url12 = pipelineId ? endpoint`projects/${projectId}/pipelines/${pipelineId}/jobs` : endpoint`projects/${projectId}/jobs`;
+    return RequestHelper.get()(this, url12, options);
+  }
+  allPipelineBridges(projectId, pipelineId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}/bridges`,
+      options
+    );
+  }
+  cancel(projectId, jobId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/jobs/${jobId}/cancel`,
+      options
+    );
+  }
+  erase(projectId, jobId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/jobs/${jobId}/erase`,
+      options
+    );
+  }
+  play(projectId, jobId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/jobs/${jobId}/play`,
+      options
+    );
+  }
+  retry(projectId, jobId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/jobs/${jobId}/retry`,
+      options
+    );
+  }
+  show(projectId, jobId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/jobs/${jobId}`,
+      options
+    );
+  }
+  showConnectedJob(options) {
+    if (!this.headers["job-token"])
+      throw new Error('Missing required header "job-token"');
+    return RequestHelper.get()(this, "job", options);
+  }
+  showConnectedJobK8Agents(options) {
+    if (!this.headers["job-token"])
+      throw new Error('Missing required header "job-token"');
+    return RequestHelper.get()(this, "job/allowed_agents", options);
+  }
+  showLog(projectId, jobId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/jobs/${jobId}/trace`,
+      options
+    );
+  }
+};
+var MergeRequestApprovals = class extends requesterUtils.BaseResource {
+  allApprovalRules(projectId, { mergerequestIId, ...options } = {}) {
+    let url12;
+    if (mergerequestIId) {
+      url12 = endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/approval_rules`;
+    } else {
+      url12 = endpoint`projects/${projectId}/approval_rules`;
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+  approve(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/approve`,
+      options
+    );
+  }
+  createApprovalRule(projectId, name, approvalsRequired, {
+    mergerequestIId,
+    ...options
+  } = {}) {
+    let url12;
+    if (mergerequestIId) {
+      url12 = endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/approval_rules`;
+    } else {
+      url12 = endpoint`projects/${projectId}/approval_rules`;
+    }
+    return RequestHelper.post()(this, url12, { name, approvalsRequired, ...options });
+  }
+  editApprovalRule(projectId, approvalRuleId, name, approvalsRequired, {
+    mergerequestIId,
+    ...options
+  } = {}) {
+    let url12;
+    if (mergerequestIId) {
+      url12 = endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/approval_rules/${approvalRuleId}`;
+    } else {
+      url12 = endpoint`projects/${projectId}/approval_rules/${approvalRuleId}`;
+    }
+    return RequestHelper.put()(this, url12, { name, approvalsRequired, ...options });
+  }
+  editConfiguration(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/approvals`,
+      options
+    );
+  }
+  removeApprovalRule(projectId, approvalRuleId, {
+    mergerequestIId,
+    ...options
+  } = {}) {
+    let url12;
+    if (mergerequestIId) {
+      url12 = endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/approval_rules/${approvalRuleId}`;
+    } else {
+      url12 = endpoint`projects/${projectId}/approval_rules/${approvalRuleId}`;
+    }
+    return RequestHelper.del()(this, url12, options);
+  }
+  showApprovalRule(projectId, approvalRuleId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/approval_rules/${approvalRuleId}`,
+      options
+    );
+  }
+  showApprovalState(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/approval_state`,
+      options
+    );
+  }
+  showConfiguration(projectId, { mergerequestIId, ...options } = {}) {
+    let url12;
+    if (mergerequestIId) {
+      url12 = endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/approvals`;
+    } else {
+      url12 = endpoint`projects/${projectId}/approvals`;
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+  unapprove(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/unapprove`,
+      options
+    );
+  }
+};
+
+// src/resources/MergeRequestAwardEmojis.ts
+var MergeRequestAwardEmojis = class extends ResourceAwardEmojis {
+  constructor(options) {
+    super("projects", "merge_requests", options);
+  }
+};
+var MergeRequestContextCommits = class extends requesterUtils.BaseResource {
+  all(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/context_commits`,
+      options
+    );
+  }
+  create(projectId, commits, { mergerequestIId, ...options } = {}) {
+    const prefix = endpoint`projects/${projectId}/merge_requests`;
+    const url12 = mergerequestIId ? `${prefix}/${mergerequestIId}/context_commits` : prefix;
+    return RequestHelper.post()(this, url12, {
+      commits,
+      ...options
+    });
+  }
+  remove(projectId, mergerequestIId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/context_commits`,
+      options
+    );
+  }
+};
+
+// src/resources/MergeRequestDiscussions.ts
+var MergeRequestDiscussions = class extends ResourceDiscussions {
+  constructor(options) {
+    super("projects", "merge_requests", options);
+  }
+  resolve(projectId, mergerequestId, discussionId, resolved, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${projectId}/merge_requests/${mergerequestId}/discussions/${discussionId}`,
+      {
+        searchParams: { resolved },
+        ...options
+      }
+    );
+  }
+};
+var MergeRequestDraftNotes = class extends requesterUtils.BaseResource {
+  all(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/draft_notes`,
+      options
+    );
+  }
+  create(projectId, mergerequestIId, note, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/draft_notes`,
+      {
+        ...options,
+        note
+      }
+    );
+  }
+  edit(projectId, mergerequestIId, draftNoteId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/draft_notes/${draftNoteId}`,
+      options
+    );
+  }
+  publish(projectId, mergerequestIId, draftNoteId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/draft_notes/${draftNoteId}/publish`,
+      options
+    );
+  }
+  publishBulk(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/draft_notes/bulk_publish`,
+      options
+    );
+  }
+  remove(projectId, mergerequestIId, draftNoteId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/draft_notes/${draftNoteId}`,
+      options
+    );
+  }
+  show(projectId, mergerequestIId, draftNoteId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/draft_notes/${draftNoteId}`,
+      options
+    );
+  }
+};
+
+// src/resources/MergeRequestLabelEvents.ts
+var MergeRequestLabelEvents = class extends ResourceLabelEvents {
+  constructor(options) {
+    super("projects", "merge_requests", options);
+  }
+};
+
+// src/resources/MergeRequestMilestoneEvents.ts
+var MergeRequestMilestoneEvents = class extends ResourceMilestoneEvents {
+  constructor(options) {
+    super("projects", "merge_requests", options);
+  }
+};
+
+// src/resources/MergeRequestNoteAwardEmojis.ts
+var MergeRequestNoteAwardEmojis = class extends ResourceNoteAwardEmojis {
+  constructor(options) {
+    super("merge_requests", options);
+  }
+};
+
+// src/resources/MergeRequestNotes.ts
+var MergeRequestNotes = class extends ResourceNotes {
+  constructor(options) {
+    super("projects", "merge_requests", options);
+  }
+};
+var MergeRequests = class extends requesterUtils.BaseResource {
+  // convenience method
+  accept(projectId, mergerequestIId, options) {
+    return this.merge(projectId, mergerequestIId, options);
+  }
+  addSpentTime(projectId, mergerequestIId, duration, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/add_spent_time`,
+      {
+        duration,
+        ...options
+      }
+    );
+  }
+  all({
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let prefix = "";
+    if (projectId) {
+      prefix = endpoint`projects/${projectId}/`;
+    } else if (groupId) {
+      prefix = endpoint`groups/${groupId}/`;
+    }
+    return RequestHelper.get()(this, `${prefix}merge_requests`, options);
+  }
+  allDiffs(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/diffs`,
+      options
+    );
+  }
+  allCommits(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/commits`,
+      options
+    );
+  }
+  allDiffVersions(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/versions`,
+      options
+    );
+  }
+  allIssuesClosed(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/closes_issues`,
+      options
+    );
+  }
+  allParticipants(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/participants`,
+      options
+    );
+  }
+  allPipelines(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/pipelines`,
+      options
+    );
+  }
+  cancelOnPipelineSuccess(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/cancel_merge_when_pipeline_succeeds`,
+      options
+    );
+  }
+  create(projectId, sourceBranch, targetBranch, title, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests`,
+      {
+        sourceBranch,
+        targetBranch,
+        title,
+        ...options
+      }
+    );
+  }
+  createPipeline(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/pipelines`,
+      options
+    );
+  }
+  createTodo(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/todo`,
+      options
+    );
+  }
+  edit(projectId, mergerequestIId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}`,
+      options
+    );
+  }
+  merge(projectId, mergerequestIId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/merge`,
+      options
+    );
+  }
+  mergeToDefault(projectId, mergerequestIId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/merge_ref`,
+      options
+    );
+  }
+  rebase(projectId, mergerequestIId, { skipCI, ...options } = {}) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/rebase`,
+      {
+        ...options,
+        skipCi: skipCI
+      }
+    );
+  }
+  remove(projectId, mergerequestIId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}`,
+      options
+    );
+  }
+  resetSpentTime(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/reset_spent_time`,
+      options
+    );
+  }
+  resetTimeEstimate(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/reset_time_estimate`,
+      options
+    );
+  }
+  setTimeEstimate(projectId, mergerequestIId, duration, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/time_estimate`,
+      {
+        duration,
+        ...options
+      }
+    );
+  }
+  show(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}`,
+      options
+    );
+  }
+  showChanges(projectId, mergerequestIId, options) {
+    process.emitWarning(
+      'This endpoint was deprecated in Gitlab API 15.7 and will be removed in API v5. Please use the "allDiffs" function instead.',
+      "DeprecationWarning"
+    );
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/changes`,
+      options
+    );
+  }
+  showDiffVersion(projectId, mergerequestIId, versionId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/versions/${versionId}`,
+      options
+    );
+  }
+  showTimeStats(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/time_stats`,
+      options
+    );
+  }
+  subscribe(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/subscribe`,
+      options
+    );
+  }
+  unsubscribe(projectId, mergerequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/unsubscribe`,
+      options
+    );
+  }
+};
+var MergeTrains = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_trains`,
+      options
+    );
+  }
+  showStatus(projectId, mergeRequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_trains/merge_requests/${mergeRequestIId}`,
+      options
+    );
+  }
+  addMergeRequest(projectId, mergeRequestIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/merge_trains/merge_requests/${mergeRequestIId}`,
+      options
+    );
+  }
+};
+var PackageRegistry = class extends requesterUtils.BaseResource {
+  publish(projectId, packageName, packageVersion, packageFile, {
+    contentType,
+    ...options
+  } = {}) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/packages/generic/${packageName}/${packageVersion}/${packageFile.filename}`,
+      {
+        isForm: true,
+        file: [packageFile.content, packageFile.filename],
+        ...options
+      }
+    );
+  }
+  download(projectId, packageName, packageVersion, filename, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/generic/${packageName}/${packageVersion}/${filename}`,
+      options
+    );
+  }
+};
+var Packages = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    groupId,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/packages`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/packages`;
+    else {
+      throw new Error(
+        "Missing required argument. Please supply a projectId or a groupId in the options parameter."
+      );
+    }
+    return RequestHelper.get()(this, url12, options);
+  }
+  allFiles(projectId, packageId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/${packageId}/package_files`,
+      options
+    );
+  }
+  remove(projectId, packageId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/packages/${packageId}`,
+      options
+    );
+  }
+  removeFile(projectId, packageId, projectFileId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/packages/${packageId}/package_files/${projectFileId}`,
+      options
+    );
+  }
+  show(projectId, packageId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/packages/${packageId}`,
+      options
+    );
+  }
+};
+var PagesDomains = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    ...options
+  } = {}) {
+    const prefix = projectId ? endpoint`projects/${projectId}/` : "";
+    return RequestHelper.get()(this, `${prefix}pages/domains`, options);
+  }
+  create(projectId, domain, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pages/domains`,
+      {
+        domain,
+        ...options
+      }
+    );
+  }
+  edit(projectId, domain, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/pages/domains/${domain}`,
+      options
+    );
+  }
+  show(projectId, domain, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pages/domains/${domain}`,
+      options
+    );
+  }
+  remove(projectId, domain, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/pages/domains/${domain}`,
+      options
+    );
+  }
+};
+var PipelineScheduleVariables = class extends requesterUtils.BaseResource {
+  all(projectId, pipelineScheduleId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}/variables`,
+      options
+    );
+  }
+  create(projectId, pipelineScheduleId, key, value, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}/variables`,
+      {
+        ...options,
+        key,
+        value
+      }
+    );
+  }
+  edit(projectId, pipelineScheduleId, key, value, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}/variables/${key}`,
+      {
+        ...options,
+        value
+      }
+    );
+  }
+  remove(projectId, pipelineScheduleId, key, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}/variables/${key}`,
+      options
+    );
+  }
+};
+var PipelineSchedules = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules`,
+      options
+    );
+  }
+  allTriggeredPipelines(projectId, pipelineScheduleId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}/pipelines`,
+      options
+    );
+  }
+  create(projectId, description, ref, cron, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules`,
+      {
+        description,
+        ref,
+        cron,
+        ...options
+      }
+    );
+  }
+  edit(projectId, pipelineScheduleId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}`,
+      options
+    );
+  }
+  remove(projectId, pipelineScheduleId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}`,
+      options
+    );
+  }
+  run(projectId, pipelineScheduleId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}/play`,
+      options
+    );
+  }
+  show(projectId, pipelineScheduleId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}`,
+      options
+    );
+  }
+  takeOwnership(projectId, pipelineScheduleId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pipeline_schedules/${pipelineScheduleId}/take_ownership`,
+      options
+    );
+  }
+};
+var PipelineTriggerTokens = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/triggers`,
+      options
+    );
+  }
+  create(projectId, description, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/triggers`,
+      {
+        description,
+        ...options
+      }
+    );
+  }
+  edit(projectId, triggerId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/triggers/${triggerId}`,
+      options
+    );
+  }
+  remove(projectId, triggerId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/triggers/${triggerId}`,
+      options
+    );
+  }
+  show(projectId, triggerId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/triggers/${triggerId}`,
+      options
+    );
+  }
+  trigger(projectId, ref, token, { variables, ...options } = {}) {
+    const opts = {
+      ...options,
+      searchParams: {
+        token,
+        ref
+      }
+    };
+    if (variables) {
+      opts.isForm = true;
+      Object.assign(opts, reformatObjectOptions(variables, "variables"));
+    }
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/trigger/pipeline`,
+      opts
+    );
+  }
+};
+var Pipelines = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipelines`,
+      options
+    );
+  }
+  allVariables(projectId, pipelineId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}/variables`,
+      options
+    );
+  }
+  cancel(projectId, pipelineId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}/cancel`,
+      options
+    );
+  }
+  create(projectId, ref, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pipeline`,
+      {
+        ref,
+        ...options
+      }
+    );
+  }
+  remove(projectId, pipelineId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}`,
+      options
+    );
+  }
+  retry(projectId, pipelineId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}/retry`,
+      options
+    );
+  }
+  show(projectId, pipelineId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}`,
+      options
+    );
+  }
+  showTestReport(projectId, pipelineId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}/test_report`,
+      options
+    );
+  }
+  showTestReportSummary(projectId, pipelineId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipelines/${pipelineId}/test_report_summary`,
+      options
+    );
+  }
+};
+var ProductAnalytics = class extends requesterUtils.BaseResource {
+  allFunnels(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/product_analytics/funnels`,
+      options
+    );
+  }
+  load(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/product_analytics/request/load`,
+      options
+    );
+  }
+  dryRun(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/product_analytics/request/dry-run`,
+      options
+    );
+  }
+  showMetadata(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/product_analytics/request/meta`,
+      options
+    );
+  }
+};
+
+// src/resources/ProjectAccessRequests.ts
+var ProjectAccessRequests = class extends ResourceAccessRequests {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectAccessTokens.ts
+var ProjectAccessTokens = class extends ResourceAccessTokens {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+var ProjectAliases = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "project_aliases", options);
+  }
+  create(projectId, name, options) {
+    return RequestHelper.post()(this, "project_aliases", {
+      name,
+      projectId,
+      ...options
+    });
+  }
+  edit(name, options) {
+    return RequestHelper.post()(this, `project_aliases/${name}`, options);
+  }
+  remove(name, options) {
+    return RequestHelper.del()(this, `project_aliases/${name}`, options);
+  }
+};
+
+// src/resources/ProjectBadges.ts
+var ProjectBadges = class extends ResourceBadges {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectCustomAttributes.ts
+var ProjectCustomAttributes = class extends ResourceCustomAttributes {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectDORA4Metrics.ts
+var ProjectDORA4Metrics = class extends ResourceDORA4Metrics {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectHooks.ts
+var ProjectHooks = class extends ResourceHooks {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+var ProjectImportExports = class extends requesterUtils.BaseResource {
+  download(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/export/download`,
+      options
+    );
+  }
+  import(file, path, options) {
+    return RequestHelper.post()(this, "projects/import", {
+      isForm: true,
+      ...options,
+      file: [file.content, file.filename],
+      path
+    });
+  }
+  importRemote(url12, path, options) {
+    return RequestHelper.post()(this, "projects/remote-import", {
+      ...options,
+      path,
+      url: url12
+    });
+  }
+  importRemoteS3(accessKeyId, bucketName, fileKey, path, region, secretAccessKey, options) {
+    return RequestHelper.post()(this, "projects/remote-import", {
+      ...options,
+      accessKeyId,
+      bucketName,
+      fileKey,
+      path,
+      region,
+      secretAccessKey
+    });
+  }
+  showExportStatus(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/export`,
+      options
+    );
+  }
+  showImportStatus(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/import`,
+      options
+    );
+  }
+  scheduleExport(projectId, uploadConfig, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/export`, {
+      ...options,
+      upload: uploadConfig
+    });
+  }
+};
+
+// src/resources/ProjectInvitations.ts
+var ProjectInvitations = class extends ResourceInvitations {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectIssueBoards.ts
+var ProjectIssueBoards = class extends ResourceIssueBoards {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectIterations.ts
+var ProjectIterations = class extends ResourceIterations {
+  constructor(options) {
+    super("project", options);
+  }
+};
+
+// src/resources/ProjectLabels.ts
+var ProjectLabels = class extends ResourceLabels {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectMembers.ts
+var ProjectMembers = class extends ResourceMembers {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectMilestones.ts
+var ProjectMilestones = class extends ResourceMilestones {
+  constructor(options) {
+    super("projects", options);
+  }
+  promote(projectId, milestoneId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${projectId}/milestones/${milestoneId}/promote`,
+      options
+    );
+  }
+};
+
+// src/resources/ProjectProtectedEnvironments.ts
+var ProjectProtectedEnvironments = class extends ResourceProtectedEnvironments {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/ProjectPushRules.ts
+var ProjectPushRules = class extends ResourcePushRules {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+var ProjectRelationsExport = class extends requesterUtils.BaseResource {
+  download(projectId, relation, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/export_relations/download`,
+      {
+        relation,
+        ...options
+      }
+    );
+  }
+  showExportStatus(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/export_relations/status`,
+      options
+    );
+  }
+  scheduleExport(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/export_relations`,
+      options
+    );
+  }
+};
+var ProjectReleases = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases`,
+      options
+    );
+  }
+  create(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/releases`,
+      options
+    );
+  }
+  createEvidence(projectId, tagName, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}/evidence`,
+      options
+    );
+  }
+  edit(projectId, tagName, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}`,
+      options
+    );
+  }
+  download(projectId, tagName, filepath, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}/downloads/${filepath}`,
+      options
+    );
+  }
+  downloadLatest(projectId, filepath, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases/permalink/latest/downloads/${filepath}`,
+      options
+    );
+  }
+  remove(projectId, tagName, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/releases/${tagName}`, options);
+  }
+  show(projectId, tagName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}`,
+      options
+    );
+  }
+  showLatest(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases/permalink/latest`,
+      options
+    );
+  }
+  showLatestEvidence(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases/permalink/latest/evidence`,
+      options
+    );
+  }
+};
+var ProjectRemoteMirrors = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/remote_mirrors`,
+      options
+    );
+  }
+  // Helper method - Duplicated from Projects
+  createPullMirror(projectId, url12, mirror, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/mirror/pull`,
+      {
+        importUrl: url12,
+        mirror,
+        ...options
+      }
+    );
+  }
+  createPushMirror(projectId, url12, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/remote_mirrors`,
+      {
+        url: url12,
+        ...options
+      }
+    );
+  }
+  edit(projectId, mirrorId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/remote_mirrors/${mirrorId}`,
+      options
+    );
+  }
+  remove(projectId, mirrorId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/remote_mirrors/${mirrorId}`,
+      options
+    );
+  }
+  show(projectId, mirrorId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/remote_mirrors/${mirrorId}`,
+      options
+    );
+  }
+};
+
+// src/resources/ProjectRepositoryStorageMoves.ts
+var ProjectRepositoryStorageMoves = class extends ResourceRepositoryStorageMoves {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+
+// src/resources/ProjectSnippetAwardEmojis.ts
+var ProjectSnippetAwardEmojis = class extends ResourceAwardEmojis {
+  constructor(options) {
+    super("projects", "snippets", options);
+  }
+};
+
+// src/resources/ProjectSnippetDiscussions.ts
+var ProjectSnippetDiscussions = class extends ResourceDiscussions {
+  constructor(options) {
+    super("projects", "snippets", options);
+  }
+};
+
+// src/resources/ProjectSnippetNotes.ts
+var ProjectSnippetNotes = class extends ResourceNotes {
+  constructor(options) {
+    super("projects", "snippets", options);
+  }
+};
+var ProjectSnippets = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/snippets`,
+      options
+    );
+  }
+  create(projectId, title, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/snippets`,
+      {
+        title,
+        ...options
+      }
+    );
+  }
+  edit(projectId, snippetId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/snippets/${snippetId}`,
+      options
+    );
+  }
+  remove(projectId, snippetId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/snippets/${snippetId}`,
+      options
+    );
+  }
+  show(projectId, snippetId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/snippets/${snippetId}`,
+      options
+    );
+  }
+  showContent(projectId, snippetId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/snippets/${snippetId}/raw`,
+      options
+    );
+  }
+  showRepositoryFileContent(projectId, snippetId, ref, filePath, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/snippets/${snippetId}/files/${ref}/${filePath}/raw`,
+      options
+    );
+  }
+  showUserAgentDetails(projectId, snippetId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/snippets/${snippetId}/user_agent_detail`,
+      options
+    );
+  }
+};
+var ProjectStatistics = class extends requesterUtils.BaseResource {
+  show(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/statistics`,
+      options
+    );
+  }
+};
+var ProjectTemplates = class extends requesterUtils.BaseResource {
+  all(projectId, type, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/templates/${type}`,
+      options
+    );
+  }
+  show(projectId, type, name, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/templates/${type}/${name}`,
+      options
+    );
+  }
+};
+
+// src/resources/ProjectVariables.ts
+var ProjectVariables = class extends ResourceVariables {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+var ProjectVulnerabilities = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/vulnerabilities`,
+      options
+    );
+  }
+  create(projectId, findingId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/vulnerabilities`,
+      {
+        ...options,
+        searchParams: {
+          findingId
+        }
+      }
+    );
+  }
+};
+
+// src/resources/ProjectWikis.ts
+var ProjectWikis = class extends ResourceWikis {
+  constructor(options) {
+    super("projects", options);
+  }
+};
+var Projects = class extends requesterUtils.BaseResource {
+  all({
+    userId,
+    starredOnly,
+    ...options
+  } = {}) {
+    let uri;
+    if (userId && starredOnly)
+      uri = endpoint`users/${userId}/starred_projects`;
+    else if (userId)
+      uri = endpoint`users/${userId}/projects`;
+    else
+      uri = "projects";
+    return RequestHelper.get()(this, uri, options);
+  }
+  allTransferLocations(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/transfer_locations`,
+      options
+    );
+  }
+  allUsers(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/users`,
+      options
+    );
+  }
+  allGroups(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/groups`,
+      options
+    );
+  }
+  allSharableGroups(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/share_locations`,
+      options
+    );
+  }
+  allForks(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/forks`,
+      options
+    );
+  }
+  allStarrers(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/starrers`,
+      options
+    );
+  }
+  allStoragePaths(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/storage`,
+      options
+    );
+  }
+  archive(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/archive`,
+      options
+    );
+  }
+  create({
+    userId,
+    avatar,
+    ...options
+  } = {}) {
+    const url12 = userId ? `projects/user/${userId}` : "projects";
+    if (avatar) {
+      return RequestHelper.post()(this, url12, {
+        ...options,
+        isForm: true,
+        avatar: [avatar.content, avatar.filename]
+      });
+    }
+    return RequestHelper.post()(this, url12, { ...options, avatar });
+  }
+  createForkRelationship(projectId, forkedFromId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/fork/${forkedFromId}`,
+      options
+    );
+  }
+  // Helper method - Duplicated from ProjectRemoteMirrors
+  createPullMirror(projectId, url12, mirror, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/mirror/pull`,
+      {
+        importUrl: url12,
+        mirror,
+        ...options
+      }
+    );
+  }
+  downloadSnapshot(projectId, options) {
+    return RequestHelper.get()(this, endpoint`projects/${projectId}/snapshot`, options);
+  }
+  edit(projectId, { avatar, ...options } = {}) {
+    const url12 = endpoint`projects/${projectId}`;
+    if (avatar) {
+      return RequestHelper.put()(this, url12, {
+        ...options,
+        isForm: true,
+        avatar: [avatar.content, avatar.filename]
+      });
+    }
+    return RequestHelper.put()(this, url12, { ...options, avatar });
+  }
+  fork(projectId, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/fork`, options);
+  }
+  housekeeping(projectId, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/housekeeping`, options);
+  }
+  importProjectMembers(projectId, sourceProjectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/import_project_members/${sourceProjectId}`,
+      options
+    );
+  }
+  remove(projectId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}`, options);
+  }
+  removeForkRelationship(projectId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/fork`, options);
+  }
+  removeAvatar(projectId, options) {
+    return RequestHelper.put()(this, endpoint`projects/${projectId}`, {
+      ...options,
+      avatar: ""
+    });
+  }
+  restore(projectId, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/restore`, options);
+  }
+  search(projectName, options) {
+    return RequestHelper.get()(this, "projects", {
+      search: projectName,
+      ...options
+    });
+  }
+  share(projectId, groupId, groupAccess, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/share`, {
+      groupId,
+      groupAccess,
+      ...options
+    });
+  }
+  show(projectId, options) {
+    return RequestHelper.get()(this, endpoint`projects/${projectId}`, options);
+  }
+  showLanguages(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/languages`,
+      options
+    );
+  }
+  showPullMirror(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/mirror/pull`,
+      options
+    );
+  }
+  star(projectId, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/star`, options);
+  }
+  transfer(projectId, namespaceId, options) {
+    return RequestHelper.put()(this, endpoint`projects/${projectId}/transfer`, {
+      ...options,
+      namespace: namespaceId
+    });
+  }
+  unarchive(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/unarchive`,
+      options
+    );
+  }
+  unshare(projectId, groupId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/share/${groupId}`, options);
+  }
+  unstar(projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/unstar`,
+      options
+    );
+  }
+  /* Upload file to be used a reference within an issue, merge request or
+     comment
+  */
+  uploadForReference(projectId, file, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/uploads`,
+      {
+        ...options,
+        isForm: true,
+        file: [file.content, file.filename]
+      }
+    );
+  }
+  uploadAvatar(projectId, avatar, options) {
+    return RequestHelper.put()(this, endpoint`projects/${projectId}`, {
+      ...options,
+      isForm: true,
+      avatar: [avatar.content, avatar.filename]
+    });
+  }
+};
+var ProtectedBranches = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/protected_branches`,
+      options
+    );
+  }
+  create(projectId, branchName, options) {
+    const { sudo, showExpanded, ...opts } = options || {};
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/protected_branches`,
+      {
+        searchParams: {
+          ...opts,
+          name: branchName
+        },
+        sudo,
+        showExpanded
+      }
+    );
+  }
+  // Convenience method - create
+  protect(projectId, branchName, options) {
+    return this.create(projectId, branchName, options);
+  }
+  edit(projectId, branchName, options) {
+    return RequestHelper.patch()(
+      this,
+      endpoint`projects/${projectId}/protected_branches/${branchName}`,
+      options
+    );
+  }
+  show(projectId, branchName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/protected_branches/${branchName}`,
+      options
+    );
+  }
+  remove(projectId, branchName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/protected_branches/${branchName}`,
+      options
+    );
+  }
+  // Convenience method - remove
+  unprotect(projectId, branchName, options) {
+    return this.remove(projectId, branchName, options);
+  }
+};
+var ProtectedTags = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/protected_tags`,
+      options
+    );
+  }
+  create(projectId, tagName, options) {
+    const { sudo, showExpanded, ...opts } = options || {};
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/protected_tags`,
+      {
+        searchParams: {
+          name: tagName,
+          ...opts
+        },
+        sudo,
+        showExpanded
+      }
+    );
+  }
+  // Convenience method - create
+  protect(projectId, tagName, options) {
+    return this.create(projectId, tagName, options);
+  }
+  show(projectId, tagName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/protected_tags/${tagName}`,
+      options
+    );
+  }
+  remove(projectId, tagName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/protected_tags/${tagName}`,
+      options
+    );
+  }
+  // Convenience method - remove
+  unprotect(projectId, tagName, options) {
+    return this.remove(projectId, tagName, options);
+  }
+};
+var ReleaseLinks = class extends requesterUtils.BaseResource {
+  all(projectId, tagName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}/assets/links`,
+      options
+    );
+  }
+  create(projectId, tagName, name, url12, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}/assets/links`,
+      {
+        name,
+        url: url12,
+        ...options
+      }
+    );
+  }
+  edit(projectId, tagName, linkId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}/assets/links/${linkId}`,
+      options
+    );
+  }
+  remove(projectId, tagName, linkId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}/assets/links/${linkId}`,
+      options
+    );
+  }
+  show(projectId, tagName, linkId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/releases/${tagName}/assets/links/${linkId}`,
+      options
+    );
+  }
+};
+var Repositories = class extends requesterUtils.BaseResource {
+  allContributors(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/contributors`,
+      options
+    );
+  }
+  allRepositoryTrees(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/tree`,
+      options
+    );
+  }
+  compare(projectId, from, to, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/compare`,
+      {
+        from,
+        to,
+        ...options
+      }
+    );
+  }
+  editChangelog(projectId, version, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/repository/changelog`,
+      { ...options, version }
+    );
+  }
+  mergeBase(projectId, refs, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/merge_base`,
+      {
+        ...options,
+        refs
+      }
+    );
+  }
+  showArchive(projectId, {
+    fileType = "tar.gz",
+    ...options
+  } = {}) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/archive.${fileType}`,
+      options
+    );
+  }
+  showBlob(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/blobs/${sha}`,
+      options
+    );
+  }
+  showBlobRaw(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/blobs/${sha}/raw`,
+      options
+    );
+  }
+  showChangelog(projectId, version, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/changelog`,
+      { ...options, version }
+    );
+  }
+};
+var RepositoryFiles = class extends requesterUtils.BaseResource {
+  allFileBlames(projectId, filePath, ref, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/files/${filePath}/blame`,
+      {
+        ref,
+        ...options
+      }
+    );
+  }
+  create(projectId, filePath, branch, content, commitMessage, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/repository/files/${filePath}`,
+      {
+        branch,
+        content,
+        commitMessage,
+        ...options
+      }
+    );
+  }
+  edit(projectId, filePath, branch, content, commitMessage, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/repository/files/${filePath}`,
+      {
+        branch,
+        content,
+        commitMessage,
+        ...options
+      }
+    );
+  }
+  remove(projectId, filePath, branch, commitMessage, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/repository/files/${filePath}`, {
+      branch,
+      commitMessage,
+      ...options
+    });
+  }
+  show(projectId, filePath, ref, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/files/${filePath}`,
+      {
+        ref,
+        ...options
+      }
+    );
+  }
+  showRaw(projectId, filePath, ref, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/files/${filePath}/raw`,
+      {
+        ref,
+        ...options
+      }
+    );
+  }
+};
+var RepositorySubmodules = class extends requesterUtils.BaseResource {
+  edit(projectId, submodule, branch, commitSha, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/repository/submodules/${submodule}`,
+      {
+        branch,
+        commitSha,
+        ...options
+      }
+    );
+  }
+};
+var ResourceGroups = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/resource_groups`,
+      options
+    );
+  }
+  edit(projectId, key, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`projects/${projectId}/resource_groups/${key}`,
+      options
+    );
+  }
+  show(projectId, key, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/resource_groups/${key}`,
+      options
+    );
+  }
+  allUpcomingJobs(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/resource_groups/upcoming_jobs`,
+      options
+    );
+  }
+};
+var Runners = class extends requesterUtils.BaseResource {
+  all({
+    projectId,
+    groupId,
+    owned,
+    ...options
+  } = {}) {
+    let url12;
+    if (projectId)
+      url12 = endpoint`projects/${projectId}/runners`;
+    else if (groupId)
+      url12 = endpoint`groups/${groupId}/runners`;
+    else if (owned)
+      url12 = "runners";
+    else
+      url12 = "runners/all";
+    return RequestHelper.get()(this, url12, options);
+  }
+  allJobs(runnerId, options) {
+    return RequestHelper.get()(this, `runners/${runnerId}/jobs`, options);
+  }
+  // https://docs.gitlab.com/15.9/ee/api/runners.html#register-a-new-runner
+  create(token, options) {
+    return RequestHelper.post()(this, `runners`, {
+      token,
+      ...options
+    });
+  }
+  edit(runnerId, options) {
+    return RequestHelper.put()(this, `runners/${runnerId}`, options);
+  }
+  enable(projectId, runnerId, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/runners`, {
+      runnerId,
+      ...options
+    });
+  }
+  disable(projectId, runnerId, options) {
+    return RequestHelper.del()(this, endpoint`projects/${projectId}/runners/${runnerId}`, options);
+  }
+  // Create - Convenience method
+  register(token, options) {
+    return this.create(token, options);
+  }
+  remove({
+    runnerId,
+    token,
+    ...options
+  }) {
+    let url12;
+    if (runnerId)
+      url12 = `runners/${runnerId}`;
+    else if (token) {
+      url12 = "runners";
+    } else
+      throw new Error(
+        "Missing required argument. Please supply a runnerId or a token in the options parameter"
+      );
+    return RequestHelper.del()(this, url12, {
+      token,
+      ...options
+    });
+  }
+  resetRegistrationToken({
+    runnerId,
+    token,
+    ...options
+  } = {}) {
+    let url12;
+    if (runnerId)
+      url12 = endpoint`runners/${runnerId}/reset_registration_token`;
+    else if (token)
+      url12 = "runners/reset_registration_token";
+    else {
+      throw new Error("Missing either runnerId or token parameters");
+    }
+    return RequestHelper.post()(this, url12, {
+      token,
+      ...options
+    });
+  }
+  show(runnerId, options) {
+    return RequestHelper.get()(this, `runners/${runnerId}`, options);
+  }
+  verify(options) {
+    return RequestHelper.post()(this, `runners/verify`, options);
+  }
+};
+var SecureFiles = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/secure_files`,
+      options
+    );
+  }
+  create(projectId, name, file, options) {
+    return RequestHelper.post()(this, `projects/${projectId}/secure_files`, {
+      isForm: true,
+      ...options,
+      file: [file.content, file.filename],
+      name
+    });
+  }
+  download(projectId, secureFileId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/secure_files/${secureFileId}/download`,
+      options
+    );
+  }
+  remove(projectId, secureFileId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/secure_files/${secureFileId}`,
+      options
+    );
+  }
+  show(projectId, secureFileId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/secure_files/${secureFileId}`,
+      options
+    );
+  }
+};
+var Tags = class extends requesterUtils.BaseResource {
+  all(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/tags`,
+      options
+    );
+  }
+  create(projectId, tagName, ref, options) {
+    return RequestHelper.post()(this, endpoint`projects/${projectId}/repository/tags`, {
+      searchParams: {
+        tagName,
+        ref
+      },
+      ...options
+    });
+  }
+  remove(projectId, tagName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/repository/tags/${tagName}`,
+      options
+    );
+  }
+  show(projectId, tagName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/tags/${tagName}`,
+      options
+    );
+  }
+  showSignature(projectId, tagName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/tags/${tagName}/signature`,
+      options
+    );
+  }
+};
+var UserStarredMetricsDashboard = class extends requesterUtils.BaseResource {
+  create(projectId, dashboardPath, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/metrics/user_starred_dashboards`,
+      {
+        dashboardPath,
+        ...options
+      }
+    );
+  }
+  remove(projectId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/metrics/user_starred_dashboards`,
+      options
+    );
+  }
+};
+
+// src/resources/EpicAwardEmojis.ts
+var EpicAwardEmojis = class extends ResourceAwardEmojis {
+  constructor(options) {
+    super("epics", "issues", options);
+  }
+};
+
+// src/resources/EpicDiscussions.ts
+var EpicDiscussions = class extends ResourceDiscussions {
+  constructor(options) {
+    super("groups", "epics", options);
+  }
+};
+var EpicIssues = class extends requesterUtils.BaseResource {
+  all(groupId, epicIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/issues`,
+      options
+    );
+  }
+  assign(groupId, epicIId, epicIssueId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/issues/${epicIssueId}`,
+      options
+    );
+  }
+  edit(groupId, epicIId, epicIssueId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/issues/${epicIssueId}`,
+      options
+    );
+  }
+  remove(groupId, epicIId, epicIssueId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/issues/${epicIssueId}`,
+      options
+    );
+  }
+};
+
+// src/resources/EpicLabelEvents.ts
+var EpicLabelEvents = class extends ResourceLabelEvents {
+  constructor(options) {
+    super("groups", "epic", options);
+  }
+};
+var EpicLinks = class extends requesterUtils.BaseResource {
+  all(groupId, epicIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/links`,
+      options
+    );
+  }
+  assign(groupId, epicIId, childEpicId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/links/${childEpicId}`,
+      options
+    );
+  }
+  create(groupId, epicIId, title, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/links`,
+      {
+        searchParams: {
+          title
+        },
+        ...options
+      }
+    );
+  }
+  reorder(groupId, epicIId, childEpicId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/links/${childEpicId}`,
+      options
+    );
+  }
+  unassign(groupId, epicIId, childEpicId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/links/${childEpicId}`,
+      options
+    );
+  }
+};
+
+// src/resources/EpicNotes.ts
+var EpicNotes = class extends ResourceNotes {
+  constructor(options) {
+    super("groups", "epics", options);
+  }
+};
+var Epics = class extends requesterUtils.BaseResource {
+  all(groupId, options) {
+    return RequestHelper.get()(this, endpoint`groups/${groupId}/epics`, options);
+  }
+  create(groupId, title, options) {
+    return RequestHelper.post()(this, endpoint`groups/${groupId}/epics`, {
+      title,
+      ...options
+    });
+  }
+  createTodo(groupId, epicIId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/todos`,
+      options
+    );
+  }
+  edit(groupId, epicIId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}`,
+      options
+    );
+  }
+  remove(groupId, epicIId, options) {
+    return RequestHelper.del()(this, endpoint`groups/${groupId}/epics/${epicIId}`, options);
+  }
+  show(groupId, epicIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}`,
+      options
+    );
+  }
+};
+
+// src/resources/GroupAccessRequests.ts
+var GroupAccessRequests = class extends ResourceAccessRequests {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupAccessTokens.ts
+var GroupAccessTokens = class extends ResourceAccessTokens {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var GroupActivityAnalytics = class extends requesterUtils.BaseResource {
+  showIssuesCount(groupPath, options) {
+    return RequestHelper.get()(
+      this,
+      "analytics/group_activity/issues_count",
+      {
+        searchParams: {
+          groupPath
+        },
+        ...options
+      }
+    );
+  }
+  showMergeRequestsCount(groupPath, options) {
+    return RequestHelper.get()(
+      this,
+      "analytics/group_activity/merge_requests_count",
+      {
+        searchParams: {
+          groupPath
+        },
+        ...options
+      }
+    );
+  }
+  showNewMembersCount(groupPath, options) {
+    return RequestHelper.get()(
+      this,
+      "analytics/group_activity/new_members_count",
+      {
+        searchParams: {
+          groupPath
+        },
+        ...options
+      }
+    );
+  }
+};
+
+// src/resources/GroupBadges.ts
+var GroupBadges = class extends ResourceBadges {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupCustomAttributes.ts
+var GroupCustomAttributes = class extends ResourceCustomAttributes {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupDORA4Metrics.ts
+var GroupDORA4Metrics = class extends ResourceDORA4Metrics {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var GroupEpicBoards = class extends requesterUtils.BaseResource {
+  all(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epic_boards`,
+      options
+    );
+  }
+  allLists(groupId, boardId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epic_boards/${boardId}/lists`,
+      options
+    );
+  }
+  show(groupId, boardId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epic_boards/${boardId}`,
+      options
+    );
+  }
+  showList(groupId, boardId, listId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epic_boards/${boardId}/lists/${listId}`,
+      options
+    );
+  }
+};
+
+// src/resources/GroupHooks.ts
+var GroupHooks = class extends ResourceHooks {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var GroupImportExports = class extends requesterUtils.BaseResource {
+  download(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/export/download`,
+      options
+    );
+  }
+  import(file, path, { parentId, name, ...options }) {
+    return RequestHelper.post()(this, "groups/import", {
+      isForm: true,
+      ...options,
+      file: [file.content, file.filename],
+      path,
+      name: name || path.split("/").at(0),
+      parentId
+    });
+  }
+  scheduleExport(groupId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/export`,
+      options
+    );
+  }
+};
+
+// src/resources/GroupInvitations.ts
+var GroupInvitations = class extends ResourceInvitations {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupIssueBoards.ts
+var GroupIssueBoards = class extends ResourceIssueBoards {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupIterations.ts
+var GroupIterations = class extends ResourceIterations {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var GroupLDAPLinks = class extends requesterUtils.BaseResource {
+  add(groupId, groupAccess, provider, options) {
+    return RequestHelper.post()(this, endpoint`groups/${groupId}/ldap_group_links`, {
+      groupAccess,
+      provider,
+      ...options
+    });
+  }
+  all(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/ldap_group_links`,
+      options
+    );
+  }
+  remove(groupId, provider, options) {
+    return RequestHelper.del()(this, endpoint`groups/${groupId}/ldap_group_links`, {
+      provider,
+      ...options
+    });
+  }
+  sync(groupId, options) {
+    return RequestHelper.post()(this, endpoint`groups/${groupId}/ldap_sync`, options);
+  }
+};
+
+// src/resources/GroupLabels.ts
+var GroupLabels = class extends ResourceLabels {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var GroupMemberRoles = class extends requesterUtils.BaseResource {
+  add(groupId, baseAccessLevel, options) {
+    return RequestHelper.post()(this, endpoint`groups/${groupId}/members`, {
+      baseAccessLevel,
+      ...options
+    });
+  }
+  all(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/member_roles`,
+      options
+    );
+  }
+  remove(groupId, memberRoleId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`groups/${groupId}/member_roles/${memberRoleId}`,
+      options
+    );
+  }
+};
+
+// src/resources/GroupMembers.ts
+var GroupMembers = class extends ResourceMembers {
+  constructor(options) {
+    super("groups", options);
+  }
+  allBillable(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${groupId}/billable_members`,
+      options
+    );
+  }
+  allPending(groupId, options) {
+    return RequestHelper.get()(this, endpoint`${groupId}/pending_members`, options);
+  }
+  allBillableMemberships(groupId, userId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${groupId}/billable_members/${userId}/memberships`,
+      options
+    );
+  }
+  approve(groupId, userId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${groupId}/members/${userId}/approve`,
+      options
+    );
+  }
+  approveAll(groupId, options) {
+    return RequestHelper.put()(
+      this,
+      endpoint`${groupId}/members/approve_all`,
+      options
+    );
+  }
+  removeBillable(groupId, userId, options) {
+    return RequestHelper.del()(this, endpoint`${groupId}/billable_members/${userId}`, options);
+  }
+  removeOverrideFlag(groupId, userId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${groupId}/members/${userId}/override`,
+      options
+    );
+  }
+  setOverrideFlag(groupId, userId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${groupId}/members/${userId}/override`,
+      options
+    );
+  }
+};
+
+// src/resources/GroupMilestones.ts
+var GroupMilestones = class extends ResourceMilestones {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupProtectedEnvironments.ts
+var GroupProtectedEnvironments = class extends ResourceProtectedEnvironments {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupPushRules.ts
+var GroupPushRules = class extends ResourcePushRules {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var GroupRelationExports = class extends requesterUtils.BaseResource {
+  download(groupId, relation, options) {
+    return RequestHelper.get()(this, endpoint`groups/${groupId}/export_relations/download`, {
+      searchParams: { relation },
+      ...options
+    });
+  }
+  exportStatus(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/export_relations`,
+      options
+    );
+  }
+  scheduleExport(groupId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/export_relations`,
+      options
+    );
+  }
+};
+var GroupReleases = class extends requesterUtils.BaseResource {
+  all(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/releases`,
+      options
+    );
+  }
+};
+
+// src/resources/GroupRepositoryStorageMoves.ts
+var GroupRepositoryStorageMoves = class extends ResourceRepositoryStorageMoves {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var GroupSAMLIdentities = class extends requesterUtils.BaseResource {
+  all(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/saml/identities`,
+      options
+    );
+  }
+  edit(groupId, identityId, options) {
+    return RequestHelper.patch()(
+      this,
+      endpoint`groups/${groupId}/saml/${identityId}`,
+      options
+    );
+  }
+};
+var GroupSAMLLinks = class extends requesterUtils.BaseResource {
+  all(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/saml_group_links`,
+      options
+    );
+  }
+  create(groupId, samlGroupName, accessLevel, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/saml_group_links`,
+      {
+        accessLevel,
+        samlGroupName,
+        ...options
+      }
+    );
+  }
+  remove(groupId, samlGroupName, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`groups/${groupId}/saml_group_links/${samlGroupName}`,
+      options
+    );
+  }
+  show(groupId, samlGroupName, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/saml_group_links/${samlGroupName}`,
+      options
+    );
+  }
+};
+var GroupSCIMIdentities = class extends requesterUtils.BaseResource {
+  all(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/scim/identities`,
+      options
+    );
+  }
+  edit(groupId, identityId, options) {
+    return RequestHelper.patch()(
+      this,
+      endpoint`groups/${groupId}/scim/${identityId}`,
+      options
+    );
+  }
+};
+var GroupServiceAccounts = class extends requesterUtils.BaseResource {
+  create(groupId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/service_accounts`,
+      options
+    );
+  }
+  addPersonalAccessToken(groupId, serviceAccountId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/service_accounts/${serviceAccountId}`,
+      options
+    );
+  }
+  rotatePersonalAccessToken(groupId, serviceAccountId, tokenId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/service_accounts/${serviceAccountId}/personal_access_tokens/${tokenId}/rotate`,
+      options
+    );
+  }
+};
+
+// src/resources/GroupVariables.ts
+var GroupVariables = class extends ResourceVariables {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupWikis.ts
+var GroupWikis = class extends ResourceWikis {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+var Groups = class extends requesterUtils.BaseResource {
+  all(options) {
+    return RequestHelper.get()(this, "groups", options);
+  }
+  allDescendantGroups(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/descendant_groups`,
+      options
+    );
+  }
+  allProjects(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/projects`,
+      options
+    );
+  }
+  allSharedProjects(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/projects/shared`,
+      options
+    );
+  }
+  allSubgroups(groupId, options) {
+    return RequestHelper.get()(this, endpoint`groups/${groupId}/subgroups`, options);
+  }
+  allProvisionedUsers(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/provisioned_users`,
+      options
+    );
+  }
+  allTransferLocations(groupId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/transfer_locations`,
+      options
+    );
+  }
+  create(name, path, { avatar, ...options } = {}) {
+    if (avatar) {
+      return RequestHelper.post()(this, "groups", {
+        ...options,
+        isForm: true,
+        avatar: [avatar.content, avatar.filename],
+        name,
+        path
+      });
+    }
+    return RequestHelper.post()(this, "groups", { name, path, ...options });
+  }
+  downloadAvatar(groupId, options) {
+    return RequestHelper.get()(this, endpoint`groups/${groupId}/avatar`, options);
+  }
+  edit(groupId, { avatar, ...options } = {}) {
+    if (avatar) {
+      return RequestHelper.post()(this, endpoint`groups/${groupId}`, {
+        ...options,
+        isForm: true,
+        avatar: [avatar.content, avatar.filename]
+      });
+    }
+    return RequestHelper.put()(this, endpoint`groups/${groupId}`, options);
+  }
+  remove(groupId, options) {
+    return RequestHelper.del()(this, endpoint`groups/${groupId}`, options);
+  }
+  removeAvatar(groupId, options) {
+    return RequestHelper.put()(this, endpoint`groups/${groupId}`, {
+      ...options,
+      avatar: ""
+    });
+  }
+  restore(groupId, options) {
+    return RequestHelper.post()(this, endpoint`groups/${groupId}/restore`, options);
+  }
+  search(nameOrPath, options) {
+    return RequestHelper.get()(this, "groups", {
+      search: nameOrPath,
+      ...options
+    });
+  }
+  share(groupId, sharedGroupId, groupAccess, options) {
+    return RequestHelper.post()(this, endpoint`groups/${groupId}/share`, {
+      groupId: sharedGroupId,
+      groupAccess,
+      ...options
+    });
+  }
+  show(groupId, options) {
+    return RequestHelper.get()(this, endpoint`groups/${groupId}`, options);
+  }
+  transfer(groupId, options) {
+    return RequestHelper.post()(this, endpoint`groups/${groupId}/transfer`, options);
+  }
+  transferProject(groupId, projectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/projects/${projectId}`,
+      options
+    );
+  }
+  unshare(groupId, sharedGroupId, options) {
+    return RequestHelper.del()(this, endpoint`groups/${groupId}/share/${sharedGroupId}`, options);
+  }
+  uploadAvatar(groupId, content, { filename, ...options } = {}) {
+    return RequestHelper.put()(this, endpoint`groups/${groupId}/avatar`, {
+      isForm: true,
+      ...options,
+      file: [content, filename]
+    });
+  }
+};
+var LinkedEpics = class extends requesterUtils.BaseResource {
+  all(groupId, epicIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/related_epics`,
+      options
+    );
+  }
+  create(groupId, epicIId, targetEpicIId, targetGroupId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/related_epics`,
+      {
+        searchParams: {
+          targetGroupId,
+          targetEpicIid: targetEpicIId
+        },
+        ...options
+      }
+    );
+  }
+  remove(groupId, epicIId, relatedEpicLinkId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`groups/${groupId}/epics/${epicIId}/related_epics/${relatedEpicLinkId}`,
+      options
+    );
+  }
+};
+
+// src/resources/UserCustomAttributes.ts
+var UserCustomAttributes = class extends ResourceCustomAttributes {
+  constructor(options) {
+    super("users", options);
+  }
+};
+var url9 = (userId) => userId ? `users/${userId}/emails` : "user/emails";
+var UserEmails = class extends requesterUtils.BaseResource {
+  // Convenience method for create
+  add(email, options) {
+    return this.create(email, options);
+  }
+  all({
+    userId,
+    ...options
+  } = {}) {
+    return RequestHelper.get()(
+      this,
+      url9(userId),
+      options
+    );
+  }
+  create(email, {
+    userId,
+    ...options
+  } = {}) {
+    return RequestHelper.post()(this, url9(userId), {
+      email,
+      ...options
+    });
+  }
+  show(emailId, options) {
+    return RequestHelper.get()(this, `user/emails/${emailId}`, options);
+  }
+  remove(emailId, { userId, ...options } = {}) {
+    return RequestHelper.del()(
+      this,
+      `${url9(userId)}/${emailId}`,
+      options
+    );
+  }
+};
+var url10 = (userId) => userId ? `users/${userId}/gpg_keys` : "user/gpg_keys";
+var UserGPGKeys = class extends requesterUtils.BaseResource {
+  // Convienence method
+  add(key, options) {
+    return this.create(key, options);
+  }
+  all({
+    userId,
+    ...options
+  } = {}) {
+    return RequestHelper.get()(this, url10(userId), options);
+  }
+  create(key, { userId, ...options } = {}) {
+    return RequestHelper.post()(this, url10(userId), {
+      key,
+      ...options
+    });
+  }
+  show(keyId, { userId, ...options } = {}) {
+    return RequestHelper.get()(this, `${url10(userId)}/${keyId}`, options);
+  }
+  remove(keyId, { userId, ...options } = {}) {
+    return RequestHelper.del()(this, `${url10(userId)}/${keyId}`, options);
+  }
+};
+var UserImpersonationTokens = class extends requesterUtils.BaseResource {
+  all(userId, options) {
+    return RequestHelper.get()(
+      this,
+      `users/${userId}/impersonation_tokens`,
+      options
+    );
+  }
+  create(userId, name, scopes, options) {
+    return RequestHelper.post()(
+      this,
+      `users/${userId}/impersonation_tokens`,
+      {
+        name,
+        scopes,
+        ...options
+      }
+    );
+  }
+  show(userId, tokenId, options) {
+    return RequestHelper.get()(
+      this,
+      `users/${userId}/impersonation_tokens/${tokenId}`,
+      options
+    );
+  }
+  remove(userId, tokenId, options) {
+    return RequestHelper.del()(this, `users/${userId}/impersonation_tokens/${tokenId}`, options);
+  }
+  // Convienence method
+  revoke(userId, tokenId, options) {
+    return this.remove(userId, tokenId, options);
+  }
+};
+var url11 = (userId) => userId ? `users/${userId}/keys` : "user/keys";
+var UserSSHKeys = class extends requesterUtils.BaseResource {
+  // Convienence method for create
+  add(title, key, options) {
+    return this.create(title, key, options);
+  }
+  all({
+    userId,
+    ...options
+  } = {}) {
+    return RequestHelper.get()(
+      this,
+      url11(userId),
+      options
+    );
+  }
+  create(title, key, {
+    userId,
+    ...options
+  } = {}) {
+    return RequestHelper.post()(this, url11(userId), {
+      title,
+      key,
+      ...options
+    });
+  }
+  show(keyId, { userId, ...options } = {}) {
+    return RequestHelper.get()(
+      this,
+      `${url11(userId)}/${keyId}`,
+      options
+    );
+  }
+  remove(keyId, { userId, ...options } = {}) {
+    return RequestHelper.del()(this, `${url11(userId)}/${keyId}`, options);
+  }
+};
+var Users = class extends requesterUtils.BaseResource {
+  activate(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/activate`, options);
+  }
+  all(options) {
+    return RequestHelper.get()(this, "users", options);
+  }
+  allActivities(options) {
+    return RequestHelper.get()(this, "user/activities", options);
+  }
+  allEvents(userId, options) {
+    return RequestHelper.get()(this, endpoint`users/${userId}/events`, options);
+  }
+  allFollowers(userId, options) {
+    return RequestHelper.get()(this, endpoint`users/${userId}/followers`, options);
+  }
+  allFollowing(userId, options) {
+    return RequestHelper.get()(this, endpoint`users/${userId}/following`, options);
+  }
+  allMemberships(userId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`users/${userId}/memberships`,
+      options
+    );
+  }
+  allProjects(userId, options) {
+    return RequestHelper.get()(this, endpoint`users/${userId}/projects`, options);
+  }
+  allContributedProjects(userId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`users/${userId}/contributed_projects`,
+      options
+    );
+  }
+  allStarredProjects(userId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`users/${userId}/starred_projects`,
+      options
+    );
+  }
+  approve(userId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`users/${userId}/approve`,
+      options
+    );
+  }
+  ban(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/ban`, options);
+  }
+  block(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/block`, options);
+  }
+  create(options) {
+    return RequestHelper.post()(this, "users", options);
+  }
+  createPersonalAccessToken(userId, name, scopes, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`users/${userId}/personal_access_tokens`,
+      {
+        name,
+        scopes,
+        ...options
+      }
+    );
+  }
+  createCIRunner(runnerType, options) {
+    return RequestHelper.post()(this, "user/runners", {
+      ...options,
+      runnerType
+    });
+  }
+  deactivate(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/deactivate`, options);
+  }
+  disableTwoFactor(userId, options) {
+    return RequestHelper.patch()(this, endpoint`users/${userId}/disable_two_factor`, options);
+  }
+  edit(userId, options) {
+    return RequestHelper.put()(this, endpoint`users/${userId}`, options);
+  }
+  editStatus(options) {
+    return RequestHelper.put()(this, "user/status", options);
+  }
+  editCurrentUserPreferences(viewDiffsFileByFile, showWhitespaceInDiffs, options) {
+    return RequestHelper.put()(this, "user/preferences", {
+      viewDiffsFileByFile,
+      showWhitespaceInDiffs,
+      ...options
+    });
+  }
+  follow(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/follow`, options);
+  }
+  reject(userId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`users/${userId}/reject`,
+      options
+    );
+  }
+  show(userId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`users/${userId}`,
+      options
+    );
+  }
+  showCount(options) {
+    return RequestHelper.get()(this, "user_counts", options);
+  }
+  showAssociationsCount(userId, options) {
+    return RequestHelper.get()(
+      this,
+      `users/${userId}/associations_count`,
+      options
+    );
+  }
+  showCurrentUser(options) {
+    return RequestHelper.get()(this, "user", options);
+  }
+  showCurrentUserPreferences(options) {
+    return RequestHelper.get()(this, "user/preferences", options);
+  }
+  showStatus({
+    iDOrUsername,
+    ...options
+  } = {}) {
+    let url12;
+    if (iDOrUsername)
+      url12 = `users/${iDOrUsername}/status`;
+    else
+      url12 = "user/status";
+    return RequestHelper.get()(this, url12, options);
+  }
+  remove(userId, options) {
+    return RequestHelper.del()(this, endpoint`users/${userId}`, options);
+  }
+  removeAuthenticationIdentity(userId, provider, options) {
+    return RequestHelper.del()(this, endpoint`users/${userId}/identities/${provider}`, options);
+  }
+  unban(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/unban`, options);
+  }
+  unblock(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/unblock`, options);
+  }
+  unfollow(userId, options) {
+    return RequestHelper.post()(this, endpoint`users/${userId}/unfollow`, options);
+  }
+};
+var resources = {
+  Agents,
+  AlertManagement,
+  ApplicationAppearance,
+  ApplicationPlanLimits,
+  Applications,
+  ApplicationSettings,
+  ApplicationStatistics,
+  AuditEvents,
+  Avatar,
+  BroadcastMessages,
+  CodeSuggestions,
+  Composer,
+  Conan,
+  DashboardAnnotations,
+  Debian,
+  DependencyProxy,
+  DeployKeys,
+  DeployTokens,
+  DockerfileTemplates,
+  Events,
+  Experiments,
+  GeoNodes,
+  GeoSites,
+  GitignoreTemplates,
+  GitLabCIYMLTemplates,
+  Import,
+  InstanceLevelCICDVariables,
+  Keys,
+  License,
+  LicenseTemplates,
+  Lint,
+  Markdown,
+  Maven,
+  Metadata,
+  Migrations,
+  Namespaces,
+  NotificationSettings,
+  NPM,
+  NuGet,
+  PersonalAccessTokens,
+  PyPI,
+  RubyGems,
+  Search,
+  SearchAdmin,
+  ServiceAccounts,
+  ServiceData,
+  SidekiqMetrics,
+  SidekiqQueues,
+  SnippetRepositoryStorageMoves,
+  Snippets,
+  Suggestions,
+  SystemHooks,
+  TodoLists,
+  Topics,
+  Branches,
+  CommitDiscussions,
+  Commits,
+  ContainerRegistry,
+  Deployments,
+  Environments,
+  ErrorTrackingClientKeys,
+  ErrorTrackingSettings,
+  ExternalStatusChecks,
+  FeatureFlags,
+  FeatureFlagUserLists,
+  FreezePeriods,
+  GitlabPages,
+  GoProxy,
+  Helm,
+  Integrations,
+  IssueAwardEmojis,
+  IssueDiscussions,
+  IssueIterationEvents,
+  IssueLabelEvents,
+  IssueLinks,
+  IssueMilestoneEvents,
+  IssueNoteAwardEmojis,
+  IssueNotes,
+  Issues,
+  IssuesStatistics,
+  IssueStateEvents,
+  IssueWeightEvents,
+  JobArtifacts,
+  Jobs,
+  MergeRequestApprovals,
+  MergeRequestAwardEmojis,
+  MergeRequestContextCommits,
+  MergeRequestDiscussions,
+  MergeRequestLabelEvents,
+  MergeRequestMilestoneEvents,
+  MergeRequestDraftNotes,
+  MergeRequestNotes,
+  MergeRequestNoteAwardEmojis,
+  MergeRequests,
+  MergeTrains,
+  PackageRegistry,
+  Packages,
+  PagesDomains,
+  Pipelines,
+  PipelineSchedules,
+  PipelineScheduleVariables,
+  PipelineTriggerTokens,
+  ProductAnalytics,
+  ProjectAccessRequests,
+  ProjectAccessTokens,
+  ProjectAliases,
+  ProjectBadges,
+  ProjectCustomAttributes,
+  ProjectDORA4Metrics,
+  ProjectHooks,
+  ProjectImportExports,
+  ProjectInvitations,
+  ProjectIssueBoards,
+  ProjectIterations,
+  ProjectLabels,
+  ProjectMembers,
+  ProjectMilestones,
+  ProjectProtectedEnvironments,
+  ProjectPushRules,
+  ProjectRelationsExport,
+  ProjectReleases,
+  ProjectRemoteMirrors,
+  ProjectRepositoryStorageMoves,
+  Projects,
+  ProjectSnippetAwardEmojis,
+  ProjectSnippetDiscussions,
+  ProjectSnippetNotes,
+  ProjectSnippets,
+  ProjectStatistics,
+  ProjectTemplates,
+  ProjectVariables,
+  ProjectVulnerabilities,
+  ProjectWikis,
+  ProtectedBranches,
+  ProtectedTags,
+  ReleaseLinks,
+  Repositories,
+  RepositoryFiles,
+  RepositorySubmodules,
+  ResourceGroups,
+  Runners,
+  SecureFiles,
+  Tags,
+  UserStarredMetricsDashboard,
+  EpicAwardEmojis,
+  EpicDiscussions,
+  EpicIssues,
+  EpicLabelEvents,
+  EpicLinks,
+  EpicNotes,
+  Epics,
+  GroupAccessRequests,
+  GroupAccessTokens,
+  GroupActivityAnalytics,
+  GroupBadges,
+  GroupCustomAttributes,
+  GroupDORA4Metrics,
+  GroupEpicBoards,
+  GroupHooks,
+  GroupImportExports,
+  GroupInvitations,
+  GroupIssueBoards,
+  GroupIterations,
+  GroupLabels,
+  GroupLDAPLinks,
+  GroupMembers,
+  GroupMemberRoles,
+  GroupMilestones,
+  GroupProtectedEnvironments,
+  GroupPushRules,
+  GroupRelationExports,
+  GroupReleases,
+  GroupRepositoryStorageMoves,
+  Groups,
+  GroupSAMLIdentities,
+  GroupSAMLLinks,
+  GroupSCIMIdentities,
+  GroupServiceAccounts,
+  GroupVariables,
+  GroupWikis,
+  LinkedEpics,
+  UserCustomAttributes,
+  UserEmails,
+  UserGPGKeys,
+  UserImpersonationTokens,
+  Users,
+  UserSSHKeys
+};
+var Gitlab = class extends requesterUtils.BaseResource {
+  constructor(options) {
+    super(options);
+    Object.keys(resources).forEach((s) => {
+      this[s] = new resources[s](options);
+    });
+  }
+};
+
+// src/constants.ts
+var AccessLevel = /* @__PURE__ */ ((AccessLevel2) => {
+  AccessLevel2[AccessLevel2["NO_ACCESS"] = 0] = "NO_ACCESS";
+  AccessLevel2[AccessLevel2["MINIMAL_ACCESS"] = 5] = "MINIMAL_ACCESS";
+  AccessLevel2[AccessLevel2["GUEST"] = 10] = "GUEST";
+  AccessLevel2[AccessLevel2["REPORTER"] = 20] = "REPORTER";
+  AccessLevel2[AccessLevel2["DEVELOPER"] = 30] = "DEVELOPER";
+  AccessLevel2[AccessLevel2["MAINTAINER"] = 40] = "MAINTAINER";
+  AccessLevel2[AccessLevel2["OWNER"] = 50] = "OWNER";
+  AccessLevel2[AccessLevel2["ADMIN"] = 60] = "ADMIN";
+  return AccessLevel2;
+})(AccessLevel || {});
+
+exports.AccessLevel = AccessLevel;
+exports.Agents = Agents;
+exports.AlertManagement = AlertManagement;
+exports.ApplicationAppearance = ApplicationAppearance;
+exports.ApplicationPlanLimits = ApplicationPlanLimits;
+exports.ApplicationSettings = ApplicationSettings;
+exports.ApplicationStatistics = ApplicationStatistics;
+exports.Applications = Applications;
+exports.AuditEvents = AuditEvents;
+exports.Avatar = Avatar;
+exports.Branches = Branches;
+exports.BroadcastMessages = BroadcastMessages;
+exports.CodeSuggestions = CodeSuggestions;
+exports.CommitDiscussions = CommitDiscussions;
+exports.Commits = Commits;
+exports.Composer = Composer;
+exports.Conan = Conan;
+exports.ContainerRegistry = ContainerRegistry;
+exports.DashboardAnnotations = DashboardAnnotations;
+exports.Debian = Debian;
+exports.DependencyProxy = DependencyProxy;
+exports.DeployKeys = DeployKeys;
+exports.DeployTokens = DeployTokens;
+exports.Deployments = Deployments;
+exports.DockerfileTemplates = DockerfileTemplates;
+exports.Environments = Environments;
+exports.EpicAwardEmojis = EpicAwardEmojis;
+exports.EpicDiscussions = EpicDiscussions;
+exports.EpicIssues = EpicIssues;
+exports.EpicLabelEvents = EpicLabelEvents;
+exports.EpicLinks = EpicLinks;
+exports.EpicNotes = EpicNotes;
+exports.Epics = Epics;
+exports.ErrorTrackingClientKeys = ErrorTrackingClientKeys;
+exports.ErrorTrackingSettings = ErrorTrackingSettings;
+exports.Events = Events;
+exports.Experiments = Experiments;
+exports.ExternalStatusChecks = ExternalStatusChecks;
+exports.FeatureFlagUserLists = FeatureFlagUserLists;
+exports.FeatureFlags = FeatureFlags;
+exports.FreezePeriods = FreezePeriods;
+exports.GeoNodes = GeoNodes;
+exports.GeoSites = GeoSites;
+exports.GitLabCIYMLTemplates = GitLabCIYMLTemplates;
+exports.GitignoreTemplates = GitignoreTemplates;
+exports.Gitlab = Gitlab;
+exports.GitlabPages = GitlabPages;
+exports.GoProxy = GoProxy;
+exports.GroupAccessRequests = GroupAccessRequests;
+exports.GroupAccessTokens = GroupAccessTokens;
+exports.GroupActivityAnalytics = GroupActivityAnalytics;
+exports.GroupBadges = GroupBadges;
+exports.GroupCustomAttributes = GroupCustomAttributes;
+exports.GroupDORA4Metrics = GroupDORA4Metrics;
+exports.GroupEpicBoards = GroupEpicBoards;
+exports.GroupHooks = GroupHooks;
+exports.GroupImportExports = GroupImportExports;
+exports.GroupInvitations = GroupInvitations;
+exports.GroupIssueBoards = GroupIssueBoards;
+exports.GroupIterations = GroupIterations;
+exports.GroupLDAPLinks = GroupLDAPLinks;
+exports.GroupLabels = GroupLabels;
+exports.GroupMemberRoles = GroupMemberRoles;
+exports.GroupMembers = GroupMembers;
+exports.GroupMilestones = GroupMilestones;
+exports.GroupProtectedEnvironments = GroupProtectedEnvironments;
+exports.GroupPushRules = GroupPushRules;
+exports.GroupRelationExports = GroupRelationExports;
+exports.GroupReleases = GroupReleases;
+exports.GroupRepositoryStorageMoves = GroupRepositoryStorageMoves;
+exports.GroupSAMLIdentities = GroupSAMLIdentities;
+exports.GroupSAMLLinks = GroupSAMLLinks;
+exports.GroupSCIMIdentities = GroupSCIMIdentities;
+exports.GroupServiceAccounts = GroupServiceAccounts;
+exports.GroupVariables = GroupVariables;
+exports.GroupWikis = GroupWikis;
+exports.Groups = Groups;
+exports.Helm = Helm;
+exports.Import = Import;
+exports.InstanceLevelCICDVariables = InstanceLevelCICDVariables;
+exports.Integrations = Integrations;
+exports.IssueAwardEmojis = IssueAwardEmojis;
+exports.IssueDiscussions = IssueDiscussions;
+exports.IssueIterationEvents = IssueIterationEvents;
+exports.IssueLabelEvents = IssueLabelEvents;
+exports.IssueLinks = IssueLinks;
+exports.IssueMilestoneEvents = IssueMilestoneEvents;
+exports.IssueNoteAwardEmojis = IssueNoteAwardEmojis;
+exports.IssueNotes = IssueNotes;
+exports.IssueStateEvents = IssueStateEvents;
+exports.IssueWeightEvents = IssueWeightEvents;
+exports.Issues = Issues;
+exports.IssuesStatistics = IssuesStatistics;
+exports.JobArtifacts = JobArtifacts;
+exports.Jobs = Jobs;
+exports.Keys = Keys;
+exports.License = License;
+exports.LicenseTemplates = LicenseTemplates;
+exports.LinkedEpics = LinkedEpics;
+exports.Lint = Lint;
+exports.Markdown = Markdown;
+exports.Maven = Maven;
+exports.MergeRequestApprovals = MergeRequestApprovals;
+exports.MergeRequestAwardEmojis = MergeRequestAwardEmojis;
+exports.MergeRequestContextCommits = MergeRequestContextCommits;
+exports.MergeRequestDiscussions = MergeRequestDiscussions;
+exports.MergeRequestDraftNotes = MergeRequestDraftNotes;
+exports.MergeRequestLabelEvents = MergeRequestLabelEvents;
+exports.MergeRequestMilestoneEvents = MergeRequestMilestoneEvents;
+exports.MergeRequestNoteAwardEmojis = MergeRequestNoteAwardEmojis;
+exports.MergeRequestNotes = MergeRequestNotes;
+exports.MergeRequests = MergeRequests;
+exports.MergeTrains = MergeTrains;
+exports.Metadata = Metadata;
+exports.Migrations = Migrations;
+exports.NPM = NPM;
+exports.Namespaces = Namespaces;
+exports.NotificationSettings = NotificationSettings;
+exports.NuGet = NuGet;
+exports.PackageRegistry = PackageRegistry;
+exports.Packages = Packages;
+exports.PagesDomains = PagesDomains;
+exports.PersonalAccessTokens = PersonalAccessTokens;
+exports.PipelineScheduleVariables = PipelineScheduleVariables;
+exports.PipelineSchedules = PipelineSchedules;
+exports.PipelineTriggerTokens = PipelineTriggerTokens;
+exports.Pipelines = Pipelines;
+exports.ProductAnalytics = ProductAnalytics;
+exports.ProjectAccessRequests = ProjectAccessRequests;
+exports.ProjectAccessTokens = ProjectAccessTokens;
+exports.ProjectAliases = ProjectAliases;
+exports.ProjectBadges = ProjectBadges;
+exports.ProjectCustomAttributes = ProjectCustomAttributes;
+exports.ProjectDORA4Metrics = ProjectDORA4Metrics;
+exports.ProjectHooks = ProjectHooks;
+exports.ProjectImportExports = ProjectImportExports;
+exports.ProjectInvitations = ProjectInvitations;
+exports.ProjectIssueBoards = ProjectIssueBoards;
+exports.ProjectIterations = ProjectIterations;
+exports.ProjectLabels = ProjectLabels;
+exports.ProjectMembers = ProjectMembers;
+exports.ProjectMilestones = ProjectMilestones;
+exports.ProjectProtectedEnvironments = ProjectProtectedEnvironments;
+exports.ProjectPushRules = ProjectPushRules;
+exports.ProjectRelationsExport = ProjectRelationsExport;
+exports.ProjectReleases = ProjectReleases;
+exports.ProjectRemoteMirrors = ProjectRemoteMirrors;
+exports.ProjectRepositoryStorageMoves = ProjectRepositoryStorageMoves;
+exports.ProjectSnippetAwardEmojis = ProjectSnippetAwardEmojis;
+exports.ProjectSnippetDiscussions = ProjectSnippetDiscussions;
+exports.ProjectSnippetNotes = ProjectSnippetNotes;
+exports.ProjectSnippets = ProjectSnippets;
+exports.ProjectStatistics = ProjectStatistics;
+exports.ProjectTemplates = ProjectTemplates;
+exports.ProjectVariables = ProjectVariables;
+exports.ProjectVulnerabilities = ProjectVulnerabilities;
+exports.ProjectWikis = ProjectWikis;
+exports.Projects = Projects;
+exports.ProtectedBranches = ProtectedBranches;
+exports.ProtectedTags = ProtectedTags;
+exports.PyPI = PyPI;
+exports.ReleaseLinks = ReleaseLinks;
+exports.Repositories = Repositories;
+exports.RepositoryFiles = RepositoryFiles;
+exports.RepositorySubmodules = RepositorySubmodules;
+exports.ResourceGroups = ResourceGroups;
+exports.RubyGems = RubyGems;
+exports.Runners = Runners;
+exports.Search = Search;
+exports.SearchAdmin = SearchAdmin;
+exports.SecureFiles = SecureFiles;
+exports.ServiceAccounts = ServiceAccounts;
+exports.ServiceData = ServiceData;
+exports.SidekiqMetrics = SidekiqMetrics;
+exports.SidekiqQueues = SidekiqQueues;
+exports.SnippetRepositoryStorageMoves = SnippetRepositoryStorageMoves;
+exports.Snippets = Snippets;
+exports.Suggestions = Suggestions;
+exports.SystemHooks = SystemHooks;
+exports.Tags = Tags;
+exports.TodoLists = TodoLists;
+exports.Topics = Topics;
+exports.UserCustomAttributes = UserCustomAttributes;
+exports.UserEmails = UserEmails;
+exports.UserGPGKeys = UserGPGKeys;
+exports.UserImpersonationTokens = UserImpersonationTokens;
+exports.UserSSHKeys = UserSSHKeys;
+exports.UserStarredMetricsDashboard = UserStarredMetricsDashboard;
+exports.Users = Users;
+
+
+/***/ }),
+
+/***/ 77:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var qs = __nccwpck_require__(2760);
+var xcase = __nccwpck_require__(7020);
+var rateLimiterFlexible = __nccwpck_require__(1045);
+var Picomatch = __nccwpck_require__(4274);
+
+function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
+
+var Picomatch__default = /*#__PURE__*/_interopDefault(Picomatch);
+
+// src/RequesterUtils.ts
+var { isMatch: isGlobMatch } = Picomatch__default.default;
+function generateRateLimiterFn(limit, interval) {
+  const limiter = new rateLimiterFlexible.RateLimiterQueue(
+    new rateLimiterFlexible.RateLimiterMemory({ points: limit, duration: interval })
+  );
+  return () => limiter.removeTokens(1);
+}
+function formatQuery(params = {}) {
+  const decamelized = xcase.decamelizeKeys(params);
+  return qs.stringify(decamelized, { arrayFormat: "brackets" });
+}
+async function defaultOptionsHandler(resourceOptions, {
+  body,
+  searchParams,
+  sudo,
+  signal,
+  asStream = false,
+  method = "GET"
+} = {}) {
+  const { headers: preconfiguredHeaders, authHeaders, url } = resourceOptions;
+  const defaultOptions = {
+    method,
+    asStream,
+    signal,
+    prefixUrl: url
+  };
+  defaultOptions.headers = { ...preconfiguredHeaders };
+  if (sudo)
+    defaultOptions.headers.sudo = `${sudo}`;
+  if (body) {
+    if (body instanceof FormData) {
+      defaultOptions.body = body;
+    } else {
+      defaultOptions.body = JSON.stringify(xcase.decamelizeKeys(body));
+      defaultOptions.headers["content-type"] = "application/json";
+    }
+  }
+  const [authHeaderKey, authHeaderFn] = Object.entries(authHeaders)[0];
+  defaultOptions.headers[authHeaderKey] = await authHeaderFn();
+  const q = formatQuery(searchParams);
+  if (q)
+    defaultOptions.searchParams = q;
+  return Promise.resolve(defaultOptions);
+}
+function createRateLimiters(rateLimitOptions = {}) {
+  const rateLimiters = {};
+  Object.entries(rateLimitOptions).forEach(([key, config]) => {
+    if (typeof config === "number")
+      rateLimiters[key] = generateRateLimiterFn(config, 60);
+    else
+      rateLimiters[key] = {
+        method: config.method.toUpperCase(),
+        limit: generateRateLimiterFn(config.limit, 60)
+      };
+  });
+  return rateLimiters;
+}
+function createRequesterFn(optionsHandler, requestHandler) {
+  const methods = ["get", "post", "put", "patch", "delete"];
+  return (serviceOptions) => {
+    const requester = {};
+    const rateLimiters = createRateLimiters(serviceOptions.rateLimits);
+    methods.forEach((m) => {
+      requester[m] = async (endpoint, options) => {
+        const defaultRequestOptions = await defaultOptionsHandler(serviceOptions, {
+          ...options,
+          method: m.toUpperCase()
+        });
+        const requestOptions = await optionsHandler(serviceOptions, defaultRequestOptions);
+        return requestHandler(endpoint, { ...requestOptions, rateLimiters });
+      };
+    });
+    return requester;
+  };
+}
+function extendClass(Base, customConfig) {
+  return class extends Base {
+    constructor(...options) {
+      const [config, ...opts] = options;
+      super({ ...customConfig, ...config }, ...opts);
+    }
+  };
+}
+function presetResourceArguments(resources, customConfig = {}) {
+  const updated = {};
+  Object.entries(resources).filter(([, s]) => typeof s === "function").forEach(([k, r]) => {
+    updated[k] = extendClass(r, customConfig);
+  });
+  return updated;
+}
+function getMatchingRateLimiter(endpoint, rateLimiters = {}, method = "GET") {
+  const sortedEndpoints = Object.keys(rateLimiters).sort().reverse();
+  const match = sortedEndpoints.find((ep) => isGlobMatch(endpoint, ep));
+  const rateLimitConfig = match && rateLimiters[match];
+  if (typeof rateLimitConfig === "function")
+    return rateLimitConfig;
+  if (rateLimitConfig && rateLimitConfig?.method?.toUpperCase() === method.toUpperCase()) {
+    return rateLimitConfig.limit;
+  }
+  return generateRateLimiterFn(3e3, 60);
+}
+
+// src/BaseResource.ts
+function getDynamicToken(tokenArgument) {
+  return tokenArgument instanceof Function ? tokenArgument() : Promise.resolve(tokenArgument);
+}
+var DEFAULT_RATE_LIMITS = Object.freeze({
+  // Default rate limit
+  "**": 3e3,
+  // Import/Export
+  "projects/import": 6,
+  "projects/*/export": 6,
+  "projects/*/download": 1,
+  "groups/import": 6,
+  "groups/*/export": 6,
+  "groups/*/download": 1,
+  // Note creation
+  "projects/*/issues/*/notes": {
+    method: "post",
+    limit: 300
+  },
+  "projects/*/snippets/*/notes": {
+    method: "post",
+    limit: 300
+  },
+  "projects/*/merge_requests/*/notes": {
+    method: "post",
+    limit: 300
+  },
+  "groups/*/epics/*/notes": {
+    method: "post",
+    limit: 300
+  },
+  // Repositories - get file archive
+  "projects/*/repository/archive*": 5,
+  // Project Jobs
+  "projects/*/jobs": 600,
+  // Member deletion
+  "projects/*/members": 60,
+  "groups/*/members": 60
+});
+var BaseResource = class {
+  url;
+  requester;
+  queryTimeout;
+  headers;
+  authHeaders;
+  camelize;
+  rejectUnauthorized;
+  constructor({
+    sudo,
+    profileToken,
+    camelize,
+    requesterFn,
+    profileMode = "execution",
+    host = "https://gitlab.com",
+    prefixUrl = "",
+    rejectUnauthorized = true,
+    queryTimeout = 3e5,
+    rateLimits = DEFAULT_RATE_LIMITS,
+    ...tokens
+  }) {
+    if (!requesterFn)
+      throw new ReferenceError("requesterFn must be passed");
+    this.url = [host, "api", "v4", prefixUrl].join("/");
+    this.headers = {};
+    this.authHeaders = {};
+    this.rejectUnauthorized = rejectUnauthorized;
+    this.camelize = camelize;
+    this.queryTimeout = queryTimeout;
+    if ("oauthToken" in tokens)
+      this.authHeaders.authorization = async () => {
+        const token = await getDynamicToken(tokens.oauthToken);
+        return `Bearer ${token}`;
+      };
+    else if ("jobToken" in tokens)
+      this.authHeaders["job-token"] = async () => getDynamicToken(tokens.jobToken);
+    else if ("token" in tokens)
+      this.authHeaders["private-token"] = async () => getDynamicToken(tokens.token);
+    else {
+      throw new ReferenceError("A token, oauthToken or jobToken must be passed");
+    }
+    if (profileToken) {
+      this.headers["X-Profile-Token"] = profileToken;
+      this.headers["X-Profile-Mode"] = profileMode;
+    }
+    if (sudo)
+      this.headers.Sudo = `${sudo}`;
+    this.requester = requesterFn({ ...this, rateLimits });
+  }
+};
+
+// src/GitbeakerError.ts
+var GitbeakerRequestError = class extends Error {
+  cause;
+  constructor(message, options) {
+    super(message, options);
+    this.cause = options?.cause;
+    this.name = "GitbeakerRequestError";
+  }
+};
+var GitbeakerTimeoutError = class extends Error {
+  constructor(message, options) {
+    super(message, options);
+    this.name = "GitbeakerTimeoutError";
+  }
+};
+var GitbeakerRetryError = class extends Error {
+  constructor(message, options) {
+    super(message, options);
+    this.name = "GitbeakerRetryError";
+  }
+};
+
+exports.BaseResource = BaseResource;
+exports.GitbeakerRequestError = GitbeakerRequestError;
+exports.GitbeakerRetryError = GitbeakerRetryError;
+exports.GitbeakerTimeoutError = GitbeakerTimeoutError;
+exports.createRateLimiters = createRateLimiters;
+exports.createRequesterFn = createRequesterFn;
+exports.defaultOptionsHandler = defaultOptionsHandler;
+exports.formatQuery = formatQuery;
+exports.generateRateLimiterFn = generateRateLimiterFn;
+exports.getMatchingRateLimiter = getMatchingRateLimiter;
+exports.presetResourceArguments = presetResourceArguments;
+
+
+/***/ }),
+
+/***/ 5767:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var CORE = __nccwpck_require__(7756);
+var requesterUtils = __nccwpck_require__(77);
+
+function _interopNamespace(e) {
+  if (e && e.__esModule) return e;
+  var n = Object.create(null);
+  if (e) {
+    Object.keys(e).forEach(function (k) {
+      if (k !== 'default') {
+        var d = Object.getOwnPropertyDescriptor(e, k);
+        Object.defineProperty(n, k, d.get ? d : {
+          enumerable: true,
+          get: function () { return e[k]; }
+        });
+      }
+    });
+  }
+  n.default = e;
+  return Object.freeze(n);
+}
+
+var CORE__namespace = /*#__PURE__*/_interopNamespace(CORE);
+
+// src/index.ts
+async function processBody(response) {
+  const contentType = (response.headers.get("content-type") || "").split(";")[0].trim();
+  if (contentType === "application/json") {
+    return response.json().then((v) => v || {});
+  }
+  if (contentType.startsWith("text/")) {
+    return response.text().then((t) => t || "");
+  }
+  return response.blob();
+}
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+async function parseResponse(response, asStream = false) {
+  const { status, headers: rawHeaders } = response;
+  const headers = Object.fromEntries(rawHeaders.entries());
+  let body;
+  if (asStream) {
+    body = response.body;
+  } else {
+    body = status === 204 ? null : await processBody(response);
+  }
+  return { body, headers, status };
+}
+async function throwFailedRequestError(request, response) {
+  const content = await response.text();
+  const contentType = response.headers.get("Content-Type");
+  let description = "API Request Error";
+  if (contentType?.includes("application/json")) {
+    const output = JSON.parse(content);
+    description = output.message;
+  } else {
+    description = content;
+  }
+  throw new requesterUtils.GitbeakerRequestError(response.statusText, {
+    cause: {
+      description,
+      request,
+      response
+    }
+  });
+}
+function getConditionalMode(endpoint) {
+  if (endpoint.includes("repository/archive"))
+    return "same-origin";
+  return void 0;
+}
+async function defaultRequestHandler(endpoint, options) {
+  const retryCodes = [429, 502];
+  const maxRetries = 10;
+  const { prefixUrl, asStream, searchParams, rateLimiters, method, ...opts } = options || {};
+  const rateLimit = requesterUtils.getMatchingRateLimiter(endpoint, rateLimiters, method);
+  let baseUrl;
+  if (prefixUrl)
+    baseUrl = prefixUrl.endsWith("/") ? prefixUrl : `${prefixUrl}/`;
+  const url = new URL(endpoint, baseUrl);
+  url.search = searchParams || "";
+  const mode = getConditionalMode(endpoint);
+  for (let i = 0; i < maxRetries; i += 1) {
+    const request = new Request(url, { ...opts, method, mode });
+    await rateLimit();
+    const response = await fetch(request).catch((e) => {
+      if (e.name === "TimeoutError" || e.name === "AbortError") {
+        throw new requesterUtils.GitbeakerTimeoutError("Query timeout was reached");
+      }
+      throw e;
+    });
+    if (response.ok)
+      return parseResponse(response, asStream);
+    if (!retryCodes.includes(response.status))
+      await throwFailedRequestError(request, response);
+    await delay(2 ** i * 0.25);
+    continue;
+  }
+  throw new requesterUtils.GitbeakerRetryError(
+    `Could not successfully complete this request due to Error 429. Check the applicable rate limits for this endpoint.`
+  );
+}
+var requesterFn = requesterUtils.createRequesterFn(
+  (_, reqo) => Promise.resolve(reqo),
+  defaultRequestHandler
+);
+
+// src/index.ts
+var { AccessLevel: AL, ...Resources } = CORE__namespace;
+var API = requesterUtils.presetResourceArguments(Resources, { requesterFn });
+var AccessLevel = AL;
+var {
+  Agents,
+  AlertManagement,
+  ApplicationAppearance,
+  ApplicationPlanLimits,
+  Applications,
+  ApplicationSettings,
+  ApplicationStatistics,
+  AuditEvents,
+  Avatar,
+  BroadcastMessages,
+  CodeSuggestions,
+  Composer,
+  Conan,
+  DashboardAnnotations,
+  Debian,
+  DependencyProxy,
+  DeployKeys,
+  DeployTokens,
+  DockerfileTemplates,
+  Events,
+  Experiments,
+  GeoNodes,
+  GeoSites,
+  GitignoreTemplates,
+  GitLabCIYMLTemplates,
+  Import,
+  InstanceLevelCICDVariables,
+  Keys,
+  License,
+  LicenseTemplates,
+  Lint,
+  Markdown,
+  Maven,
+  Metadata,
+  Migrations,
+  Namespaces,
+  NotificationSettings,
+  NPM,
+  NuGet,
+  PersonalAccessTokens,
+  PyPI,
+  RubyGems,
+  Search,
+  SearchAdmin,
+  ServiceAccounts,
+  ServiceData,
+  SidekiqMetrics,
+  SidekiqQueues,
+  SnippetRepositoryStorageMoves,
+  Snippets,
+  Suggestions,
+  SystemHooks,
+  TodoLists,
+  Topics,
+  Branches,
+  CommitDiscussions,
+  Commits,
+  ContainerRegistry,
+  Deployments,
+  Environments,
+  ErrorTrackingClientKeys,
+  ErrorTrackingSettings,
+  ExternalStatusChecks,
+  FeatureFlags,
+  FeatureFlagUserLists,
+  FreezePeriods,
+  GitlabPages,
+  GoProxy,
+  Helm,
+  Integrations,
+  IssueAwardEmojis,
+  IssueDiscussions,
+  IssueIterationEvents,
+  IssueLabelEvents,
+  IssueLinks,
+  IssueMilestoneEvents,
+  IssueNoteAwardEmojis,
+  IssueNotes,
+  Issues,
+  IssuesStatistics,
+  IssueStateEvents,
+  IssueWeightEvents,
+  JobArtifacts,
+  Jobs,
+  MergeRequestApprovals,
+  MergeRequestAwardEmojis,
+  MergeRequestContextCommits,
+  MergeRequestDiscussions,
+  MergeRequestLabelEvents,
+  MergeRequestMilestoneEvents,
+  MergeRequestDraftNotes,
+  MergeRequestNotes,
+  MergeRequestNoteAwardEmojis,
+  MergeRequests,
+  MergeTrains,
+  PackageRegistry,
+  Packages,
+  PagesDomains,
+  Pipelines,
+  PipelineSchedules,
+  PipelineScheduleVariables,
+  PipelineTriggerTokens,
+  ProductAnalytics,
+  ProjectAccessRequests,
+  ProjectAccessTokens,
+  ProjectAliases,
+  ProjectBadges,
+  ProjectCustomAttributes,
+  ProjectDORA4Metrics,
+  ProjectHooks,
+  ProjectImportExports,
+  ProjectInvitations,
+  ProjectIssueBoards,
+  ProjectIterations,
+  ProjectLabels,
+  ProjectMembers,
+  ProjectMilestones,
+  ProjectProtectedEnvironments,
+  ProjectPushRules,
+  ProjectRelationsExport,
+  ProjectReleases,
+  ProjectRemoteMirrors,
+  ProjectRepositoryStorageMoves,
+  Projects,
+  ProjectSnippetAwardEmojis,
+  ProjectSnippetDiscussions,
+  ProjectSnippetNotes,
+  ProjectSnippets,
+  ProjectStatistics,
+  ProjectTemplates,
+  ProjectVariables,
+  ProjectVulnerabilities,
+  ProjectWikis,
+  ProtectedBranches,
+  ProtectedTags,
+  ReleaseLinks,
+  Repositories,
+  RepositoryFiles,
+  RepositorySubmodules,
+  ResourceGroups,
+  Runners,
+  SecureFiles,
+  Tags,
+  UserStarredMetricsDashboard,
+  EpicAwardEmojis,
+  EpicDiscussions,
+  EpicIssues,
+  EpicLabelEvents,
+  EpicLinks,
+  EpicNotes,
+  Epics,
+  GroupAccessRequests,
+  GroupAccessTokens,
+  GroupActivityAnalytics,
+  GroupBadges,
+  GroupCustomAttributes,
+  GroupDORA4Metrics,
+  GroupEpicBoards,
+  GroupHooks,
+  GroupImportExports,
+  GroupInvitations,
+  GroupIssueBoards,
+  GroupIterations,
+  GroupLabels,
+  GroupLDAPLinks,
+  GroupMembers,
+  GroupMemberRoles,
+  GroupMilestones,
+  GroupProtectedEnvironments,
+  GroupPushRules,
+  GroupRelationExports,
+  GroupReleases,
+  GroupRepositoryStorageMoves,
+  Groups,
+  GroupSAMLIdentities,
+  GroupSAMLLinks,
+  GroupSCIMIdentities,
+  GroupServiceAccounts,
+  GroupVariables,
+  GroupWikis,
+  LinkedEpics,
+  UserCustomAttributes,
+  UserEmails,
+  UserGPGKeys,
+  UserImpersonationTokens,
+  Users,
+  UserSSHKeys,
+  Gitlab
+} = API;
+
+exports.AccessLevel = AccessLevel;
+exports.Agents = Agents;
+exports.AlertManagement = AlertManagement;
+exports.ApplicationAppearance = ApplicationAppearance;
+exports.ApplicationPlanLimits = ApplicationPlanLimits;
+exports.ApplicationSettings = ApplicationSettings;
+exports.ApplicationStatistics = ApplicationStatistics;
+exports.Applications = Applications;
+exports.AuditEvents = AuditEvents;
+exports.Avatar = Avatar;
+exports.Branches = Branches;
+exports.BroadcastMessages = BroadcastMessages;
+exports.CodeSuggestions = CodeSuggestions;
+exports.CommitDiscussions = CommitDiscussions;
+exports.Commits = Commits;
+exports.Composer = Composer;
+exports.Conan = Conan;
+exports.ContainerRegistry = ContainerRegistry;
+exports.DashboardAnnotations = DashboardAnnotations;
+exports.Debian = Debian;
+exports.DependencyProxy = DependencyProxy;
+exports.DeployKeys = DeployKeys;
+exports.DeployTokens = DeployTokens;
+exports.Deployments = Deployments;
+exports.DockerfileTemplates = DockerfileTemplates;
+exports.Environments = Environments;
+exports.EpicAwardEmojis = EpicAwardEmojis;
+exports.EpicDiscussions = EpicDiscussions;
+exports.EpicIssues = EpicIssues;
+exports.EpicLabelEvents = EpicLabelEvents;
+exports.EpicLinks = EpicLinks;
+exports.EpicNotes = EpicNotes;
+exports.Epics = Epics;
+exports.ErrorTrackingClientKeys = ErrorTrackingClientKeys;
+exports.ErrorTrackingSettings = ErrorTrackingSettings;
+exports.Events = Events;
+exports.Experiments = Experiments;
+exports.ExternalStatusChecks = ExternalStatusChecks;
+exports.FeatureFlagUserLists = FeatureFlagUserLists;
+exports.FeatureFlags = FeatureFlags;
+exports.FreezePeriods = FreezePeriods;
+exports.GeoNodes = GeoNodes;
+exports.GeoSites = GeoSites;
+exports.GitLabCIYMLTemplates = GitLabCIYMLTemplates;
+exports.GitignoreTemplates = GitignoreTemplates;
+exports.Gitlab = Gitlab;
+exports.GitlabPages = GitlabPages;
+exports.GoProxy = GoProxy;
+exports.GroupAccessRequests = GroupAccessRequests;
+exports.GroupAccessTokens = GroupAccessTokens;
+exports.GroupActivityAnalytics = GroupActivityAnalytics;
+exports.GroupBadges = GroupBadges;
+exports.GroupCustomAttributes = GroupCustomAttributes;
+exports.GroupDORA4Metrics = GroupDORA4Metrics;
+exports.GroupEpicBoards = GroupEpicBoards;
+exports.GroupHooks = GroupHooks;
+exports.GroupImportExports = GroupImportExports;
+exports.GroupInvitations = GroupInvitations;
+exports.GroupIssueBoards = GroupIssueBoards;
+exports.GroupIterations = GroupIterations;
+exports.GroupLDAPLinks = GroupLDAPLinks;
+exports.GroupLabels = GroupLabels;
+exports.GroupMemberRoles = GroupMemberRoles;
+exports.GroupMembers = GroupMembers;
+exports.GroupMilestones = GroupMilestones;
+exports.GroupProtectedEnvironments = GroupProtectedEnvironments;
+exports.GroupPushRules = GroupPushRules;
+exports.GroupRelationExports = GroupRelationExports;
+exports.GroupReleases = GroupReleases;
+exports.GroupRepositoryStorageMoves = GroupRepositoryStorageMoves;
+exports.GroupSAMLIdentities = GroupSAMLIdentities;
+exports.GroupSAMLLinks = GroupSAMLLinks;
+exports.GroupSCIMIdentities = GroupSCIMIdentities;
+exports.GroupServiceAccounts = GroupServiceAccounts;
+exports.GroupVariables = GroupVariables;
+exports.GroupWikis = GroupWikis;
+exports.Groups = Groups;
+exports.Helm = Helm;
+exports.Import = Import;
+exports.InstanceLevelCICDVariables = InstanceLevelCICDVariables;
+exports.Integrations = Integrations;
+exports.IssueAwardEmojis = IssueAwardEmojis;
+exports.IssueDiscussions = IssueDiscussions;
+exports.IssueIterationEvents = IssueIterationEvents;
+exports.IssueLabelEvents = IssueLabelEvents;
+exports.IssueLinks = IssueLinks;
+exports.IssueMilestoneEvents = IssueMilestoneEvents;
+exports.IssueNoteAwardEmojis = IssueNoteAwardEmojis;
+exports.IssueNotes = IssueNotes;
+exports.IssueStateEvents = IssueStateEvents;
+exports.IssueWeightEvents = IssueWeightEvents;
+exports.Issues = Issues;
+exports.IssuesStatistics = IssuesStatistics;
+exports.JobArtifacts = JobArtifacts;
+exports.Jobs = Jobs;
+exports.Keys = Keys;
+exports.License = License;
+exports.LicenseTemplates = LicenseTemplates;
+exports.LinkedEpics = LinkedEpics;
+exports.Lint = Lint;
+exports.Markdown = Markdown;
+exports.Maven = Maven;
+exports.MergeRequestApprovals = MergeRequestApprovals;
+exports.MergeRequestAwardEmojis = MergeRequestAwardEmojis;
+exports.MergeRequestContextCommits = MergeRequestContextCommits;
+exports.MergeRequestDiscussions = MergeRequestDiscussions;
+exports.MergeRequestDraftNotes = MergeRequestDraftNotes;
+exports.MergeRequestLabelEvents = MergeRequestLabelEvents;
+exports.MergeRequestMilestoneEvents = MergeRequestMilestoneEvents;
+exports.MergeRequestNoteAwardEmojis = MergeRequestNoteAwardEmojis;
+exports.MergeRequestNotes = MergeRequestNotes;
+exports.MergeRequests = MergeRequests;
+exports.MergeTrains = MergeTrains;
+exports.Metadata = Metadata;
+exports.Migrations = Migrations;
+exports.NPM = NPM;
+exports.Namespaces = Namespaces;
+exports.NotificationSettings = NotificationSettings;
+exports.NuGet = NuGet;
+exports.PackageRegistry = PackageRegistry;
+exports.Packages = Packages;
+exports.PagesDomains = PagesDomains;
+exports.PersonalAccessTokens = PersonalAccessTokens;
+exports.PipelineScheduleVariables = PipelineScheduleVariables;
+exports.PipelineSchedules = PipelineSchedules;
+exports.PipelineTriggerTokens = PipelineTriggerTokens;
+exports.Pipelines = Pipelines;
+exports.ProductAnalytics = ProductAnalytics;
+exports.ProjectAccessRequests = ProjectAccessRequests;
+exports.ProjectAccessTokens = ProjectAccessTokens;
+exports.ProjectAliases = ProjectAliases;
+exports.ProjectBadges = ProjectBadges;
+exports.ProjectCustomAttributes = ProjectCustomAttributes;
+exports.ProjectDORA4Metrics = ProjectDORA4Metrics;
+exports.ProjectHooks = ProjectHooks;
+exports.ProjectImportExports = ProjectImportExports;
+exports.ProjectInvitations = ProjectInvitations;
+exports.ProjectIssueBoards = ProjectIssueBoards;
+exports.ProjectIterations = ProjectIterations;
+exports.ProjectLabels = ProjectLabels;
+exports.ProjectMembers = ProjectMembers;
+exports.ProjectMilestones = ProjectMilestones;
+exports.ProjectProtectedEnvironments = ProjectProtectedEnvironments;
+exports.ProjectPushRules = ProjectPushRules;
+exports.ProjectRelationsExport = ProjectRelationsExport;
+exports.ProjectReleases = ProjectReleases;
+exports.ProjectRemoteMirrors = ProjectRemoteMirrors;
+exports.ProjectRepositoryStorageMoves = ProjectRepositoryStorageMoves;
+exports.ProjectSnippetAwardEmojis = ProjectSnippetAwardEmojis;
+exports.ProjectSnippetDiscussions = ProjectSnippetDiscussions;
+exports.ProjectSnippetNotes = ProjectSnippetNotes;
+exports.ProjectSnippets = ProjectSnippets;
+exports.ProjectStatistics = ProjectStatistics;
+exports.ProjectTemplates = ProjectTemplates;
+exports.ProjectVariables = ProjectVariables;
+exports.ProjectVulnerabilities = ProjectVulnerabilities;
+exports.ProjectWikis = ProjectWikis;
+exports.Projects = Projects;
+exports.ProtectedBranches = ProtectedBranches;
+exports.ProtectedTags = ProtectedTags;
+exports.PyPI = PyPI;
+exports.ReleaseLinks = ReleaseLinks;
+exports.Repositories = Repositories;
+exports.RepositoryFiles = RepositoryFiles;
+exports.RepositorySubmodules = RepositorySubmodules;
+exports.ResourceGroups = ResourceGroups;
+exports.RubyGems = RubyGems;
+exports.Runners = Runners;
+exports.Search = Search;
+exports.SearchAdmin = SearchAdmin;
+exports.SecureFiles = SecureFiles;
+exports.ServiceAccounts = ServiceAccounts;
+exports.ServiceData = ServiceData;
+exports.SidekiqMetrics = SidekiqMetrics;
+exports.SidekiqQueues = SidekiqQueues;
+exports.SnippetRepositoryStorageMoves = SnippetRepositoryStorageMoves;
+exports.Snippets = Snippets;
+exports.Suggestions = Suggestions;
+exports.SystemHooks = SystemHooks;
+exports.Tags = Tags;
+exports.TodoLists = TodoLists;
+exports.Topics = Topics;
+exports.UserCustomAttributes = UserCustomAttributes;
+exports.UserEmails = UserEmails;
+exports.UserGPGKeys = UserGPGKeys;
+exports.UserImpersonationTokens = UserImpersonationTokens;
+exports.UserSSHKeys = UserSSHKeys;
+exports.UserStarredMetricsDashboard = UserStarredMetricsDashboard;
+exports.Users = Users;
+
+
+/***/ }),
+
+/***/ 8803:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var GetIntrinsic = __nccwpck_require__(4538);
+
+var callBind = __nccwpck_require__(2977);
+
+var $indexOf = callBind(GetIntrinsic('String.prototype.indexOf'));
+
+module.exports = function callBoundIntrinsic(name, allowMissing) {
+	var intrinsic = GetIntrinsic(name, !!allowMissing);
+	if (typeof intrinsic === 'function' && $indexOf(name, '.prototype.') > -1) {
+		return callBind(intrinsic);
+	}
+	return intrinsic;
+};
+
+
+/***/ }),
+
+/***/ 2977:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var bind = __nccwpck_require__(8334);
+var GetIntrinsic = __nccwpck_require__(4538);
+var setFunctionLength = __nccwpck_require__(4056);
+
+var $TypeError = __nccwpck_require__(6361);
+var $apply = GetIntrinsic('%Function.prototype.apply%');
+var $call = GetIntrinsic('%Function.prototype.call%');
+var $reflectApply = GetIntrinsic('%Reflect.apply%', true) || bind.call($call, $apply);
+
+var $defineProperty = __nccwpck_require__(6123);
+var $max = GetIntrinsic('%Math.max%');
+
+module.exports = function callBind(originalFunction) {
+	if (typeof originalFunction !== 'function') {
+		throw new $TypeError('a function is required');
+	}
+	var func = $reflectApply(bind, $call, arguments);
+	return setFunctionLength(
+		func,
+		1 + $max(0, originalFunction.length - (arguments.length - 1)),
+		true
+	);
+};
+
+var applyBind = function applyBind() {
+	return $reflectApply(bind, $apply, arguments);
+};
+
+if ($defineProperty) {
+	$defineProperty(module.exports, 'apply', { value: applyBind });
+} else {
+	module.exports.apply = applyBind;
+}
+
+
+/***/ }),
+
+/***/ 4564:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var $defineProperty = __nccwpck_require__(6123);
+
+var $SyntaxError = __nccwpck_require__(5474);
+var $TypeError = __nccwpck_require__(6361);
+
+var gopd = __nccwpck_require__(8501);
+
+/** @type {import('.')} */
+module.exports = function defineDataProperty(
+	obj,
+	property,
+	value
+) {
+	if (!obj || (typeof obj !== 'object' && typeof obj !== 'function')) {
+		throw new $TypeError('`obj` must be an object or a function`');
+	}
+	if (typeof property !== 'string' && typeof property !== 'symbol') {
+		throw new $TypeError('`property` must be a string or a symbol`');
+	}
+	if (arguments.length > 3 && typeof arguments[3] !== 'boolean' && arguments[3] !== null) {
+		throw new $TypeError('`nonEnumerable`, if provided, must be a boolean or null');
+	}
+	if (arguments.length > 4 && typeof arguments[4] !== 'boolean' && arguments[4] !== null) {
+		throw new $TypeError('`nonWritable`, if provided, must be a boolean or null');
+	}
+	if (arguments.length > 5 && typeof arguments[5] !== 'boolean' && arguments[5] !== null) {
+		throw new $TypeError('`nonConfigurable`, if provided, must be a boolean or null');
+	}
+	if (arguments.length > 6 && typeof arguments[6] !== 'boolean') {
+		throw new $TypeError('`loose`, if provided, must be a boolean');
+	}
+
+	var nonEnumerable = arguments.length > 3 ? arguments[3] : null;
+	var nonWritable = arguments.length > 4 ? arguments[4] : null;
+	var nonConfigurable = arguments.length > 5 ? arguments[5] : null;
+	var loose = arguments.length > 6 ? arguments[6] : false;
+
+	/* @type {false | TypedPropertyDescriptor<unknown>} */
+	var desc = !!gopd && gopd(obj, property);
+
+	if ($defineProperty) {
+		$defineProperty(obj, property, {
+			configurable: nonConfigurable === null && desc ? desc.configurable : !nonConfigurable,
+			enumerable: nonEnumerable === null && desc ? desc.enumerable : !nonEnumerable,
+			value: value,
+			writable: nonWritable === null && desc ? desc.writable : !nonWritable
+		});
+	} else if (loose || (!nonEnumerable && !nonWritable && !nonConfigurable)) {
+		// must fall back to [[Set]], and was not explicitly asked to make non-enumerable, non-writable, or non-configurable
+		obj[property] = value; // eslint-disable-line no-param-reassign
+	} else {
+		throw new $SyntaxError('This environment does not support defining a property as non-configurable, non-writable, or non-enumerable.');
+	}
+};
+
+
+/***/ }),
+
+/***/ 6123:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var GetIntrinsic = __nccwpck_require__(4538);
+
+/** @type {import('.')} */
+var $defineProperty = GetIntrinsic('%Object.defineProperty%', true) || false;
+if ($defineProperty) {
+	try {
+		$defineProperty({}, 'a', { value: 1 });
+	} catch (e) {
+		// IE 8 has a broken defineProperty
+		$defineProperty = false;
+	}
+}
+
+module.exports = $defineProperty;
+
+
+/***/ }),
+
+/***/ 1933:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./eval')} */
+module.exports = EvalError;
+
+
+/***/ }),
+
+/***/ 8015:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('.')} */
+module.exports = Error;
+
+
+/***/ }),
+
+/***/ 4415:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./range')} */
+module.exports = RangeError;
+
+
+/***/ }),
+
+/***/ 6279:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./ref')} */
+module.exports = ReferenceError;
+
+
+/***/ }),
+
+/***/ 5474:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./syntax')} */
+module.exports = SyntaxError;
+
+
+/***/ }),
+
+/***/ 6361:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./type')} */
+module.exports = TypeError;
+
+
+/***/ }),
+
+/***/ 5065:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./uri')} */
+module.exports = URIError;
+
+
+/***/ }),
+
+/***/ 9320:
+/***/ ((module) => {
+
+"use strict";
+
+
+/* eslint no-invalid-this: 1 */
+
+var ERROR_MESSAGE = 'Function.prototype.bind called on incompatible ';
+var toStr = Object.prototype.toString;
+var max = Math.max;
+var funcType = '[object Function]';
+
+var concatty = function concatty(a, b) {
+    var arr = [];
+
+    for (var i = 0; i < a.length; i += 1) {
+        arr[i] = a[i];
+    }
+    for (var j = 0; j < b.length; j += 1) {
+        arr[j + a.length] = b[j];
+    }
+
+    return arr;
+};
+
+var slicy = function slicy(arrLike, offset) {
+    var arr = [];
+    for (var i = offset || 0, j = 0; i < arrLike.length; i += 1, j += 1) {
+        arr[j] = arrLike[i];
+    }
+    return arr;
+};
+
+var joiny = function (arr, joiner) {
+    var str = '';
+    for (var i = 0; i < arr.length; i += 1) {
+        str += arr[i];
+        if (i + 1 < arr.length) {
+            str += joiner;
+        }
+    }
+    return str;
+};
+
+module.exports = function bind(that) {
+    var target = this;
+    if (typeof target !== 'function' || toStr.apply(target) !== funcType) {
+        throw new TypeError(ERROR_MESSAGE + target);
+    }
+    var args = slicy(arguments, 1);
+
+    var bound;
+    var binder = function () {
+        if (this instanceof bound) {
+            var result = target.apply(
+                this,
+                concatty(args, arguments)
+            );
+            if (Object(result) === result) {
+                return result;
+            }
+            return this;
+        }
+        return target.apply(
+            that,
+            concatty(args, arguments)
+        );
+
+    };
+
+    var boundLength = max(0, target.length - args.length);
+    var boundArgs = [];
+    for (var i = 0; i < boundLength; i++) {
+        boundArgs[i] = '$' + i;
+    }
+
+    bound = Function('binder', 'return function (' + joiny(boundArgs, ',') + '){ return binder.apply(this,arguments); }')(binder);
+
+    if (target.prototype) {
+        var Empty = function Empty() {};
+        Empty.prototype = target.prototype;
+        bound.prototype = new Empty();
+        Empty.prototype = null;
+    }
+
+    return bound;
+};
+
+
+/***/ }),
+
+/***/ 8334:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var implementation = __nccwpck_require__(9320);
+
+module.exports = Function.prototype.bind || implementation;
+
+
+/***/ }),
+
+/***/ 4538:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var undefined;
+
+var $Error = __nccwpck_require__(8015);
+var $EvalError = __nccwpck_require__(1933);
+var $RangeError = __nccwpck_require__(4415);
+var $ReferenceError = __nccwpck_require__(6279);
+var $SyntaxError = __nccwpck_require__(5474);
+var $TypeError = __nccwpck_require__(6361);
+var $URIError = __nccwpck_require__(5065);
+
+var $Function = Function;
+
+// eslint-disable-next-line consistent-return
+var getEvalledConstructor = function (expressionSyntax) {
+	try {
+		return $Function('"use strict"; return (' + expressionSyntax + ').constructor;')();
+	} catch (e) {}
+};
+
+var $gOPD = Object.getOwnPropertyDescriptor;
+if ($gOPD) {
+	try {
+		$gOPD({}, '');
+	} catch (e) {
+		$gOPD = null; // this is IE 8, which has a broken gOPD
+	}
+}
+
+var throwTypeError = function () {
+	throw new $TypeError();
+};
+var ThrowTypeError = $gOPD
+	? (function () {
+		try {
+			// eslint-disable-next-line no-unused-expressions, no-caller, no-restricted-properties
+			arguments.callee; // IE 8 does not throw here
+			return throwTypeError;
+		} catch (calleeThrows) {
+			try {
+				// IE 8 throws on Object.getOwnPropertyDescriptor(arguments, '')
+				return $gOPD(arguments, 'callee').get;
+			} catch (gOPDthrows) {
+				return throwTypeError;
+			}
+		}
+	}())
+	: throwTypeError;
+
+var hasSymbols = __nccwpck_require__(587)();
+var hasProto = __nccwpck_require__(5894)();
+
+var getProto = Object.getPrototypeOf || (
+	hasProto
+		? function (x) { return x.__proto__; } // eslint-disable-line no-proto
+		: null
+);
+
+var needsEval = {};
+
+var TypedArray = typeof Uint8Array === 'undefined' || !getProto ? undefined : getProto(Uint8Array);
+
+var INTRINSICS = {
+	__proto__: null,
+	'%AggregateError%': typeof AggregateError === 'undefined' ? undefined : AggregateError,
+	'%Array%': Array,
+	'%ArrayBuffer%': typeof ArrayBuffer === 'undefined' ? undefined : ArrayBuffer,
+	'%ArrayIteratorPrototype%': hasSymbols && getProto ? getProto([][Symbol.iterator]()) : undefined,
+	'%AsyncFromSyncIteratorPrototype%': undefined,
+	'%AsyncFunction%': needsEval,
+	'%AsyncGenerator%': needsEval,
+	'%AsyncGeneratorFunction%': needsEval,
+	'%AsyncIteratorPrototype%': needsEval,
+	'%Atomics%': typeof Atomics === 'undefined' ? undefined : Atomics,
+	'%BigInt%': typeof BigInt === 'undefined' ? undefined : BigInt,
+	'%BigInt64Array%': typeof BigInt64Array === 'undefined' ? undefined : BigInt64Array,
+	'%BigUint64Array%': typeof BigUint64Array === 'undefined' ? undefined : BigUint64Array,
+	'%Boolean%': Boolean,
+	'%DataView%': typeof DataView === 'undefined' ? undefined : DataView,
+	'%Date%': Date,
+	'%decodeURI%': decodeURI,
+	'%decodeURIComponent%': decodeURIComponent,
+	'%encodeURI%': encodeURI,
+	'%encodeURIComponent%': encodeURIComponent,
+	'%Error%': $Error,
+	'%eval%': eval, // eslint-disable-line no-eval
+	'%EvalError%': $EvalError,
+	'%Float32Array%': typeof Float32Array === 'undefined' ? undefined : Float32Array,
+	'%Float64Array%': typeof Float64Array === 'undefined' ? undefined : Float64Array,
+	'%FinalizationRegistry%': typeof FinalizationRegistry === 'undefined' ? undefined : FinalizationRegistry,
+	'%Function%': $Function,
+	'%GeneratorFunction%': needsEval,
+	'%Int8Array%': typeof Int8Array === 'undefined' ? undefined : Int8Array,
+	'%Int16Array%': typeof Int16Array === 'undefined' ? undefined : Int16Array,
+	'%Int32Array%': typeof Int32Array === 'undefined' ? undefined : Int32Array,
+	'%isFinite%': isFinite,
+	'%isNaN%': isNaN,
+	'%IteratorPrototype%': hasSymbols && getProto ? getProto(getProto([][Symbol.iterator]())) : undefined,
+	'%JSON%': typeof JSON === 'object' ? JSON : undefined,
+	'%Map%': typeof Map === 'undefined' ? undefined : Map,
+	'%MapIteratorPrototype%': typeof Map === 'undefined' || !hasSymbols || !getProto ? undefined : getProto(new Map()[Symbol.iterator]()),
+	'%Math%': Math,
+	'%Number%': Number,
+	'%Object%': Object,
+	'%parseFloat%': parseFloat,
+	'%parseInt%': parseInt,
+	'%Promise%': typeof Promise === 'undefined' ? undefined : Promise,
+	'%Proxy%': typeof Proxy === 'undefined' ? undefined : Proxy,
+	'%RangeError%': $RangeError,
+	'%ReferenceError%': $ReferenceError,
+	'%Reflect%': typeof Reflect === 'undefined' ? undefined : Reflect,
+	'%RegExp%': RegExp,
+	'%Set%': typeof Set === 'undefined' ? undefined : Set,
+	'%SetIteratorPrototype%': typeof Set === 'undefined' || !hasSymbols || !getProto ? undefined : getProto(new Set()[Symbol.iterator]()),
+	'%SharedArrayBuffer%': typeof SharedArrayBuffer === 'undefined' ? undefined : SharedArrayBuffer,
+	'%String%': String,
+	'%StringIteratorPrototype%': hasSymbols && getProto ? getProto(''[Symbol.iterator]()) : undefined,
+	'%Symbol%': hasSymbols ? Symbol : undefined,
+	'%SyntaxError%': $SyntaxError,
+	'%ThrowTypeError%': ThrowTypeError,
+	'%TypedArray%': TypedArray,
+	'%TypeError%': $TypeError,
+	'%Uint8Array%': typeof Uint8Array === 'undefined' ? undefined : Uint8Array,
+	'%Uint8ClampedArray%': typeof Uint8ClampedArray === 'undefined' ? undefined : Uint8ClampedArray,
+	'%Uint16Array%': typeof Uint16Array === 'undefined' ? undefined : Uint16Array,
+	'%Uint32Array%': typeof Uint32Array === 'undefined' ? undefined : Uint32Array,
+	'%URIError%': $URIError,
+	'%WeakMap%': typeof WeakMap === 'undefined' ? undefined : WeakMap,
+	'%WeakRef%': typeof WeakRef === 'undefined' ? undefined : WeakRef,
+	'%WeakSet%': typeof WeakSet === 'undefined' ? undefined : WeakSet
+};
+
+if (getProto) {
+	try {
+		null.error; // eslint-disable-line no-unused-expressions
+	} catch (e) {
+		// https://github.com/tc39/proposal-shadowrealm/pull/384#issuecomment-1364264229
+		var errorProto = getProto(getProto(e));
+		INTRINSICS['%Error.prototype%'] = errorProto;
+	}
+}
+
+var doEval = function doEval(name) {
+	var value;
+	if (name === '%AsyncFunction%') {
+		value = getEvalledConstructor('async function () {}');
+	} else if (name === '%GeneratorFunction%') {
+		value = getEvalledConstructor('function* () {}');
+	} else if (name === '%AsyncGeneratorFunction%') {
+		value = getEvalledConstructor('async function* () {}');
+	} else if (name === '%AsyncGenerator%') {
+		var fn = doEval('%AsyncGeneratorFunction%');
+		if (fn) {
+			value = fn.prototype;
+		}
+	} else if (name === '%AsyncIteratorPrototype%') {
+		var gen = doEval('%AsyncGenerator%');
+		if (gen && getProto) {
+			value = getProto(gen.prototype);
+		}
+	}
+
+	INTRINSICS[name] = value;
+
+	return value;
+};
+
+var LEGACY_ALIASES = {
+	__proto__: null,
+	'%ArrayBufferPrototype%': ['ArrayBuffer', 'prototype'],
+	'%ArrayPrototype%': ['Array', 'prototype'],
+	'%ArrayProto_entries%': ['Array', 'prototype', 'entries'],
+	'%ArrayProto_forEach%': ['Array', 'prototype', 'forEach'],
+	'%ArrayProto_keys%': ['Array', 'prototype', 'keys'],
+	'%ArrayProto_values%': ['Array', 'prototype', 'values'],
+	'%AsyncFunctionPrototype%': ['AsyncFunction', 'prototype'],
+	'%AsyncGenerator%': ['AsyncGeneratorFunction', 'prototype'],
+	'%AsyncGeneratorPrototype%': ['AsyncGeneratorFunction', 'prototype', 'prototype'],
+	'%BooleanPrototype%': ['Boolean', 'prototype'],
+	'%DataViewPrototype%': ['DataView', 'prototype'],
+	'%DatePrototype%': ['Date', 'prototype'],
+	'%ErrorPrototype%': ['Error', 'prototype'],
+	'%EvalErrorPrototype%': ['EvalError', 'prototype'],
+	'%Float32ArrayPrototype%': ['Float32Array', 'prototype'],
+	'%Float64ArrayPrototype%': ['Float64Array', 'prototype'],
+	'%FunctionPrototype%': ['Function', 'prototype'],
+	'%Generator%': ['GeneratorFunction', 'prototype'],
+	'%GeneratorPrototype%': ['GeneratorFunction', 'prototype', 'prototype'],
+	'%Int8ArrayPrototype%': ['Int8Array', 'prototype'],
+	'%Int16ArrayPrototype%': ['Int16Array', 'prototype'],
+	'%Int32ArrayPrototype%': ['Int32Array', 'prototype'],
+	'%JSONParse%': ['JSON', 'parse'],
+	'%JSONStringify%': ['JSON', 'stringify'],
+	'%MapPrototype%': ['Map', 'prototype'],
+	'%NumberPrototype%': ['Number', 'prototype'],
+	'%ObjectPrototype%': ['Object', 'prototype'],
+	'%ObjProto_toString%': ['Object', 'prototype', 'toString'],
+	'%ObjProto_valueOf%': ['Object', 'prototype', 'valueOf'],
+	'%PromisePrototype%': ['Promise', 'prototype'],
+	'%PromiseProto_then%': ['Promise', 'prototype', 'then'],
+	'%Promise_all%': ['Promise', 'all'],
+	'%Promise_reject%': ['Promise', 'reject'],
+	'%Promise_resolve%': ['Promise', 'resolve'],
+	'%RangeErrorPrototype%': ['RangeError', 'prototype'],
+	'%ReferenceErrorPrototype%': ['ReferenceError', 'prototype'],
+	'%RegExpPrototype%': ['RegExp', 'prototype'],
+	'%SetPrototype%': ['Set', 'prototype'],
+	'%SharedArrayBufferPrototype%': ['SharedArrayBuffer', 'prototype'],
+	'%StringPrototype%': ['String', 'prototype'],
+	'%SymbolPrototype%': ['Symbol', 'prototype'],
+	'%SyntaxErrorPrototype%': ['SyntaxError', 'prototype'],
+	'%TypedArrayPrototype%': ['TypedArray', 'prototype'],
+	'%TypeErrorPrototype%': ['TypeError', 'prototype'],
+	'%Uint8ArrayPrototype%': ['Uint8Array', 'prototype'],
+	'%Uint8ClampedArrayPrototype%': ['Uint8ClampedArray', 'prototype'],
+	'%Uint16ArrayPrototype%': ['Uint16Array', 'prototype'],
+	'%Uint32ArrayPrototype%': ['Uint32Array', 'prototype'],
+	'%URIErrorPrototype%': ['URIError', 'prototype'],
+	'%WeakMapPrototype%': ['WeakMap', 'prototype'],
+	'%WeakSetPrototype%': ['WeakSet', 'prototype']
+};
+
+var bind = __nccwpck_require__(8334);
+var hasOwn = __nccwpck_require__(2157);
+var $concat = bind.call(Function.call, Array.prototype.concat);
+var $spliceApply = bind.call(Function.apply, Array.prototype.splice);
+var $replace = bind.call(Function.call, String.prototype.replace);
+var $strSlice = bind.call(Function.call, String.prototype.slice);
+var $exec = bind.call(Function.call, RegExp.prototype.exec);
+
+/* adapted from https://github.com/lodash/lodash/blob/4.17.15/dist/lodash.js#L6735-L6744 */
+var rePropName = /[^%.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|%$))/g;
+var reEscapeChar = /\\(\\)?/g; /** Used to match backslashes in property paths. */
+var stringToPath = function stringToPath(string) {
+	var first = $strSlice(string, 0, 1);
+	var last = $strSlice(string, -1);
+	if (first === '%' && last !== '%') {
+		throw new $SyntaxError('invalid intrinsic syntax, expected closing `%`');
+	} else if (last === '%' && first !== '%') {
+		throw new $SyntaxError('invalid intrinsic syntax, expected opening `%`');
+	}
+	var result = [];
+	$replace(string, rePropName, function (match, number, quote, subString) {
+		result[result.length] = quote ? $replace(subString, reEscapeChar, '$1') : number || match;
+	});
+	return result;
+};
+/* end adaptation */
+
+var getBaseIntrinsic = function getBaseIntrinsic(name, allowMissing) {
+	var intrinsicName = name;
+	var alias;
+	if (hasOwn(LEGACY_ALIASES, intrinsicName)) {
+		alias = LEGACY_ALIASES[intrinsicName];
+		intrinsicName = '%' + alias[0] + '%';
+	}
+
+	if (hasOwn(INTRINSICS, intrinsicName)) {
+		var value = INTRINSICS[intrinsicName];
+		if (value === needsEval) {
+			value = doEval(intrinsicName);
+		}
+		if (typeof value === 'undefined' && !allowMissing) {
+			throw new $TypeError('intrinsic ' + name + ' exists, but is not available. Please file an issue!');
+		}
+
+		return {
+			alias: alias,
+			name: intrinsicName,
+			value: value
+		};
+	}
+
+	throw new $SyntaxError('intrinsic ' + name + ' does not exist!');
+};
+
+module.exports = function GetIntrinsic(name, allowMissing) {
+	if (typeof name !== 'string' || name.length === 0) {
+		throw new $TypeError('intrinsic name must be a non-empty string');
+	}
+	if (arguments.length > 1 && typeof allowMissing !== 'boolean') {
+		throw new $TypeError('"allowMissing" argument must be a boolean');
+	}
+
+	if ($exec(/^%?[^%]*%?$/, name) === null) {
+		throw new $SyntaxError('`%` may not be present anywhere but at the beginning and end of the intrinsic name');
+	}
+	var parts = stringToPath(name);
+	var intrinsicBaseName = parts.length > 0 ? parts[0] : '';
+
+	var intrinsic = getBaseIntrinsic('%' + intrinsicBaseName + '%', allowMissing);
+	var intrinsicRealName = intrinsic.name;
+	var value = intrinsic.value;
+	var skipFurtherCaching = false;
+
+	var alias = intrinsic.alias;
+	if (alias) {
+		intrinsicBaseName = alias[0];
+		$spliceApply(parts, $concat([0, 1], alias));
+	}
+
+	for (var i = 1, isOwn = true; i < parts.length; i += 1) {
+		var part = parts[i];
+		var first = $strSlice(part, 0, 1);
+		var last = $strSlice(part, -1);
+		if (
+			(
+				(first === '"' || first === "'" || first === '`')
+				|| (last === '"' || last === "'" || last === '`')
+			)
+			&& first !== last
+		) {
+			throw new $SyntaxError('property names with quotes must have matching quotes');
+		}
+		if (part === 'constructor' || !isOwn) {
+			skipFurtherCaching = true;
+		}
+
+		intrinsicBaseName += '.' + part;
+		intrinsicRealName = '%' + intrinsicBaseName + '%';
+
+		if (hasOwn(INTRINSICS, intrinsicRealName)) {
+			value = INTRINSICS[intrinsicRealName];
+		} else if (value != null) {
+			if (!(part in value)) {
+				if (!allowMissing) {
+					throw new $TypeError('base intrinsic for ' + name + ' exists, but the property is not available.');
+				}
+				return void undefined;
+			}
+			if ($gOPD && (i + 1) >= parts.length) {
+				var desc = $gOPD(value, part);
+				isOwn = !!desc;
+
+				// By convention, when a data property is converted to an accessor
+				// property to emulate a data property that does not suffer from
+				// the override mistake, that accessor's getter is marked with
+				// an `originalValue` property. Here, when we detect this, we
+				// uphold the illusion by pretending to see that original data
+				// property, i.e., returning the value rather than the getter
+				// itself.
+				if (isOwn && 'get' in desc && !('originalValue' in desc.get)) {
+					value = desc.get;
+				} else {
+					value = value[part];
+				}
+			} else {
+				isOwn = hasOwn(value, part);
+				value = value[part];
+			}
+
+			if (isOwn && !skipFurtherCaching) {
+				INTRINSICS[intrinsicRealName] = value;
+			}
+		}
+	}
+	return value;
+};
+
+
+/***/ }),
+
+/***/ 8501:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var GetIntrinsic = __nccwpck_require__(4538);
+
+var $gOPD = GetIntrinsic('%Object.getOwnPropertyDescriptor%', true);
+
+if ($gOPD) {
+	try {
+		$gOPD([], 'length');
+	} catch (e) {
+		// IE 8 has a broken gOPD
+		$gOPD = null;
+	}
+}
+
+module.exports = $gOPD;
+
+
+/***/ }),
+
+/***/ 176:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var $defineProperty = __nccwpck_require__(6123);
+
+var hasPropertyDescriptors = function hasPropertyDescriptors() {
+	return !!$defineProperty;
+};
+
+hasPropertyDescriptors.hasArrayLengthDefineBug = function hasArrayLengthDefineBug() {
+	// node v0.6 has a bug where array lengths can be Set but not Defined
+	if (!$defineProperty) {
+		return null;
+	}
+	try {
+		return $defineProperty([], 'length', { value: 1 }).length !== 1;
+	} catch (e) {
+		// In Firefox 4-22, defining length on an array throws an exception.
+		return true;
+	}
+};
+
+module.exports = hasPropertyDescriptors;
+
+
+/***/ }),
+
+/***/ 5894:
+/***/ ((module) => {
+
+"use strict";
+
+
+var test = {
+	__proto__: null,
+	foo: {}
+};
+
+var $Object = Object;
+
+/** @type {import('.')} */
+module.exports = function hasProto() {
+	// @ts-expect-error: TS errors on an inherited property for some reason
+	return { __proto__: test }.foo === test.foo
+		&& !(test instanceof $Object);
+};
+
+
+/***/ }),
+
+/***/ 587:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var origSymbol = typeof Symbol !== 'undefined' && Symbol;
+var hasSymbolSham = __nccwpck_require__(7747);
+
+module.exports = function hasNativeSymbols() {
+	if (typeof origSymbol !== 'function') { return false; }
+	if (typeof Symbol !== 'function') { return false; }
+	if (typeof origSymbol('foo') !== 'symbol') { return false; }
+	if (typeof Symbol('bar') !== 'symbol') { return false; }
+
+	return hasSymbolSham();
+};
+
+
+/***/ }),
+
+/***/ 7747:
+/***/ ((module) => {
+
+"use strict";
+
+
+/* eslint complexity: [2, 18], max-statements: [2, 33] */
+module.exports = function hasSymbols() {
+	if (typeof Symbol !== 'function' || typeof Object.getOwnPropertySymbols !== 'function') { return false; }
+	if (typeof Symbol.iterator === 'symbol') { return true; }
+
+	var obj = {};
+	var sym = Symbol('test');
+	var symObj = Object(sym);
+	if (typeof sym === 'string') { return false; }
+
+	if (Object.prototype.toString.call(sym) !== '[object Symbol]') { return false; }
+	if (Object.prototype.toString.call(symObj) !== '[object Symbol]') { return false; }
+
+	// temp disabled per https://github.com/ljharb/object.assign/issues/17
+	// if (sym instanceof Symbol) { return false; }
+	// temp disabled per https://github.com/WebReflection/get-own-property-symbols/issues/4
+	// if (!(symObj instanceof Symbol)) { return false; }
+
+	// if (typeof Symbol.prototype.toString !== 'function') { return false; }
+	// if (String(sym) !== Symbol.prototype.toString.call(sym)) { return false; }
+
+	var symVal = 42;
+	obj[sym] = symVal;
+	for (sym in obj) { return false; } // eslint-disable-line no-restricted-syntax, no-unreachable-loop
+	if (typeof Object.keys === 'function' && Object.keys(obj).length !== 0) { return false; }
+
+	if (typeof Object.getOwnPropertyNames === 'function' && Object.getOwnPropertyNames(obj).length !== 0) { return false; }
+
+	var syms = Object.getOwnPropertySymbols(obj);
+	if (syms.length !== 1 || syms[0] !== sym) { return false; }
+
+	if (!Object.prototype.propertyIsEnumerable.call(obj, sym)) { return false; }
+
+	if (typeof Object.getOwnPropertyDescriptor === 'function') {
+		var descriptor = Object.getOwnPropertyDescriptor(obj, sym);
+		if (descriptor.value !== symVal || descriptor.enumerable !== true) { return false; }
+	}
+
+	return true;
+};
+
+
+/***/ }),
+
+/***/ 2157:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var call = Function.prototype.call;
+var $hasOwn = Object.prototype.hasOwnProperty;
+var bind = __nccwpck_require__(8334);
+
+/** @type {import('.')} */
+module.exports = bind.call(call, $hasOwn);
+
+
+/***/ }),
+
+/***/ 504:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var hasMap = typeof Map === 'function' && Map.prototype;
+var mapSizeDescriptor = Object.getOwnPropertyDescriptor && hasMap ? Object.getOwnPropertyDescriptor(Map.prototype, 'size') : null;
+var mapSize = hasMap && mapSizeDescriptor && typeof mapSizeDescriptor.get === 'function' ? mapSizeDescriptor.get : null;
+var mapForEach = hasMap && Map.prototype.forEach;
+var hasSet = typeof Set === 'function' && Set.prototype;
+var setSizeDescriptor = Object.getOwnPropertyDescriptor && hasSet ? Object.getOwnPropertyDescriptor(Set.prototype, 'size') : null;
+var setSize = hasSet && setSizeDescriptor && typeof setSizeDescriptor.get === 'function' ? setSizeDescriptor.get : null;
+var setForEach = hasSet && Set.prototype.forEach;
+var hasWeakMap = typeof WeakMap === 'function' && WeakMap.prototype;
+var weakMapHas = hasWeakMap ? WeakMap.prototype.has : null;
+var hasWeakSet = typeof WeakSet === 'function' && WeakSet.prototype;
+var weakSetHas = hasWeakSet ? WeakSet.prototype.has : null;
+var hasWeakRef = typeof WeakRef === 'function' && WeakRef.prototype;
+var weakRefDeref = hasWeakRef ? WeakRef.prototype.deref : null;
+var booleanValueOf = Boolean.prototype.valueOf;
+var objectToString = Object.prototype.toString;
+var functionToString = Function.prototype.toString;
+var $match = String.prototype.match;
+var $slice = String.prototype.slice;
+var $replace = String.prototype.replace;
+var $toUpperCase = String.prototype.toUpperCase;
+var $toLowerCase = String.prototype.toLowerCase;
+var $test = RegExp.prototype.test;
+var $concat = Array.prototype.concat;
+var $join = Array.prototype.join;
+var $arrSlice = Array.prototype.slice;
+var $floor = Math.floor;
+var bigIntValueOf = typeof BigInt === 'function' ? BigInt.prototype.valueOf : null;
+var gOPS = Object.getOwnPropertySymbols;
+var symToString = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? Symbol.prototype.toString : null;
+var hasShammedSymbols = typeof Symbol === 'function' && typeof Symbol.iterator === 'object';
+// ie, `has-tostringtag/shams
+var toStringTag = typeof Symbol === 'function' && Symbol.toStringTag && (typeof Symbol.toStringTag === hasShammedSymbols ? 'object' : 'symbol')
+    ? Symbol.toStringTag
+    : null;
+var isEnumerable = Object.prototype.propertyIsEnumerable;
+
+var gPO = (typeof Reflect === 'function' ? Reflect.getPrototypeOf : Object.getPrototypeOf) || (
+    [].__proto__ === Array.prototype // eslint-disable-line no-proto
+        ? function (O) {
+            return O.__proto__; // eslint-disable-line no-proto
+        }
+        : null
+);
+
+function addNumericSeparator(num, str) {
+    if (
+        num === Infinity
+        || num === -Infinity
+        || num !== num
+        || (num && num > -1000 && num < 1000)
+        || $test.call(/e/, str)
+    ) {
+        return str;
+    }
+    var sepRegex = /[0-9](?=(?:[0-9]{3})+(?![0-9]))/g;
+    if (typeof num === 'number') {
+        var int = num < 0 ? -$floor(-num) : $floor(num); // trunc(num)
+        if (int !== num) {
+            var intStr = String(int);
+            var dec = $slice.call(str, intStr.length + 1);
+            return $replace.call(intStr, sepRegex, '$&_') + '.' + $replace.call($replace.call(dec, /([0-9]{3})/g, '$&_'), /_$/, '');
+        }
+    }
+    return $replace.call(str, sepRegex, '$&_');
+}
+
+var utilInspect = __nccwpck_require__(7265);
+var inspectCustom = utilInspect.custom;
+var inspectSymbol = isSymbol(inspectCustom) ? inspectCustom : null;
+
+module.exports = function inspect_(obj, options, depth, seen) {
+    var opts = options || {};
+
+    if (has(opts, 'quoteStyle') && (opts.quoteStyle !== 'single' && opts.quoteStyle !== 'double')) {
+        throw new TypeError('option "quoteStyle" must be "single" or "double"');
+    }
+    if (
+        has(opts, 'maxStringLength') && (typeof opts.maxStringLength === 'number'
+            ? opts.maxStringLength < 0 && opts.maxStringLength !== Infinity
+            : opts.maxStringLength !== null
+        )
+    ) {
+        throw new TypeError('option "maxStringLength", if provided, must be a positive integer, Infinity, or `null`');
+    }
+    var customInspect = has(opts, 'customInspect') ? opts.customInspect : true;
+    if (typeof customInspect !== 'boolean' && customInspect !== 'symbol') {
+        throw new TypeError('option "customInspect", if provided, must be `true`, `false`, or `\'symbol\'`');
+    }
+
+    if (
+        has(opts, 'indent')
+        && opts.indent !== null
+        && opts.indent !== '\t'
+        && !(parseInt(opts.indent, 10) === opts.indent && opts.indent > 0)
+    ) {
+        throw new TypeError('option "indent" must be "\\t", an integer > 0, or `null`');
+    }
+    if (has(opts, 'numericSeparator') && typeof opts.numericSeparator !== 'boolean') {
+        throw new TypeError('option "numericSeparator", if provided, must be `true` or `false`');
+    }
+    var numericSeparator = opts.numericSeparator;
+
+    if (typeof obj === 'undefined') {
+        return 'undefined';
+    }
+    if (obj === null) {
+        return 'null';
+    }
+    if (typeof obj === 'boolean') {
+        return obj ? 'true' : 'false';
+    }
+
+    if (typeof obj === 'string') {
+        return inspectString(obj, opts);
+    }
+    if (typeof obj === 'number') {
+        if (obj === 0) {
+            return Infinity / obj > 0 ? '0' : '-0';
+        }
+        var str = String(obj);
+        return numericSeparator ? addNumericSeparator(obj, str) : str;
+    }
+    if (typeof obj === 'bigint') {
+        var bigIntStr = String(obj) + 'n';
+        return numericSeparator ? addNumericSeparator(obj, bigIntStr) : bigIntStr;
+    }
+
+    var maxDepth = typeof opts.depth === 'undefined' ? 5 : opts.depth;
+    if (typeof depth === 'undefined') { depth = 0; }
+    if (depth >= maxDepth && maxDepth > 0 && typeof obj === 'object') {
+        return isArray(obj) ? '[Array]' : '[Object]';
+    }
+
+    var indent = getIndent(opts, depth);
+
+    if (typeof seen === 'undefined') {
+        seen = [];
+    } else if (indexOf(seen, obj) >= 0) {
+        return '[Circular]';
+    }
+
+    function inspect(value, from, noIndent) {
+        if (from) {
+            seen = $arrSlice.call(seen);
+            seen.push(from);
+        }
+        if (noIndent) {
+            var newOpts = {
+                depth: opts.depth
+            };
+            if (has(opts, 'quoteStyle')) {
+                newOpts.quoteStyle = opts.quoteStyle;
+            }
+            return inspect_(value, newOpts, depth + 1, seen);
+        }
+        return inspect_(value, opts, depth + 1, seen);
+    }
+
+    if (typeof obj === 'function' && !isRegExp(obj)) { // in older engines, regexes are callable
+        var name = nameOf(obj);
+        var keys = arrObjKeys(obj, inspect);
+        return '[Function' + (name ? ': ' + name : ' (anonymous)') + ']' + (keys.length > 0 ? ' { ' + $join.call(keys, ', ') + ' }' : '');
+    }
+    if (isSymbol(obj)) {
+        var symString = hasShammedSymbols ? $replace.call(String(obj), /^(Symbol\(.*\))_[^)]*$/, '$1') : symToString.call(obj);
+        return typeof obj === 'object' && !hasShammedSymbols ? markBoxed(symString) : symString;
+    }
+    if (isElement(obj)) {
+        var s = '<' + $toLowerCase.call(String(obj.nodeName));
+        var attrs = obj.attributes || [];
+        for (var i = 0; i < attrs.length; i++) {
+            s += ' ' + attrs[i].name + '=' + wrapQuotes(quote(attrs[i].value), 'double', opts);
+        }
+        s += '>';
+        if (obj.childNodes && obj.childNodes.length) { s += '...'; }
+        s += '</' + $toLowerCase.call(String(obj.nodeName)) + '>';
+        return s;
+    }
+    if (isArray(obj)) {
+        if (obj.length === 0) { return '[]'; }
+        var xs = arrObjKeys(obj, inspect);
+        if (indent && !singleLineValues(xs)) {
+            return '[' + indentedJoin(xs, indent) + ']';
+        }
+        return '[ ' + $join.call(xs, ', ') + ' ]';
+    }
+    if (isError(obj)) {
+        var parts = arrObjKeys(obj, inspect);
+        if (!('cause' in Error.prototype) && 'cause' in obj && !isEnumerable.call(obj, 'cause')) {
+            return '{ [' + String(obj) + '] ' + $join.call($concat.call('[cause]: ' + inspect(obj.cause), parts), ', ') + ' }';
+        }
+        if (parts.length === 0) { return '[' + String(obj) + ']'; }
+        return '{ [' + String(obj) + '] ' + $join.call(parts, ', ') + ' }';
+    }
+    if (typeof obj === 'object' && customInspect) {
+        if (inspectSymbol && typeof obj[inspectSymbol] === 'function' && utilInspect) {
+            return utilInspect(obj, { depth: maxDepth - depth });
+        } else if (customInspect !== 'symbol' && typeof obj.inspect === 'function') {
+            return obj.inspect();
+        }
+    }
+    if (isMap(obj)) {
+        var mapParts = [];
+        if (mapForEach) {
+            mapForEach.call(obj, function (value, key) {
+                mapParts.push(inspect(key, obj, true) + ' => ' + inspect(value, obj));
+            });
+        }
+        return collectionOf('Map', mapSize.call(obj), mapParts, indent);
+    }
+    if (isSet(obj)) {
+        var setParts = [];
+        if (setForEach) {
+            setForEach.call(obj, function (value) {
+                setParts.push(inspect(value, obj));
+            });
+        }
+        return collectionOf('Set', setSize.call(obj), setParts, indent);
+    }
+    if (isWeakMap(obj)) {
+        return weakCollectionOf('WeakMap');
+    }
+    if (isWeakSet(obj)) {
+        return weakCollectionOf('WeakSet');
+    }
+    if (isWeakRef(obj)) {
+        return weakCollectionOf('WeakRef');
+    }
+    if (isNumber(obj)) {
+        return markBoxed(inspect(Number(obj)));
+    }
+    if (isBigInt(obj)) {
+        return markBoxed(inspect(bigIntValueOf.call(obj)));
+    }
+    if (isBoolean(obj)) {
+        return markBoxed(booleanValueOf.call(obj));
+    }
+    if (isString(obj)) {
+        return markBoxed(inspect(String(obj)));
+    }
+    // note: in IE 8, sometimes `global !== window` but both are the prototypes of each other
+    /* eslint-env browser */
+    if (typeof window !== 'undefined' && obj === window) {
+        return '{ [object Window] }';
+    }
+    if (obj === global) {
+        return '{ [object globalThis] }';
+    }
+    if (!isDate(obj) && !isRegExp(obj)) {
+        var ys = arrObjKeys(obj, inspect);
+        var isPlainObject = gPO ? gPO(obj) === Object.prototype : obj instanceof Object || obj.constructor === Object;
+        var protoTag = obj instanceof Object ? '' : 'null prototype';
+        var stringTag = !isPlainObject && toStringTag && Object(obj) === obj && toStringTag in obj ? $slice.call(toStr(obj), 8, -1) : protoTag ? 'Object' : '';
+        var constructorTag = isPlainObject || typeof obj.constructor !== 'function' ? '' : obj.constructor.name ? obj.constructor.name + ' ' : '';
+        var tag = constructorTag + (stringTag || protoTag ? '[' + $join.call($concat.call([], stringTag || [], protoTag || []), ': ') + '] ' : '');
+        if (ys.length === 0) { return tag + '{}'; }
+        if (indent) {
+            return tag + '{' + indentedJoin(ys, indent) + '}';
+        }
+        return tag + '{ ' + $join.call(ys, ', ') + ' }';
+    }
+    return String(obj);
+};
+
+function wrapQuotes(s, defaultStyle, opts) {
+    var quoteChar = (opts.quoteStyle || defaultStyle) === 'double' ? '"' : "'";
+    return quoteChar + s + quoteChar;
+}
+
+function quote(s) {
+    return $replace.call(String(s), /"/g, '&quot;');
+}
+
+function isArray(obj) { return toStr(obj) === '[object Array]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+function isDate(obj) { return toStr(obj) === '[object Date]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+function isRegExp(obj) { return toStr(obj) === '[object RegExp]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+function isError(obj) { return toStr(obj) === '[object Error]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+function isString(obj) { return toStr(obj) === '[object String]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+function isNumber(obj) { return toStr(obj) === '[object Number]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+function isBoolean(obj) { return toStr(obj) === '[object Boolean]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+
+// Symbol and BigInt do have Symbol.toStringTag by spec, so that can't be used to eliminate false positives
+function isSymbol(obj) {
+    if (hasShammedSymbols) {
+        return obj && typeof obj === 'object' && obj instanceof Symbol;
+    }
+    if (typeof obj === 'symbol') {
+        return true;
+    }
+    if (!obj || typeof obj !== 'object' || !symToString) {
+        return false;
+    }
+    try {
+        symToString.call(obj);
+        return true;
+    } catch (e) {}
+    return false;
+}
+
+function isBigInt(obj) {
+    if (!obj || typeof obj !== 'object' || !bigIntValueOf) {
+        return false;
+    }
+    try {
+        bigIntValueOf.call(obj);
+        return true;
+    } catch (e) {}
+    return false;
+}
+
+var hasOwn = Object.prototype.hasOwnProperty || function (key) { return key in this; };
+function has(obj, key) {
+    return hasOwn.call(obj, key);
+}
+
+function toStr(obj) {
+    return objectToString.call(obj);
+}
+
+function nameOf(f) {
+    if (f.name) { return f.name; }
+    var m = $match.call(functionToString.call(f), /^function\s*([\w$]+)/);
+    if (m) { return m[1]; }
+    return null;
+}
+
+function indexOf(xs, x) {
+    if (xs.indexOf) { return xs.indexOf(x); }
+    for (var i = 0, l = xs.length; i < l; i++) {
+        if (xs[i] === x) { return i; }
+    }
+    return -1;
+}
+
+function isMap(x) {
+    if (!mapSize || !x || typeof x !== 'object') {
+        return false;
+    }
+    try {
+        mapSize.call(x);
+        try {
+            setSize.call(x);
+        } catch (s) {
+            return true;
+        }
+        return x instanceof Map; // core-js workaround, pre-v2.5.0
+    } catch (e) {}
+    return false;
+}
+
+function isWeakMap(x) {
+    if (!weakMapHas || !x || typeof x !== 'object') {
+        return false;
+    }
+    try {
+        weakMapHas.call(x, weakMapHas);
+        try {
+            weakSetHas.call(x, weakSetHas);
+        } catch (s) {
+            return true;
+        }
+        return x instanceof WeakMap; // core-js workaround, pre-v2.5.0
+    } catch (e) {}
+    return false;
+}
+
+function isWeakRef(x) {
+    if (!weakRefDeref || !x || typeof x !== 'object') {
+        return false;
+    }
+    try {
+        weakRefDeref.call(x);
+        return true;
+    } catch (e) {}
+    return false;
+}
+
+function isSet(x) {
+    if (!setSize || !x || typeof x !== 'object') {
+        return false;
+    }
+    try {
+        setSize.call(x);
+        try {
+            mapSize.call(x);
+        } catch (m) {
+            return true;
+        }
+        return x instanceof Set; // core-js workaround, pre-v2.5.0
+    } catch (e) {}
+    return false;
+}
+
+function isWeakSet(x) {
+    if (!weakSetHas || !x || typeof x !== 'object') {
+        return false;
+    }
+    try {
+        weakSetHas.call(x, weakSetHas);
+        try {
+            weakMapHas.call(x, weakMapHas);
+        } catch (s) {
+            return true;
+        }
+        return x instanceof WeakSet; // core-js workaround, pre-v2.5.0
+    } catch (e) {}
+    return false;
+}
+
+function isElement(x) {
+    if (!x || typeof x !== 'object') { return false; }
+    if (typeof HTMLElement !== 'undefined' && x instanceof HTMLElement) {
+        return true;
+    }
+    return typeof x.nodeName === 'string' && typeof x.getAttribute === 'function';
+}
+
+function inspectString(str, opts) {
+    if (str.length > opts.maxStringLength) {
+        var remaining = str.length - opts.maxStringLength;
+        var trailer = '... ' + remaining + ' more character' + (remaining > 1 ? 's' : '');
+        return inspectString($slice.call(str, 0, opts.maxStringLength), opts) + trailer;
+    }
+    // eslint-disable-next-line no-control-regex
+    var s = $replace.call($replace.call(str, /(['\\])/g, '\\$1'), /[\x00-\x1f]/g, lowbyte);
+    return wrapQuotes(s, 'single', opts);
+}
+
+function lowbyte(c) {
+    var n = c.charCodeAt(0);
+    var x = {
+        8: 'b',
+        9: 't',
+        10: 'n',
+        12: 'f',
+        13: 'r'
+    }[n];
+    if (x) { return '\\' + x; }
+    return '\\x' + (n < 0x10 ? '0' : '') + $toUpperCase.call(n.toString(16));
+}
+
+function markBoxed(str) {
+    return 'Object(' + str + ')';
+}
+
+function weakCollectionOf(type) {
+    return type + ' { ? }';
+}
+
+function collectionOf(type, size, entries, indent) {
+    var joinedEntries = indent ? indentedJoin(entries, indent) : $join.call(entries, ', ');
+    return type + ' (' + size + ') {' + joinedEntries + '}';
+}
+
+function singleLineValues(xs) {
+    for (var i = 0; i < xs.length; i++) {
+        if (indexOf(xs[i], '\n') >= 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function getIndent(opts, depth) {
+    var baseIndent;
+    if (opts.indent === '\t') {
+        baseIndent = '\t';
+    } else if (typeof opts.indent === 'number' && opts.indent > 0) {
+        baseIndent = $join.call(Array(opts.indent + 1), ' ');
+    } else {
+        return null;
+    }
+    return {
+        base: baseIndent,
+        prev: $join.call(Array(depth + 1), baseIndent)
+    };
+}
+
+function indentedJoin(xs, indent) {
+    if (xs.length === 0) { return ''; }
+    var lineJoiner = '\n' + indent.prev + indent.base;
+    return lineJoiner + $join.call(xs, ',' + lineJoiner) + '\n' + indent.prev;
+}
+
+function arrObjKeys(obj, inspect) {
+    var isArr = isArray(obj);
+    var xs = [];
+    if (isArr) {
+        xs.length = obj.length;
+        for (var i = 0; i < obj.length; i++) {
+            xs[i] = has(obj, i) ? inspect(obj[i], obj) : '';
+        }
+    }
+    var syms = typeof gOPS === 'function' ? gOPS(obj) : [];
+    var symMap;
+    if (hasShammedSymbols) {
+        symMap = {};
+        for (var k = 0; k < syms.length; k++) {
+            symMap['$' + syms[k]] = syms[k];
+        }
+    }
+
+    for (var key in obj) { // eslint-disable-line no-restricted-syntax
+        if (!has(obj, key)) { continue; } // eslint-disable-line no-restricted-syntax, no-continue
+        if (isArr && String(Number(key)) === key && key < obj.length) { continue; } // eslint-disable-line no-restricted-syntax, no-continue
+        if (hasShammedSymbols && symMap['$' + key] instanceof Symbol) {
+            // this is to prevent shammed Symbols, which are stored as strings, from being included in the string key section
+            continue; // eslint-disable-line no-restricted-syntax, no-continue
+        } else if ($test.call(/[^\w$]/, key)) {
+            xs.push(inspect(key, obj) + ': ' + inspect(obj[key], obj));
+        } else {
+            xs.push(key + ': ' + inspect(obj[key], obj));
+        }
+    }
+    if (typeof gOPS === 'function') {
+        for (var j = 0; j < syms.length; j++) {
+            if (isEnumerable.call(obj, syms[j])) {
+                xs.push('[' + inspect(syms[j]) + ']: ' + inspect(obj[syms[j]], obj));
+            }
+        }
+    }
+    return xs;
+}
+
+
+/***/ }),
+
+/***/ 7265:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = __nccwpck_require__(3837).inspect;
+
+
+/***/ }),
+
+/***/ 4274:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+module.exports = __nccwpck_require__(1378);
+
+
+/***/ }),
+
+/***/ 4550:
+/***/ ((module) => {
+
+"use strict";
+
+
+const WIN_SLASH = '\\\\/';
+const WIN_NO_SLASH = `[^${WIN_SLASH}]`;
+
+/**
+ * Posix glob regex
+ */
+
+const DOT_LITERAL = '\\.';
+const PLUS_LITERAL = '\\+';
+const QMARK_LITERAL = '\\?';
+const SLASH_LITERAL = '\\/';
+const ONE_CHAR = '(?=.)';
+const QMARK = '[^/]';
+const END_ANCHOR = `(?:${SLASH_LITERAL}|$)`;
+const START_ANCHOR = `(?:^|${SLASH_LITERAL})`;
+const DOTS_SLASH = `${DOT_LITERAL}{1,2}${END_ANCHOR}`;
+const NO_DOT = `(?!${DOT_LITERAL})`;
+const NO_DOTS = `(?!${START_ANCHOR}${DOTS_SLASH})`;
+const NO_DOT_SLASH = `(?!${DOT_LITERAL}{0,1}${END_ANCHOR})`;
+const NO_DOTS_SLASH = `(?!${DOTS_SLASH})`;
+const QMARK_NO_DOT = `[^.${SLASH_LITERAL}]`;
+const STAR = `${QMARK}*?`;
+const SEP = '/';
+
+const POSIX_CHARS = {
+  DOT_LITERAL,
+  PLUS_LITERAL,
+  QMARK_LITERAL,
+  SLASH_LITERAL,
+  ONE_CHAR,
+  QMARK,
+  END_ANCHOR,
+  DOTS_SLASH,
+  NO_DOT,
+  NO_DOTS,
+  NO_DOT_SLASH,
+  NO_DOTS_SLASH,
+  QMARK_NO_DOT,
+  STAR,
+  START_ANCHOR,
+  SEP
+};
+
+/**
+ * Windows glob regex
+ */
+
+const WINDOWS_CHARS = {
+  ...POSIX_CHARS,
+
+  SLASH_LITERAL: `[${WIN_SLASH}]`,
+  QMARK: WIN_NO_SLASH,
+  STAR: `${WIN_NO_SLASH}*?`,
+  DOTS_SLASH: `${DOT_LITERAL}{1,2}(?:[${WIN_SLASH}]|$)`,
+  NO_DOT: `(?!${DOT_LITERAL})`,
+  NO_DOTS: `(?!(?:^|[${WIN_SLASH}])${DOT_LITERAL}{1,2}(?:[${WIN_SLASH}]|$))`,
+  NO_DOT_SLASH: `(?!${DOT_LITERAL}{0,1}(?:[${WIN_SLASH}]|$))`,
+  NO_DOTS_SLASH: `(?!${DOT_LITERAL}{1,2}(?:[${WIN_SLASH}]|$))`,
+  QMARK_NO_DOT: `[^.${WIN_SLASH}]`,
+  START_ANCHOR: `(?:^|[${WIN_SLASH}])`,
+  END_ANCHOR: `(?:[${WIN_SLASH}]|$)`,
+  SEP: '\\'
+};
+
+/**
+ * POSIX Bracket Regex
+ */
+
+const POSIX_REGEX_SOURCE = {
+  alnum: 'a-zA-Z0-9',
+  alpha: 'a-zA-Z',
+  ascii: '\\x00-\\x7F',
+  blank: ' \\t',
+  cntrl: '\\x00-\\x1F\\x7F',
+  digit: '0-9',
+  graph: '\\x21-\\x7E',
+  lower: 'a-z',
+  print: '\\x20-\\x7E ',
+  punct: '\\-!"#$%&\'()\\*+,./:;<=>?@[\\]^_`{|}~',
+  space: ' \\t\\r\\n\\v\\f',
+  upper: 'A-Z',
+  word: 'A-Za-z0-9_',
+  xdigit: 'A-Fa-f0-9'
+};
+
+module.exports = {
+  MAX_LENGTH: 1024 * 64,
+  POSIX_REGEX_SOURCE,
+
+  // regular expressions
+  REGEX_BACKSLASH: /\\(?![*+?^${}(|)[\]])/g,
+  REGEX_NON_SPECIAL_CHARS: /^[^@![\].,$*+?^{}()|\\/]+/,
+  REGEX_SPECIAL_CHARS: /[-*+?.^${}(|)[\]]/,
+  REGEX_SPECIAL_CHARS_BACKREF: /(\\?)((\W)(\3*))/g,
+  REGEX_SPECIAL_CHARS_GLOBAL: /([-*+?.^${}(|)[\]])/g,
+  REGEX_REMOVE_BACKSLASH: /(?:\[.*?[^\\]\]|\\(?=.))/g,
+
+  // Replace globs with equivalent patterns to reduce parsing time.
+  REPLACEMENTS: {
+    '***': '*',
+    '**/**': '**',
+    '**/**/**': '**'
+  },
+
+  // Digits
+  CHAR_0: 48, /* 0 */
+  CHAR_9: 57, /* 9 */
+
+  // Alphabet chars.
+  CHAR_UPPERCASE_A: 65, /* A */
+  CHAR_LOWERCASE_A: 97, /* a */
+  CHAR_UPPERCASE_Z: 90, /* Z */
+  CHAR_LOWERCASE_Z: 122, /* z */
+
+  CHAR_LEFT_PARENTHESES: 40, /* ( */
+  CHAR_RIGHT_PARENTHESES: 41, /* ) */
+
+  CHAR_ASTERISK: 42, /* * */
+
+  // Non-alphabetic chars.
+  CHAR_AMPERSAND: 38, /* & */
+  CHAR_AT: 64, /* @ */
+  CHAR_BACKWARD_SLASH: 92, /* \ */
+  CHAR_CARRIAGE_RETURN: 13, /* \r */
+  CHAR_CIRCUMFLEX_ACCENT: 94, /* ^ */
+  CHAR_COLON: 58, /* : */
+  CHAR_COMMA: 44, /* , */
+  CHAR_DOT: 46, /* . */
+  CHAR_DOUBLE_QUOTE: 34, /* " */
+  CHAR_EQUAL: 61, /* = */
+  CHAR_EXCLAMATION_MARK: 33, /* ! */
+  CHAR_FORM_FEED: 12, /* \f */
+  CHAR_FORWARD_SLASH: 47, /* / */
+  CHAR_GRAVE_ACCENT: 96, /* ` */
+  CHAR_HASH: 35, /* # */
+  CHAR_HYPHEN_MINUS: 45, /* - */
+  CHAR_LEFT_ANGLE_BRACKET: 60, /* < */
+  CHAR_LEFT_CURLY_BRACE: 123, /* { */
+  CHAR_LEFT_SQUARE_BRACKET: 91, /* [ */
+  CHAR_LINE_FEED: 10, /* \n */
+  CHAR_NO_BREAK_SPACE: 160, /* \u00A0 */
+  CHAR_PERCENT: 37, /* % */
+  CHAR_PLUS: 43, /* + */
+  CHAR_QUESTION_MARK: 63, /* ? */
+  CHAR_RIGHT_ANGLE_BRACKET: 62, /* > */
+  CHAR_RIGHT_CURLY_BRACE: 125, /* } */
+  CHAR_RIGHT_SQUARE_BRACKET: 93, /* ] */
+  CHAR_SEMICOLON: 59, /* ; */
+  CHAR_SINGLE_QUOTE: 39, /* ' */
+  CHAR_SPACE: 32, /*   */
+  CHAR_TAB: 9, /* \t */
+  CHAR_UNDERSCORE: 95, /* _ */
+  CHAR_VERTICAL_LINE: 124, /* | */
+  CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279, /* \uFEFF */
+
+  /**
+   * Create EXTGLOB_CHARS
+   */
+
+  extglobChars(chars) {
+    return {
+      '!': { type: 'negate', open: '(?:(?!(?:', close: `))${chars.STAR})` },
+      '?': { type: 'qmark', open: '(?:', close: ')?' },
+      '+': { type: 'plus', open: '(?:', close: ')+' },
+      '*': { type: 'star', open: '(?:', close: ')*' },
+      '@': { type: 'at', open: '(?:', close: ')' }
+    };
+  },
+
+  /**
+   * Create GLOB_CHARS
+   */
+
+  globChars(win32) {
+    return win32 === true ? WINDOWS_CHARS : POSIX_CHARS;
+  }
+};
+
+
+/***/ }),
+
+/***/ 136:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const constants = __nccwpck_require__(4550);
+const utils = __nccwpck_require__(3402);
+
+/**
+ * Constants
+ */
+
+const {
+  MAX_LENGTH,
+  POSIX_REGEX_SOURCE,
+  REGEX_NON_SPECIAL_CHARS,
+  REGEX_SPECIAL_CHARS_BACKREF,
+  REPLACEMENTS
+} = constants;
+
+/**
+ * Helpers
+ */
+
+const expandRange = (args, options) => {
+  if (typeof options.expandRange === 'function') {
+    return options.expandRange(...args, options);
+  }
+
+  args.sort();
+  const value = `[${args.join('-')}]`;
+
+  try {
+    /* eslint-disable-next-line no-new */
+    new RegExp(value);
+  } catch (ex) {
+    return args.map(v => utils.escapeRegex(v)).join('..');
+  }
+
+  return value;
+};
+
+/**
+ * Create the message for a syntax error
+ */
+
+const syntaxError = (type, char) => {
+  return `Missing ${type}: "${char}" - use "\\\\${char}" to match literal characters`;
+};
+
+/**
+ * Parse the given input string.
+ * @param {String} input
+ * @param {Object} options
+ * @return {Object}
+ */
+
+const parse = (input, options) => {
+  if (typeof input !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+
+  input = REPLACEMENTS[input] || input;
+
+  const opts = { ...options };
+  const max = typeof opts.maxLength === 'number' ? Math.min(MAX_LENGTH, opts.maxLength) : MAX_LENGTH;
+
+  let len = input.length;
+  if (len > max) {
+    throw new SyntaxError(`Input length: ${len}, exceeds maximum allowed length: ${max}`);
+  }
+
+  const bos = { type: 'bos', value: '', output: opts.prepend || '' };
+  const tokens = [bos];
+
+  const capture = opts.capture ? '' : '?:';
+
+  // create constants based on platform, for windows or posix
+  const PLATFORM_CHARS = constants.globChars(opts.windows);
+  const EXTGLOB_CHARS = constants.extglobChars(PLATFORM_CHARS);
+
+  const {
+    DOT_LITERAL,
+    PLUS_LITERAL,
+    SLASH_LITERAL,
+    ONE_CHAR,
+    DOTS_SLASH,
+    NO_DOT,
+    NO_DOT_SLASH,
+    NO_DOTS_SLASH,
+    QMARK,
+    QMARK_NO_DOT,
+    STAR,
+    START_ANCHOR
+  } = PLATFORM_CHARS;
+
+  const globstar = (opts) => {
+    return `(${capture}(?:(?!${START_ANCHOR}${opts.dot ? DOTS_SLASH : DOT_LITERAL}).)*?)`;
+  };
+
+  const nodot = opts.dot ? '' : NO_DOT;
+  const qmarkNoDot = opts.dot ? QMARK : QMARK_NO_DOT;
+  let star = opts.bash === true ? globstar(opts) : STAR;
+
+  if (opts.capture) {
+    star = `(${star})`;
+  }
+
+  // minimatch options support
+  if (typeof opts.noext === 'boolean') {
+    opts.noextglob = opts.noext;
+  }
+
+  const state = {
+    input,
+    index: -1,
+    start: 0,
+    dot: opts.dot === true,
+    consumed: '',
+    output: '',
+    prefix: '',
+    backtrack: false,
+    negated: false,
+    brackets: 0,
+    braces: 0,
+    parens: 0,
+    quotes: 0,
+    globstar: false,
+    tokens
+  };
+
+  input = utils.removePrefix(input, state);
+  len = input.length;
+
+  const extglobs = [];
+  const braces = [];
+  const stack = [];
+  let prev = bos;
+  let value;
+
+  /**
+   * Tokenizing helpers
+   */
+
+  const eos = () => state.index === len - 1;
+  const peek = state.peek = (n = 1) => input[state.index + n];
+  const advance = state.advance = () => input[++state.index];
+  const remaining = () => input.slice(state.index + 1);
+  const consume = (value = '', num = 0) => {
+    state.consumed += value;
+    state.index += num;
+  };
+  const append = token => {
+    state.output += token.output != null ? token.output : token.value;
+    consume(token.value);
+  };
+
+  const negate = () => {
+    let count = 1;
+
+    while (peek() === '!' && (peek(2) !== '(' || peek(3) === '?')) {
+      advance();
+      state.start++;
+      count++;
+    }
+
+    if (count % 2 === 0) {
+      return false;
+    }
+
+    state.negated = true;
+    state.start++;
+    return true;
+  };
+
+  const increment = type => {
+    state[type]++;
+    stack.push(type);
+  };
+
+  const decrement = type => {
+    state[type]--;
+    stack.pop();
+  };
+
+  /**
+   * Push tokens onto the tokens array. This helper speeds up
+   * tokenizing by 1) helping us avoid backtracking as much as possible,
+   * and 2) helping us avoid creating extra tokens when consecutive
+   * characters are plain text. This improves performance and simplifies
+   * lookbehinds.
+   */
+
+  const push = tok => {
+    if (prev.type === 'globstar') {
+      const isBrace = state.braces > 0 && (tok.type === 'comma' || tok.type === 'brace');
+      const isExtglob = tok.extglob === true || (extglobs.length && (tok.type === 'pipe' || tok.type === 'paren'));
+
+      if (tok.type !== 'slash' && tok.type !== 'paren' && !isBrace && !isExtglob) {
+        state.output = state.output.slice(0, -prev.output.length);
+        prev.type = 'star';
+        prev.value = '*';
+        prev.output = star;
+        state.output += prev.output;
+      }
+    }
+
+    if (extglobs.length && tok.type !== 'paren' && !EXTGLOB_CHARS[tok.value]) {
+      extglobs[extglobs.length - 1].inner += tok.value;
+    }
+
+    if (tok.value || tok.output) append(tok);
+    if (prev && prev.type === 'text' && tok.type === 'text') {
+      prev.value += tok.value;
+      prev.output = (prev.output || '') + tok.value;
+      return;
+    }
+
+    tok.prev = prev;
+    tokens.push(tok);
+    prev = tok;
+  };
+
+  const extglobOpen = (type, value) => {
+    const token = { ...EXTGLOB_CHARS[value], conditions: 1, inner: '' };
+
+    token.prev = prev;
+    token.parens = state.parens;
+    token.output = state.output;
+    const output = (opts.capture ? '(' : '') + token.open;
+
+    increment('parens');
+    push({ type, value, output: state.output ? '' : ONE_CHAR });
+    push({ type: 'paren', extglob: true, value: advance(), output });
+    extglobs.push(token);
+  };
+
+  const extglobClose = token => {
+    let output = token.close + (opts.capture ? ')' : '');
+
+    if (token.type === 'negate') {
+      let extglobStar = star;
+
+      if (token.inner && token.inner.length > 1 && token.inner.includes('/')) {
+        extglobStar = globstar(opts);
+      }
+
+      if (extglobStar !== star || eos() || /^\)+$/.test(remaining())) {
+        output = token.close = `)$))${extglobStar}`;
+      }
+
+      if (token.prev.type === 'bos' && eos()) {
+        state.negatedExtglob = true;
+      }
+    }
+
+    push({ type: 'paren', extglob: true, value, output });
+    decrement('parens');
+  };
+
+  /**
+   * Fast paths
+   */
+
+  if (opts.fastpaths !== false && !/(^[*!]|[/()[\]{}"])/.test(input)) {
+    let backslashes = false;
+
+    let output = input.replace(REGEX_SPECIAL_CHARS_BACKREF, (m, esc, chars, first, rest, index) => {
+      if (first === '\\') {
+        backslashes = true;
+        return m;
+      }
+
+      if (first === '?') {
+        if (esc) {
+          return esc + first + (rest ? QMARK.repeat(rest.length) : '');
+        }
+        if (index === 0) {
+          return qmarkNoDot + (rest ? QMARK.repeat(rest.length) : '');
+        }
+        return QMARK.repeat(chars.length);
+      }
+
+      if (first === '.') {
+        return DOT_LITERAL.repeat(chars.length);
+      }
+
+      if (first === '*') {
+        if (esc) {
+          return esc + first + (rest ? star : '');
+        }
+        return star;
+      }
+      return esc ? m : `\\${m}`;
+    });
+
+    if (backslashes === true) {
+      if (opts.unescape === true) {
+        output = output.replace(/\\/g, '');
+      } else {
+        output = output.replace(/\\+/g, m => {
+          return m.length % 2 === 0 ? '\\\\' : (m ? '\\' : '');
+        });
+      }
+    }
+
+    if (output === input && opts.contains === true) {
+      state.output = input;
+      return state;
+    }
+
+    state.output = utils.wrapOutput(output, state, options);
+    return state;
+  }
+
+  /**
+   * Tokenize input until we reach end-of-string
+   */
+
+  while (!eos()) {
+    value = advance();
+
+    if (value === '\u0000') {
+      continue;
+    }
+
+    /**
+     * Escaped characters
+     */
+
+    if (value === '\\') {
+      const next = peek();
+
+      if (next === '/' && opts.bash !== true) {
+        continue;
+      }
+
+      if (next === '.' || next === ';') {
+        continue;
+      }
+
+      if (!next) {
+        value += '\\';
+        push({ type: 'text', value });
+        continue;
+      }
+
+      // collapse slashes to reduce potential for exploits
+      const match = /^\\+/.exec(remaining());
+      let slashes = 0;
+
+      if (match && match[0].length > 2) {
+        slashes = match[0].length;
+        state.index += slashes;
+        if (slashes % 2 !== 0) {
+          value += '\\';
+        }
+      }
+
+      if (opts.unescape === true) {
+        value = advance() || '';
+      } else {
+        value += advance() || '';
+      }
+
+      if (state.brackets === 0) {
+        push({ type: 'text', value });
+        continue;
+      }
+    }
+
+    /**
+     * If we're inside a regex character class, continue
+     * until we reach the closing bracket.
+     */
+
+    if (state.brackets > 0 && (value !== ']' || prev.value === '[' || prev.value === '[^')) {
+      if (opts.posix !== false && value === ':') {
+        const inner = prev.value.slice(1);
+        if (inner.includes('[')) {
+          prev.posix = true;
+
+          if (inner.includes(':')) {
+            const idx = prev.value.lastIndexOf('[');
+            const pre = prev.value.slice(0, idx);
+            const rest = prev.value.slice(idx + 2);
+            const posix = POSIX_REGEX_SOURCE[rest];
+            if (posix) {
+              prev.value = pre + posix;
+              state.backtrack = true;
+              advance();
+
+              if (!bos.output && tokens.indexOf(prev) === 1) {
+                bos.output = ONE_CHAR;
+              }
+              continue;
+            }
+          }
+        }
+      }
+
+      if ((value === '[' && peek() !== ':') || (value === '-' && peek() === ']')) {
+        value = `\\${value}`;
+      }
+
+      if (value === ']' && (prev.value === '[' || prev.value === '[^')) {
+        value = `\\${value}`;
+      }
+
+      if (opts.posix === true && value === '!' && prev.value === '[') {
+        value = '^';
+      }
+
+      prev.value += value;
+      append({ value });
+      continue;
+    }
+
+    /**
+     * If we're inside a quoted string, continue
+     * until we reach the closing double quote.
+     */
+
+    if (state.quotes === 1 && value !== '"') {
+      value = utils.escapeRegex(value);
+      prev.value += value;
+      append({ value });
+      continue;
+    }
+
+    /**
+     * Double quotes
+     */
+
+    if (value === '"') {
+      state.quotes = state.quotes === 1 ? 0 : 1;
+      if (opts.keepQuotes === true) {
+        push({ type: 'text', value });
+      }
+      continue;
+    }
+
+    /**
+     * Parentheses
+     */
+
+    if (value === '(') {
+      increment('parens');
+      push({ type: 'paren', value });
+      continue;
+    }
+
+    if (value === ')') {
+      if (state.parens === 0 && opts.strictBrackets === true) {
+        throw new SyntaxError(syntaxError('opening', '('));
+      }
+
+      const extglob = extglobs[extglobs.length - 1];
+      if (extglob && state.parens === extglob.parens + 1) {
+        extglobClose(extglobs.pop());
+        continue;
+      }
+
+      push({ type: 'paren', value, output: state.parens ? ')' : '\\)' });
+      decrement('parens');
+      continue;
+    }
+
+    /**
+     * Square brackets
+     */
+
+    if (value === '[') {
+      if (opts.nobracket === true || !remaining().includes(']')) {
+        if (opts.nobracket !== true && opts.strictBrackets === true) {
+          throw new SyntaxError(syntaxError('closing', ']'));
+        }
+
+        value = `\\${value}`;
+      } else {
+        increment('brackets');
+      }
+
+      push({ type: 'bracket', value });
+      continue;
+    }
+
+    if (value === ']') {
+      if (opts.nobracket === true || (prev && prev.type === 'bracket' && prev.value.length === 1)) {
+        push({ type: 'text', value, output: `\\${value}` });
+        continue;
+      }
+
+      if (state.brackets === 0) {
+        if (opts.strictBrackets === true) {
+          throw new SyntaxError(syntaxError('opening', '['));
+        }
+
+        push({ type: 'text', value, output: `\\${value}` });
+        continue;
+      }
+
+      decrement('brackets');
+
+      const prevValue = prev.value.slice(1);
+      if (prev.posix !== true && prevValue[0] === '^' && !prevValue.includes('/')) {
+        value = `/${value}`;
+      }
+
+      prev.value += value;
+      append({ value });
+
+      // when literal brackets are explicitly disabled
+      // assume we should match with a regex character class
+      if (opts.literalBrackets === false || utils.hasRegexChars(prevValue)) {
+        continue;
+      }
+
+      const escaped = utils.escapeRegex(prev.value);
+      state.output = state.output.slice(0, -prev.value.length);
+
+      // when literal brackets are explicitly enabled
+      // assume we should escape the brackets to match literal characters
+      if (opts.literalBrackets === true) {
+        state.output += escaped;
+        prev.value = escaped;
+        continue;
+      }
+
+      // when the user specifies nothing, try to match both
+      prev.value = `(${capture}${escaped}|${prev.value})`;
+      state.output += prev.value;
+      continue;
+    }
+
+    /**
+     * Braces
+     */
+
+    if (value === '{' && opts.nobrace !== true) {
+      increment('braces');
+
+      const open = {
+        type: 'brace',
+        value,
+        output: '(',
+        outputIndex: state.output.length,
+        tokensIndex: state.tokens.length
+      };
+
+      braces.push(open);
+      push(open);
+      continue;
+    }
+
+    if (value === '}') {
+      const brace = braces[braces.length - 1];
+
+      if (opts.nobrace === true || !brace) {
+        push({ type: 'text', value, output: value });
+        continue;
+      }
+
+      let output = ')';
+
+      if (brace.dots === true) {
+        const arr = tokens.slice();
+        const range = [];
+
+        for (let i = arr.length - 1; i >= 0; i--) {
+          tokens.pop();
+          if (arr[i].type === 'brace') {
+            break;
+          }
+          if (arr[i].type !== 'dots') {
+            range.unshift(arr[i].value);
+          }
+        }
+
+        output = expandRange(range, opts);
+        state.backtrack = true;
+      }
+
+      if (brace.comma !== true && brace.dots !== true) {
+        const out = state.output.slice(0, brace.outputIndex);
+        const toks = state.tokens.slice(brace.tokensIndex);
+        brace.value = brace.output = '\\{';
+        value = output = '\\}';
+        state.output = out;
+        for (const t of toks) {
+          state.output += (t.output || t.value);
+        }
+      }
+
+      push({ type: 'brace', value, output });
+      decrement('braces');
+      braces.pop();
+      continue;
+    }
+
+    /**
+     * Pipes
+     */
+
+    if (value === '|') {
+      if (extglobs.length > 0) {
+        extglobs[extglobs.length - 1].conditions++;
+      }
+      push({ type: 'text', value });
+      continue;
+    }
+
+    /**
+     * Commas
+     */
+
+    if (value === ',') {
+      let output = value;
+
+      const brace = braces[braces.length - 1];
+      if (brace && stack[stack.length - 1] === 'braces') {
+        brace.comma = true;
+        output = '|';
+      }
+
+      push({ type: 'comma', value, output });
+      continue;
+    }
+
+    /**
+     * Slashes
+     */
+
+    if (value === '/') {
+      // if the beginning of the glob is "./", advance the start
+      // to the current index, and don't add the "./" characters
+      // to the state. This greatly simplifies lookbehinds when
+      // checking for BOS characters like "!" and "." (not "./")
+      if (prev.type === 'dot' && state.index === state.start + 1) {
+        state.start = state.index + 1;
+        state.consumed = '';
+        state.output = '';
+        tokens.pop();
+        prev = bos; // reset "prev" to the first token
+        continue;
+      }
+
+      push({ type: 'slash', value, output: SLASH_LITERAL });
+      continue;
+    }
+
+    /**
+     * Dots
+     */
+
+    if (value === '.') {
+      if (state.braces > 0 && prev.type === 'dot') {
+        if (prev.value === '.') prev.output = DOT_LITERAL;
+        const brace = braces[braces.length - 1];
+        prev.type = 'dots';
+        prev.output += value;
+        prev.value += value;
+        brace.dots = true;
+        continue;
+      }
+
+      if ((state.braces + state.parens) === 0 && prev.type !== 'bos' && prev.type !== 'slash') {
+        push({ type: 'text', value, output: DOT_LITERAL });
+        continue;
+      }
+
+      push({ type: 'dot', value, output: DOT_LITERAL });
+      continue;
+    }
+
+    /**
+     * Question marks
+     */
+
+    if (value === '?') {
+      const isGroup = prev && prev.value === '(';
+      if (!isGroup && opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
+        extglobOpen('qmark', value);
+        continue;
+      }
+
+      if (prev && prev.type === 'paren') {
+        const next = peek();
+        let output = value;
+
+        if (next === '<' && !utils.supportsLookbehinds()) {
+          throw new Error('Node.js v10 or higher is required for regex lookbehinds');
+        }
+
+        if ((prev.value === '(' && !/[!=<:]/.test(next)) || (next === '<' && !/<([!=]|\w+>)/.test(remaining()))) {
+          output = `\\${value}`;
+        }
+
+        push({ type: 'text', value, output });
+        continue;
+      }
+
+      if (opts.dot !== true && (prev.type === 'slash' || prev.type === 'bos')) {
+        push({ type: 'qmark', value, output: QMARK_NO_DOT });
+        continue;
+      }
+
+      push({ type: 'qmark', value, output: QMARK });
+      continue;
+    }
+
+    /**
+     * Exclamation
+     */
+
+    if (value === '!') {
+      if (opts.noextglob !== true && peek() === '(') {
+        if (peek(2) !== '?' || !/[!=<:]/.test(peek(3))) {
+          extglobOpen('negate', value);
+          continue;
+        }
+      }
+
+      if (opts.nonegate !== true && state.index === 0) {
+        negate();
+        continue;
+      }
+    }
+
+    /**
+     * Plus
+     */
+
+    if (value === '+') {
+      if (opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
+        extglobOpen('plus', value);
+        continue;
+      }
+
+      if ((prev && prev.value === '(') || opts.regex === false) {
+        push({ type: 'plus', value, output: PLUS_LITERAL });
+        continue;
+      }
+
+      if ((prev && (prev.type === 'bracket' || prev.type === 'paren' || prev.type === 'brace')) || state.parens > 0) {
+        push({ type: 'plus', value });
+        continue;
+      }
+
+      push({ type: 'plus', value: PLUS_LITERAL });
+      continue;
+    }
+
+    /**
+     * Plain text
+     */
+
+    if (value === '@') {
+      if (opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
+        push({ type: 'at', extglob: true, value, output: '' });
+        continue;
+      }
+
+      push({ type: 'text', value });
+      continue;
+    }
+
+    /**
+     * Plain text
+     */
+
+    if (value !== '*') {
+      if (value === '$' || value === '^') {
+        value = `\\${value}`;
+      }
+
+      const match = REGEX_NON_SPECIAL_CHARS.exec(remaining());
+      if (match) {
+        value += match[0];
+        state.index += match[0].length;
+      }
+
+      push({ type: 'text', value });
+      continue;
+    }
+
+    /**
+     * Stars
+     */
+
+    if (prev && (prev.type === 'globstar' || prev.star === true)) {
+      prev.type = 'star';
+      prev.star = true;
+      prev.value += value;
+      prev.output = star;
+      state.backtrack = true;
+      state.globstar = true;
+      consume(value);
+      continue;
+    }
+
+    let rest = remaining();
+    if (opts.noextglob !== true && /^\([^?]/.test(rest)) {
+      extglobOpen('star', value);
+      continue;
+    }
+
+    if (prev.type === 'star') {
+      if (opts.noglobstar === true) {
+        consume(value);
+        continue;
+      }
+
+      const prior = prev.prev;
+      const before = prior.prev;
+      const isStart = prior.type === 'slash' || prior.type === 'bos';
+      const afterStar = before && (before.type === 'star' || before.type === 'globstar');
+
+      if (opts.bash === true && (!isStart || (rest[0] && rest[0] !== '/'))) {
+        push({ type: 'star', value, output: '' });
+        continue;
+      }
+
+      const isBrace = state.braces > 0 && (prior.type === 'comma' || prior.type === 'brace');
+      const isExtglob = extglobs.length && (prior.type === 'pipe' || prior.type === 'paren');
+      if (!isStart && prior.type !== 'paren' && !isBrace && !isExtglob) {
+        push({ type: 'star', value, output: '' });
+        continue;
+      }
+
+      // strip consecutive `/**/`
+      while (rest.slice(0, 3) === '/**') {
+        const after = input[state.index + 4];
+        if (after && after !== '/') {
+          break;
+        }
+        rest = rest.slice(3);
+        consume('/**', 3);
+      }
+
+      if (prior.type === 'bos' && eos()) {
+        prev.type = 'globstar';
+        prev.value += value;
+        prev.output = globstar(opts);
+        state.output = prev.output;
+        state.globstar = true;
+        consume(value);
+        continue;
+      }
+
+      if (prior.type === 'slash' && prior.prev.type !== 'bos' && !afterStar && eos()) {
+        state.output = state.output.slice(0, -(prior.output + prev.output).length);
+        prior.output = `(?:${prior.output}`;
+
+        prev.type = 'globstar';
+        prev.output = globstar(opts) + (opts.strictSlashes ? ')' : '|$)');
+        prev.value += value;
+        state.globstar = true;
+        state.output += prior.output + prev.output;
+        consume(value);
+        continue;
+      }
+
+      if (prior.type === 'slash' && prior.prev.type !== 'bos' && rest[0] === '/') {
+        const end = rest[1] !== void 0 ? '|$' : '';
+
+        state.output = state.output.slice(0, -(prior.output + prev.output).length);
+        prior.output = `(?:${prior.output}`;
+
+        prev.type = 'globstar';
+        prev.output = `${globstar(opts)}${SLASH_LITERAL}|${SLASH_LITERAL}${end})`;
+        prev.value += value;
+
+        state.output += prior.output + prev.output;
+        state.globstar = true;
+
+        consume(value + advance());
+
+        push({ type: 'slash', value: '/', output: '' });
+        continue;
+      }
+
+      if (prior.type === 'bos' && rest[0] === '/') {
+        prev.type = 'globstar';
+        prev.value += value;
+        prev.output = `(?:^|${SLASH_LITERAL}|${globstar(opts)}${SLASH_LITERAL})`;
+        state.output = prev.output;
+        state.globstar = true;
+        consume(value + advance());
+        push({ type: 'slash', value: '/', output: '' });
+        continue;
+      }
+
+      // remove single star from output
+      state.output = state.output.slice(0, -prev.output.length);
+
+      // reset previous token to globstar
+      prev.type = 'globstar';
+      prev.output = globstar(opts);
+      prev.value += value;
+
+      // reset output with globstar
+      state.output += prev.output;
+      state.globstar = true;
+      consume(value);
+      continue;
+    }
+
+    const token = { type: 'star', value, output: star };
+
+    if (opts.bash === true) {
+      token.output = '.*?';
+      if (prev.type === 'bos' || prev.type === 'slash') {
+        token.output = nodot + token.output;
+      }
+      push(token);
+      continue;
+    }
+
+    if (prev && (prev.type === 'bracket' || prev.type === 'paren') && opts.regex === true) {
+      token.output = value;
+      push(token);
+      continue;
+    }
+
+    if (state.index === state.start || prev.type === 'slash' || prev.type === 'dot') {
+      if (prev.type === 'dot') {
+        state.output += NO_DOT_SLASH;
+        prev.output += NO_DOT_SLASH;
+
+      } else if (opts.dot === true) {
+        state.output += NO_DOTS_SLASH;
+        prev.output += NO_DOTS_SLASH;
+
+      } else {
+        state.output += nodot;
+        prev.output += nodot;
+      }
+
+      if (peek() !== '*') {
+        state.output += ONE_CHAR;
+        prev.output += ONE_CHAR;
+      }
+    }
+
+    push(token);
+  }
+
+  while (state.brackets > 0) {
+    if (opts.strictBrackets === true) throw new SyntaxError(syntaxError('closing', ']'));
+    state.output = utils.escapeLast(state.output, '[');
+    decrement('brackets');
+  }
+
+  while (state.parens > 0) {
+    if (opts.strictBrackets === true) throw new SyntaxError(syntaxError('closing', ')'));
+    state.output = utils.escapeLast(state.output, '(');
+    decrement('parens');
+  }
+
+  while (state.braces > 0) {
+    if (opts.strictBrackets === true) throw new SyntaxError(syntaxError('closing', '}'));
+    state.output = utils.escapeLast(state.output, '{');
+    decrement('braces');
+  }
+
+  if (opts.strictSlashes !== true && (prev.type === 'star' || prev.type === 'bracket')) {
+    push({ type: 'maybe_slash', value: '', output: `${SLASH_LITERAL}?` });
+  }
+
+  // rebuild the output if we had to backtrack at any point
+  if (state.backtrack === true) {
+    state.output = '';
+
+    for (const token of state.tokens) {
+      state.output += token.output != null ? token.output : token.value;
+
+      if (token.suffix) {
+        state.output += token.suffix;
+      }
+    }
+  }
+
+  return state;
+};
+
+/**
+ * Fast paths for creating regular expressions for common glob patterns.
+ * This can significantly speed up processing and has very little downside
+ * impact when none of the fast paths match.
+ */
+
+parse.fastpaths = (input, options) => {
+  const opts = { ...options };
+  const max = typeof opts.maxLength === 'number' ? Math.min(MAX_LENGTH, opts.maxLength) : MAX_LENGTH;
+  const len = input.length;
+  if (len > max) {
+    throw new SyntaxError(`Input length: ${len}, exceeds maximum allowed length: ${max}`);
+  }
+
+  input = REPLACEMENTS[input] || input;
+
+  // create constants based on platform, for windows or posix
+  const {
+    DOT_LITERAL,
+    SLASH_LITERAL,
+    ONE_CHAR,
+    DOTS_SLASH,
+    NO_DOT,
+    NO_DOTS,
+    NO_DOTS_SLASH,
+    STAR,
+    START_ANCHOR
+  } = constants.globChars(opts.windows);
+
+  const nodot = opts.dot ? NO_DOTS : NO_DOT;
+  const slashDot = opts.dot ? NO_DOTS_SLASH : NO_DOT;
+  const capture = opts.capture ? '' : '?:';
+  const state = { negated: false, prefix: '' };
+  let star = opts.bash === true ? '.*?' : STAR;
+
+  if (opts.capture) {
+    star = `(${star})`;
+  }
+
+  const globstar = (opts) => {
+    if (opts.noglobstar === true) return star;
+    return `(${capture}(?:(?!${START_ANCHOR}${opts.dot ? DOTS_SLASH : DOT_LITERAL}).)*?)`;
+  };
+
+  const create = str => {
+    switch (str) {
+      case '*':
+        return `${nodot}${ONE_CHAR}${star}`;
+
+      case '.*':
+        return `${DOT_LITERAL}${ONE_CHAR}${star}`;
+
+      case '*.*':
+        return `${nodot}${star}${DOT_LITERAL}${ONE_CHAR}${star}`;
+
+      case '*/*':
+        return `${nodot}${star}${SLASH_LITERAL}${ONE_CHAR}${slashDot}${star}`;
+
+      case '**':
+        return nodot + globstar(opts);
+
+      case '**/*':
+        return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${slashDot}${ONE_CHAR}${star}`;
+
+      case '**/*.*':
+        return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${slashDot}${star}${DOT_LITERAL}${ONE_CHAR}${star}`;
+
+      case '**/.*':
+        return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${DOT_LITERAL}${ONE_CHAR}${star}`;
+
+      default: {
+        const match = /^(.*?)\.(\w+)$/.exec(str);
+        if (!match) return;
+
+        const source = create(match[1]);
+        if (!source) return;
+
+        return source + DOT_LITERAL + match[2];
+      }
+    }
+  };
+
+  const output = utils.removePrefix(input, state);
+  let source = create(output);
+
+  if (source && opts.strictSlashes !== true) {
+    source += `${SLASH_LITERAL}?`;
+  }
+
+  return source;
+};
+
+module.exports = parse;
+
+
+/***/ }),
+
+/***/ 1378:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const scan = __nccwpck_require__(460);
+const parse = __nccwpck_require__(136);
+const utils = __nccwpck_require__(3402);
+const constants = __nccwpck_require__(4550);
+const isObject = val => val && typeof val === 'object' && !Array.isArray(val);
+
+/**
+ * Creates a matcher function from one or more glob patterns. The
+ * returned function takes a string to match as its first argument,
+ * and returns true if the string is a match. The returned matcher
+ * function also takes a boolean as the second argument that, when true,
+ * returns an object with additional information.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * // picomatch(glob[, options]);
+ *
+ * const isMatch = picomatch('*.!(*a)');
+ * console.log(isMatch('a.a')); //=> false
+ * console.log(isMatch('a.b')); //=> true
+ * ```
+ * @name picomatch
+ * @param {String|Array} `globs` One or more glob patterns.
+ * @param {Object=} `options`
+ * @return {Function=} Returns a matcher function.
+ * @api public
+ */
+
+const picomatch = (glob, options, returnState = false) => {
+  if (Array.isArray(glob)) {
+    const fns = glob.map(input => picomatch(input, options, returnState));
+    const arrayMatcher = str => {
+      for (const isMatch of fns) {
+        const state = isMatch(str);
+        if (state) return state;
+      }
+      return false;
+    };
+    return arrayMatcher;
+  }
+
+  const isState = isObject(glob) && glob.tokens && glob.input;
+
+  if (glob === '' || (typeof glob !== 'string' && !isState)) {
+    throw new TypeError('Expected pattern to be a non-empty string');
+  }
+
+  const opts = options || {};
+  const posix = opts.windows;
+  const regex = isState
+    ? picomatch.compileRe(glob, options)
+    : picomatch.makeRe(glob, options, false, true);
+
+  const state = regex.state;
+  delete regex.state;
+
+  let isIgnored = () => false;
+  if (opts.ignore) {
+    const ignoreOpts = { ...options, ignore: null, onMatch: null, onResult: null };
+    isIgnored = picomatch(opts.ignore, ignoreOpts, returnState);
+  }
+
+  const matcher = (input, returnObject = false) => {
+    const { isMatch, match, output } = picomatch.test(input, regex, options, { glob, posix });
+    const result = { glob, state, regex, posix, input, output, match, isMatch };
+
+    if (typeof opts.onResult === 'function') {
+      opts.onResult(result);
+    }
+
+    if (isMatch === false) {
+      result.isMatch = false;
+      return returnObject ? result : false;
+    }
+
+    if (isIgnored(input)) {
+      if (typeof opts.onIgnore === 'function') {
+        opts.onIgnore(result);
+      }
+      result.isMatch = false;
+      return returnObject ? result : false;
+    }
+
+    if (typeof opts.onMatch === 'function') {
+      opts.onMatch(result);
+    }
+    return returnObject ? result : true;
+  };
+
+  if (returnState) {
+    matcher.state = state;
+  }
+
+  return matcher;
+};
+
+/**
+ * Test `input` with the given `regex`. This is used by the main
+ * `picomatch()` function to test the input string.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * // picomatch.test(input, regex[, options]);
+ *
+ * console.log(picomatch.test('foo/bar', /^(?:([^/]*?)\/([^/]*?))$/));
+ * // { isMatch: true, match: [ 'foo/', 'foo', 'bar' ], output: 'foo/bar' }
+ * ```
+ * @param {String} `input` String to test.
+ * @param {RegExp} `regex`
+ * @return {Object} Returns an object with matching info.
+ * @api public
+ */
+
+picomatch.test = (input, regex, options, { glob, posix } = {}) => {
+  if (typeof input !== 'string') {
+    throw new TypeError('Expected input to be a string');
+  }
+
+  if (input === '') {
+    return { isMatch: false, output: '' };
+  }
+
+  const opts = options || {};
+  const format = opts.format || (posix ? utils.toPosixSlashes : null);
+  let match = input === glob;
+  let output = (match && format) ? format(input) : input;
+
+  if (match === false) {
+    output = format ? format(input) : input;
+    match = output === glob;
+  }
+
+  if (match === false || opts.capture === true) {
+    if (opts.matchBase === true || opts.basename === true) {
+      match = picomatch.matchBase(input, regex, options, posix);
+    } else {
+      match = regex.exec(output);
+    }
+  }
+
+  return { isMatch: Boolean(match), match, output };
+};
+
+/**
+ * Match the basename of a filepath.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * // picomatch.matchBase(input, glob[, options]);
+ * console.log(picomatch.matchBase('foo/bar.js', '*.js'); // true
+ * ```
+ * @param {String} `input` String to test.
+ * @param {RegExp|String} `glob` Glob pattern or regex created by [.makeRe](#makeRe).
+ * @return {Boolean}
+ * @api public
+ */
+
+picomatch.matchBase = (input, glob, options) => {
+  const regex = glob instanceof RegExp ? glob : picomatch.makeRe(glob, options);
+  return regex.test(utils.basename(input));
+};
+
+/**
+ * Returns true if **any** of the given glob `patterns` match the specified `string`.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * // picomatch.isMatch(string, patterns[, options]);
+ *
+ * console.log(picomatch.isMatch('a.a', ['b.*', '*.a'])); //=> true
+ * console.log(picomatch.isMatch('a.a', 'b.*')); //=> false
+ * ```
+ * @param {String|Array} str The string to test.
+ * @param {String|Array} patterns One or more glob patterns to use for matching.
+ * @param {Object} [options] See available [options](#options).
+ * @return {Boolean} Returns true if any patterns match `str`
+ * @api public
+ */
+
+picomatch.isMatch = (str, patterns, options) => picomatch(patterns, options)(str);
+
+/**
+ * Parse a glob pattern to create the source string for a regular
+ * expression.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * const result = picomatch.parse(pattern[, options]);
+ * ```
+ * @param {String} `pattern`
+ * @param {Object} `options`
+ * @return {Object} Returns an object with useful properties and output to be used as a regex source string.
+ * @api public
+ */
+
+picomatch.parse = (pattern, options) => {
+  if (Array.isArray(pattern)) return pattern.map(p => picomatch.parse(p, options));
+  return parse(pattern, { ...options, fastpaths: false });
+};
+
+/**
+ * Scan a glob pattern to separate the pattern into segments.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * // picomatch.scan(input[, options]);
+ *
+ * const result = picomatch.scan('!./foo/*.js');
+ * console.log(result);
+ * { prefix: '!./',
+ *   input: '!./foo/*.js',
+ *   start: 3,
+ *   base: 'foo',
+ *   glob: '*.js',
+ *   isBrace: false,
+ *   isBracket: false,
+ *   isGlob: true,
+ *   isExtglob: false,
+ *   isGlobstar: false,
+ *   negated: true }
+ * ```
+ * @param {String} `input` Glob pattern to scan.
+ * @param {Object} `options`
+ * @return {Object} Returns an object with
+ * @api public
+ */
+
+picomatch.scan = (input, options) => scan(input, options);
+
+/**
+ * Create a regular expression from a parsed glob pattern.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * const state = picomatch.parse('*.js');
+ * // picomatch.compileRe(state[, options]);
+ *
+ * console.log(picomatch.compileRe(state));
+ * //=> /^(?:(?!\.)(?=.)[^/]*?\.js)$/
+ * ```
+ * @param {String} `state` The object returned from the `.parse` method.
+ * @param {Object} `options`
+ * @return {RegExp} Returns a regex created from the given pattern.
+ * @api public
+ */
+
+picomatch.compileRe = (parsed, options, returnOutput = false, returnState = false) => {
+  if (returnOutput === true) {
+    return parsed.output;
+  }
+
+  const opts = options || {};
+  const prepend = opts.contains ? '' : '^';
+  const append = opts.contains ? '' : '$';
+
+  let source = `${prepend}(?:${parsed.output})${append}`;
+  if (parsed && parsed.negated === true) {
+    source = `^(?!${source}).*$`;
+  }
+
+  const regex = picomatch.toRegex(source, options);
+  if (returnState === true) {
+    regex.state = parsed;
+  }
+
+  return regex;
+};
+
+picomatch.makeRe = (input, options, returnOutput = false, returnState = false) => {
+  if (!input || typeof input !== 'string') {
+    throw new TypeError('Expected a non-empty string');
+  }
+
+  const opts = options || {};
+  let parsed = { negated: false, fastpaths: true };
+  let prefix = '';
+  let output;
+
+  if (input.startsWith('./')) {
+    input = input.slice(2);
+    prefix = parsed.prefix = './';
+  }
+
+  if (opts.fastpaths !== false && (input[0] === '.' || input[0] === '*')) {
+    output = parse.fastpaths(input, options);
+  }
+
+  if (output === undefined) {
+    parsed = parse(input, options);
+    parsed.prefix = prefix + (parsed.prefix || '');
+  } else {
+    parsed.output = output;
+  }
+
+  return picomatch.compileRe(parsed, options, returnOutput, returnState);
+};
+
+/**
+ * Create a regular expression from the given regex source string.
+ *
+ * ```js
+ * const picomatch = require('picomatch');
+ * // picomatch.toRegex(source[, options]);
+ *
+ * const { output } = picomatch.parse('*.js');
+ * console.log(picomatch.toRegex(output));
+ * //=> /^(?:(?!\.)(?=.)[^/]*?\.js)$/
+ * ```
+ * @param {String} `source` Regular expression source string.
+ * @param {Object} `options`
+ * @return {RegExp}
+ * @api public
+ */
+
+picomatch.toRegex = (source, options) => {
+  try {
+    const opts = options || {};
+    return new RegExp(source, opts.flags || (opts.nocase ? 'i' : ''));
+  } catch (err) {
+    if (options && options.debug === true) throw err;
+    return /$^/;
+  }
+};
+
+/**
+ * Picomatch constants.
+ * @return {Object}
+ */
+
+picomatch.constants = constants;
+
+/**
+ * Expose "picomatch"
+ */
+
+module.exports = picomatch;
+
+
+/***/ }),
+
+/***/ 460:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const utils = __nccwpck_require__(3402);
+const {
+  CHAR_ASTERISK,             /* * */
+  CHAR_AT,                   /* @ */
+  CHAR_BACKWARD_SLASH,       /* \ */
+  CHAR_COMMA,                /* , */
+  CHAR_DOT,                  /* . */
+  CHAR_EXCLAMATION_MARK,     /* ! */
+  CHAR_FORWARD_SLASH,        /* / */
+  CHAR_LEFT_CURLY_BRACE,     /* { */
+  CHAR_LEFT_PARENTHESES,     /* ( */
+  CHAR_LEFT_SQUARE_BRACKET,  /* [ */
+  CHAR_PLUS,                 /* + */
+  CHAR_QUESTION_MARK,        /* ? */
+  CHAR_RIGHT_CURLY_BRACE,    /* } */
+  CHAR_RIGHT_PARENTHESES,    /* ) */
+  CHAR_RIGHT_SQUARE_BRACKET  /* ] */
+} = __nccwpck_require__(4550);
+
+const isPathSeparator = code => {
+  return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH;
+};
+
+const depth = token => {
+  if (token.isPrefix !== true) {
+    token.depth = token.isGlobstar ? Infinity : 1;
+  }
+};
+
+/**
+ * Quickly scans a glob pattern and returns an object with a handful of
+ * useful properties, like `isGlob`, `path` (the leading non-glob, if it exists),
+ * `glob` (the actual pattern), and `negated` (true if the path starts with `!`).
+ *
+ * ```js
+ * const pm = require('picomatch');
+ * console.log(pm.scan('foo/bar/*.js'));
+ * { isGlob: true, input: 'foo/bar/*.js', base: 'foo/bar', glob: '*.js' }
+ * ```
+ * @param {String} `str`
+ * @param {Object} `options`
+ * @return {Object} Returns an object with tokens and regex source string.
+ * @api public
+ */
+
+const scan = (input, options) => {
+  const opts = options || {};
+
+  const length = input.length - 1;
+  const scanToEnd = opts.parts === true || opts.scanToEnd === true;
+  const slashes = [];
+  const tokens = [];
+  const parts = [];
+
+  let str = input;
+  let index = -1;
+  let start = 0;
+  let lastIndex = 0;
+  let isBrace = false;
+  let isBracket = false;
+  let isGlob = false;
+  let isExtglob = false;
+  let isGlobstar = false;
+  let braceEscaped = false;
+  let backslashes = false;
+  let negated = false;
+  let finished = false;
+  let braces = 0;
+  let prev;
+  let code;
+  let token = { value: '', depth: 0, isGlob: false };
+
+  const eos = () => index >= length;
+  const peek = () => str.charCodeAt(index + 1);
+  const advance = () => {
+    prev = code;
+    return str.charCodeAt(++index);
+  };
+
+  while (index < length) {
+    code = advance();
+    let next;
+
+    if (code === CHAR_BACKWARD_SLASH) {
+      backslashes = token.backslashes = true;
+      code = advance();
+
+      if (code === CHAR_LEFT_CURLY_BRACE) {
+        braceEscaped = true;
+      }
+      continue;
+    }
+
+    if (braceEscaped === true || code === CHAR_LEFT_CURLY_BRACE) {
+      braces++;
+
+      while (eos() !== true && (code = advance())) {
+        if (code === CHAR_BACKWARD_SLASH) {
+          backslashes = token.backslashes = true;
+          advance();
+          continue;
+        }
+
+        if (code === CHAR_LEFT_CURLY_BRACE) {
+          braces++;
+          continue;
+        }
+
+        if (braceEscaped !== true && code === CHAR_DOT && (code = advance()) === CHAR_DOT) {
+          isBrace = token.isBrace = true;
+          isGlob = token.isGlob = true;
+          finished = true;
+
+          if (scanToEnd === true) {
+            continue;
+          }
+
+          break;
+        }
+
+        if (braceEscaped !== true && code === CHAR_COMMA) {
+          isBrace = token.isBrace = true;
+          isGlob = token.isGlob = true;
+          finished = true;
+
+          if (scanToEnd === true) {
+            continue;
+          }
+
+          break;
+        }
+
+        if (code === CHAR_RIGHT_CURLY_BRACE) {
+          braces--;
+
+          if (braces === 0) {
+            braceEscaped = false;
+            isBrace = token.isBrace = true;
+            finished = true;
+            break;
+          }
+        }
+      }
+
+      if (scanToEnd === true) {
+        continue;
+      }
+
+      break;
+    }
+
+    if (code === CHAR_FORWARD_SLASH) {
+      slashes.push(index);
+      tokens.push(token);
+      token = { value: '', depth: 0, isGlob: false };
+
+      if (finished === true) continue;
+      if (prev === CHAR_DOT && index === (start + 1)) {
+        start += 2;
+        continue;
+      }
+
+      lastIndex = index + 1;
+      continue;
+    }
+
+    if (opts.noext !== true) {
+      const isExtglobChar = code === CHAR_PLUS
+        || code === CHAR_AT
+        || code === CHAR_ASTERISK
+        || code === CHAR_QUESTION_MARK
+        || code === CHAR_EXCLAMATION_MARK;
+
+      if (isExtglobChar === true && peek() === CHAR_LEFT_PARENTHESES) {
+        isGlob = token.isGlob = true;
+        isExtglob = token.isExtglob = true;
+        finished = true;
+
+        if (scanToEnd === true) {
+          while (eos() !== true && (code = advance())) {
+            if (code === CHAR_BACKWARD_SLASH) {
+              backslashes = token.backslashes = true;
+              code = advance();
+              continue;
+            }
+
+            if (code === CHAR_RIGHT_PARENTHESES) {
+              isGlob = token.isGlob = true;
+              finished = true;
+              break;
+            }
+          }
+          continue;
+        }
+        break;
+      }
+    }
+
+    if (code === CHAR_ASTERISK) {
+      if (prev === CHAR_ASTERISK) isGlobstar = token.isGlobstar = true;
+      isGlob = token.isGlob = true;
+      finished = true;
+
+      if (scanToEnd === true) {
+        continue;
+      }
+      break;
+    }
+
+    if (code === CHAR_QUESTION_MARK) {
+      isGlob = token.isGlob = true;
+      finished = true;
+
+      if (scanToEnd === true) {
+        continue;
+      }
+      break;
+    }
+
+    if (code === CHAR_LEFT_SQUARE_BRACKET) {
+      while (eos() !== true && (next = advance())) {
+        if (next === CHAR_BACKWARD_SLASH) {
+          backslashes = token.backslashes = true;
+          advance();
+          continue;
+        }
+
+        if (next === CHAR_RIGHT_SQUARE_BRACKET) {
+          isBracket = token.isBracket = true;
+          isGlob = token.isGlob = true;
+          finished = true;
+
+          if (scanToEnd === true) {
+            continue;
+          }
+          break;
+        }
+      }
+    }
+
+    if (opts.nonegate !== true && code === CHAR_EXCLAMATION_MARK && index === start) {
+      negated = token.negated = true;
+      start++;
+      continue;
+    }
+
+    if (opts.noparen !== true && code === CHAR_LEFT_PARENTHESES) {
+      isGlob = token.isGlob = true;
+
+      if (scanToEnd === true) {
+        while (eos() !== true && (code = advance())) {
+          if (code === CHAR_LEFT_PARENTHESES) {
+            backslashes = token.backslashes = true;
+            code = advance();
+            continue;
+          }
+
+          if (code === CHAR_RIGHT_PARENTHESES) {
+            finished = true;
+            break;
+          }
+        }
+        continue;
+      }
+      break;
+    }
+
+    if (isGlob === true) {
+      finished = true;
+
+      if (scanToEnd === true) {
+        continue;
+      }
+
+      break;
+    }
+  }
+
+  if (opts.noext === true) {
+    isExtglob = false;
+    isGlob = false;
+  }
+
+  let base = str;
+  let prefix = '';
+  let glob = '';
+
+  if (start > 0) {
+    prefix = str.slice(0, start);
+    str = str.slice(start);
+    lastIndex -= start;
+  }
+
+  if (base && isGlob === true && lastIndex > 0) {
+    base = str.slice(0, lastIndex);
+    glob = str.slice(lastIndex);
+  } else if (isGlob === true) {
+    base = '';
+    glob = str;
+  } else {
+    base = str;
+  }
+
+  if (base && base !== '' && base !== '/' && base !== str) {
+    if (isPathSeparator(base.charCodeAt(base.length - 1))) {
+      base = base.slice(0, -1);
+    }
+  }
+
+  if (opts.unescape === true) {
+    if (glob) glob = utils.removeBackslashes(glob);
+
+    if (base && backslashes === true) {
+      base = utils.removeBackslashes(base);
+    }
+  }
+
+  const state = {
+    prefix,
+    input,
+    start,
+    base,
+    glob,
+    isBrace,
+    isBracket,
+    isGlob,
+    isExtglob,
+    isGlobstar,
+    negated
+  };
+
+  if (opts.tokens === true) {
+    state.maxDepth = 0;
+    if (!isPathSeparator(code)) {
+      tokens.push(token);
+    }
+    state.tokens = tokens;
+  }
+
+  if (opts.parts === true || opts.tokens === true) {
+    let prevIndex;
+
+    for (let idx = 0; idx < slashes.length; idx++) {
+      const n = prevIndex ? prevIndex + 1 : start;
+      const i = slashes[idx];
+      const value = input.slice(n, i);
+      if (opts.tokens) {
+        if (idx === 0 && start !== 0) {
+          tokens[idx].isPrefix = true;
+          tokens[idx].value = prefix;
+        } else {
+          tokens[idx].value = value;
+        }
+        depth(tokens[idx]);
+        state.maxDepth += tokens[idx].depth;
+      }
+      if (idx !== 0 || value !== '') {
+        parts.push(value);
+      }
+      prevIndex = i;
+    }
+
+    if (prevIndex && prevIndex + 1 < input.length) {
+      const value = input.slice(prevIndex + 1);
+      parts.push(value);
+
+      if (opts.tokens) {
+        tokens[tokens.length - 1].value = value;
+        depth(tokens[tokens.length - 1]);
+        state.maxDepth += tokens[tokens.length - 1].depth;
+      }
+    }
+
+    state.slashes = slashes;
+    state.parts = parts;
+  }
+
+  return state;
+};
+
+module.exports = scan;
+
+
+/***/ }),
+
+/***/ 3402:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const {
+  REGEX_BACKSLASH,
+  REGEX_REMOVE_BACKSLASH,
+  REGEX_SPECIAL_CHARS,
+  REGEX_SPECIAL_CHARS_GLOBAL
+} = __nccwpck_require__(4550);
+
+exports.isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
+exports.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str);
+exports.isRegexChar = str => str.length === 1 && exports.hasRegexChars(str);
+exports.escapeRegex = str => str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1');
+exports.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/');
+
+exports.removeBackslashes = str => {
+  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
+    return match === '\\' ? '' : match;
+  });
+};
+
+exports.supportsLookbehinds = () => {
+  const segs = process.version.slice(1).split('.').map(Number);
+  if (segs.length === 3 && segs[0] >= 9 || (segs[0] === 8 && segs[1] >= 10)) {
+    return true;
+  }
+  return false;
+};
+
+exports.escapeLast = (input, char, lastIdx) => {
+  const idx = input.lastIndexOf(char, lastIdx);
+  if (idx === -1) return input;
+  if (input[idx - 1] === '\\') return exports.escapeLast(input, char, idx - 1);
+  return `${input.slice(0, idx)}\\${input.slice(idx)}`;
+};
+
+exports.removePrefix = (input, state = {}) => {
+  let output = input;
+  if (output.startsWith('./')) {
+    output = output.slice(2);
+    state.prefix = './';
+  }
+  return output;
+};
+
+exports.wrapOutput = (input, state = {}, options = {}) => {
+  const prepend = options.contains ? '' : '^';
+  const append = options.contains ? '' : '$';
+
+  let output = `${prepend}(?:${input})${append}`;
+  if (state.negated === true) {
+    output = `(?:^(?!${output}).*$)`;
+  }
+  return output;
+};
+
+exports.basename = (path, { windows } = {}) => {
+  if (windows) {
+    return path.replace(/[\\/]$/, '').replace(/.*[\\/]/, '');
+  } else {
+    return path.replace(/\/$/, '').replace(/.*\//, '');
+  }
+};
+
+
+/***/ }),
+
+/***/ 4907:
+/***/ ((module) => {
+
+"use strict";
+
+
+var replace = String.prototype.replace;
+var percentTwenties = /%20/g;
+
+var Format = {
+    RFC1738: 'RFC1738',
+    RFC3986: 'RFC3986'
+};
+
+module.exports = {
+    'default': Format.RFC3986,
+    formatters: {
+        RFC1738: function (value) {
+            return replace.call(value, percentTwenties, '+');
+        },
+        RFC3986: function (value) {
+            return String(value);
+        }
+    },
+    RFC1738: Format.RFC1738,
+    RFC3986: Format.RFC3986
+};
+
+
+/***/ }),
+
+/***/ 2760:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var stringify = __nccwpck_require__(9954);
+var parse = __nccwpck_require__(3912);
+var formats = __nccwpck_require__(4907);
+
+module.exports = {
+    formats: formats,
+    parse: parse,
+    stringify: stringify
+};
+
+
+/***/ }),
+
+/***/ 3912:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var utils = __nccwpck_require__(2360);
+
+var has = Object.prototype.hasOwnProperty;
+var isArray = Array.isArray;
+
+var defaults = {
+    allowDots: false,
+    allowEmptyArrays: false,
+    allowPrototypes: false,
+    allowSparse: false,
+    arrayLimit: 20,
+    charset: 'utf-8',
+    charsetSentinel: false,
+    comma: false,
+    decodeDotInKeys: true,
+    decoder: utils.decode,
+    delimiter: '&',
+    depth: 5,
+    duplicates: 'combine',
+    ignoreQueryPrefix: false,
+    interpretNumericEntities: false,
+    parameterLimit: 1000,
+    parseArrays: true,
+    plainObjects: false,
+    strictNullHandling: false
+};
+
+var interpretNumericEntities = function (str) {
+    return str.replace(/&#(\d+);/g, function ($0, numberStr) {
+        return String.fromCharCode(parseInt(numberStr, 10));
+    });
+};
+
+var parseArrayValue = function (val, options) {
+    if (val && typeof val === 'string' && options.comma && val.indexOf(',') > -1) {
+        return val.split(',');
+    }
+
+    return val;
+};
+
+// This is what browsers will submit when the ✓ character occurs in an
+// application/x-www-form-urlencoded body and the encoding of the page containing
+// the form is iso-8859-1, or when the submitted form has an accept-charset
+// attribute of iso-8859-1. Presumably also with other charsets that do not contain
+// the ✓ character, such as us-ascii.
+var isoSentinel = 'utf8=%26%2310003%3B'; // encodeURIComponent('&#10003;')
+
+// These are the percent-encoded utf-8 octets representing a checkmark, indicating that the request actually is utf-8 encoded.
+var charsetSentinel = 'utf8=%E2%9C%93'; // encodeURIComponent('✓')
+
+var parseValues = function parseQueryStringValues(str, options) {
+    var obj = { __proto__: null };
+
+    var cleanStr = options.ignoreQueryPrefix ? str.replace(/^\?/, '') : str;
+    var limit = options.parameterLimit === Infinity ? undefined : options.parameterLimit;
+    var parts = cleanStr.split(options.delimiter, limit);
+    var skipIndex = -1; // Keep track of where the utf8 sentinel was found
+    var i;
+
+    var charset = options.charset;
+    if (options.charsetSentinel) {
+        for (i = 0; i < parts.length; ++i) {
+            if (parts[i].indexOf('utf8=') === 0) {
+                if (parts[i] === charsetSentinel) {
+                    charset = 'utf-8';
+                } else if (parts[i] === isoSentinel) {
+                    charset = 'iso-8859-1';
+                }
+                skipIndex = i;
+                i = parts.length; // The eslint settings do not allow break;
+            }
+        }
+    }
+
+    for (i = 0; i < parts.length; ++i) {
+        if (i === skipIndex) {
+            continue;
+        }
+        var part = parts[i];
+
+        var bracketEqualsPos = part.indexOf(']=');
+        var pos = bracketEqualsPos === -1 ? part.indexOf('=') : bracketEqualsPos + 1;
+
+        var key, val;
+        if (pos === -1) {
+            key = options.decoder(part, defaults.decoder, charset, 'key');
+            val = options.strictNullHandling ? null : '';
+        } else {
+            key = options.decoder(part.slice(0, pos), defaults.decoder, charset, 'key');
+            val = utils.maybeMap(
+                parseArrayValue(part.slice(pos + 1), options),
+                function (encodedVal) {
+                    return options.decoder(encodedVal, defaults.decoder, charset, 'value');
+                }
+            );
+        }
+
+        if (val && options.interpretNumericEntities && charset === 'iso-8859-1') {
+            val = interpretNumericEntities(val);
+        }
+
+        if (part.indexOf('[]=') > -1) {
+            val = isArray(val) ? [val] : val;
+        }
+
+        var existing = has.call(obj, key);
+        if (existing && options.duplicates === 'combine') {
+            obj[key] = utils.combine(obj[key], val);
+        } else if (!existing || options.duplicates === 'last') {
+            obj[key] = val;
+        }
+    }
+
+    return obj;
+};
+
+var parseObject = function (chain, val, options, valuesParsed) {
+    var leaf = valuesParsed ? val : parseArrayValue(val, options);
+
+    for (var i = chain.length - 1; i >= 0; --i) {
+        var obj;
+        var root = chain[i];
+
+        if (root === '[]' && options.parseArrays) {
+            obj = options.allowEmptyArrays && leaf === '' ? [] : [].concat(leaf);
+        } else {
+            obj = options.plainObjects ? Object.create(null) : {};
+            var cleanRoot = root.charAt(0) === '[' && root.charAt(root.length - 1) === ']' ? root.slice(1, -1) : root;
+            var decodedRoot = options.decodeDotInKeys ? cleanRoot.replace(/%2E/g, '.') : cleanRoot;
+            var index = parseInt(decodedRoot, 10);
+            if (!options.parseArrays && decodedRoot === '') {
+                obj = { 0: leaf };
+            } else if (
+                !isNaN(index)
+                && root !== decodedRoot
+                && String(index) === decodedRoot
+                && index >= 0
+                && (options.parseArrays && index <= options.arrayLimit)
+            ) {
+                obj = [];
+                obj[index] = leaf;
+            } else if (decodedRoot !== '__proto__') {
+                obj[decodedRoot] = leaf;
+            }
+        }
+
+        leaf = obj;
+    }
+
+    return leaf;
+};
+
+var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesParsed) {
+    if (!givenKey) {
+        return;
+    }
+
+    // Transform dot notation to bracket notation
+    var key = options.allowDots ? givenKey.replace(/\.([^.[]+)/g, '[$1]') : givenKey;
+
+    // The regex chunks
+
+    var brackets = /(\[[^[\]]*])/;
+    var child = /(\[[^[\]]*])/g;
+
+    // Get the parent
+
+    var segment = options.depth > 0 && brackets.exec(key);
+    var parent = segment ? key.slice(0, segment.index) : key;
+
+    // Stash the parent if it exists
+
+    var keys = [];
+    if (parent) {
+        // If we aren't using plain objects, optionally prefix keys that would overwrite object prototype properties
+        if (!options.plainObjects && has.call(Object.prototype, parent)) {
+            if (!options.allowPrototypes) {
+                return;
+            }
+        }
+
+        keys.push(parent);
+    }
+
+    // Loop through children appending to the array until we hit depth
+
+    var i = 0;
+    while (options.depth > 0 && (segment = child.exec(key)) !== null && i < options.depth) {
+        i += 1;
+        if (!options.plainObjects && has.call(Object.prototype, segment[1].slice(1, -1))) {
+            if (!options.allowPrototypes) {
+                return;
+            }
+        }
+        keys.push(segment[1]);
+    }
+
+    // If there's a remainder, just add whatever is left
+
+    if (segment) {
+        keys.push('[' + key.slice(segment.index) + ']');
+    }
+
+    return parseObject(keys, val, options, valuesParsed);
+};
+
+var normalizeParseOptions = function normalizeParseOptions(opts) {
+    if (!opts) {
+        return defaults;
+    }
+
+    if (typeof opts.allowEmptyArrays !== 'undefined' && typeof opts.allowEmptyArrays !== 'boolean') {
+        throw new TypeError('`allowEmptyArrays` option can only be `true` or `false`, when provided');
+    }
+
+    if (typeof opts.decodeDotInKeys !== 'undefined' && typeof opts.decodeDotInKeys !== 'boolean') {
+        throw new TypeError('`decodeDotInKeys` option can only be `true` or `false`, when provided');
+    }
+
+    if (opts.decoder !== null && typeof opts.decoder !== 'undefined' && typeof opts.decoder !== 'function') {
+        throw new TypeError('Decoder has to be a function.');
+    }
+
+    if (typeof opts.charset !== 'undefined' && opts.charset !== 'utf-8' && opts.charset !== 'iso-8859-1') {
+        throw new TypeError('The charset option must be either utf-8, iso-8859-1, or undefined');
+    }
+    var charset = typeof opts.charset === 'undefined' ? defaults.charset : opts.charset;
+
+    var duplicates = typeof opts.duplicates === 'undefined' ? defaults.duplicates : opts.duplicates;
+
+    if (duplicates !== 'combine' && duplicates !== 'first' && duplicates !== 'last') {
+        throw new TypeError('The duplicates option must be either combine, first, or last');
+    }
+
+    var allowDots = typeof opts.allowDots === 'undefined' ? opts.decodeDotInKeys === true ? true : defaults.allowDots : !!opts.allowDots;
+
+    return {
+        allowDots: allowDots,
+        allowEmptyArrays: typeof opts.allowEmptyArrays === 'boolean' ? !!opts.allowEmptyArrays : defaults.allowEmptyArrays,
+        allowPrototypes: typeof opts.allowPrototypes === 'boolean' ? opts.allowPrototypes : defaults.allowPrototypes,
+        allowSparse: typeof opts.allowSparse === 'boolean' ? opts.allowSparse : defaults.allowSparse,
+        arrayLimit: typeof opts.arrayLimit === 'number' ? opts.arrayLimit : defaults.arrayLimit,
+        charset: charset,
+        charsetSentinel: typeof opts.charsetSentinel === 'boolean' ? opts.charsetSentinel : defaults.charsetSentinel,
+        comma: typeof opts.comma === 'boolean' ? opts.comma : defaults.comma,
+        decodeDotInKeys: typeof opts.decodeDotInKeys === 'boolean' ? opts.decodeDotInKeys : defaults.decodeDotInKeys,
+        decoder: typeof opts.decoder === 'function' ? opts.decoder : defaults.decoder,
+        delimiter: typeof opts.delimiter === 'string' || utils.isRegExp(opts.delimiter) ? opts.delimiter : defaults.delimiter,
+        // eslint-disable-next-line no-implicit-coercion, no-extra-parens
+        depth: (typeof opts.depth === 'number' || opts.depth === false) ? +opts.depth : defaults.depth,
+        duplicates: duplicates,
+        ignoreQueryPrefix: opts.ignoreQueryPrefix === true,
+        interpretNumericEntities: typeof opts.interpretNumericEntities === 'boolean' ? opts.interpretNumericEntities : defaults.interpretNumericEntities,
+        parameterLimit: typeof opts.parameterLimit === 'number' ? opts.parameterLimit : defaults.parameterLimit,
+        parseArrays: opts.parseArrays !== false,
+        plainObjects: typeof opts.plainObjects === 'boolean' ? opts.plainObjects : defaults.plainObjects,
+        strictNullHandling: typeof opts.strictNullHandling === 'boolean' ? opts.strictNullHandling : defaults.strictNullHandling
+    };
+};
+
+module.exports = function (str, opts) {
+    var options = normalizeParseOptions(opts);
+
+    if (str === '' || str === null || typeof str === 'undefined') {
+        return options.plainObjects ? Object.create(null) : {};
+    }
+
+    var tempObj = typeof str === 'string' ? parseValues(str, options) : str;
+    var obj = options.plainObjects ? Object.create(null) : {};
+
+    // Iterate over the keys and setup the new object
+
+    var keys = Object.keys(tempObj);
+    for (var i = 0; i < keys.length; ++i) {
+        var key = keys[i];
+        var newObj = parseKeys(key, tempObj[key], options, typeof str === 'string');
+        obj = utils.merge(obj, newObj, options);
+    }
+
+    if (options.allowSparse === true) {
+        return obj;
+    }
+
+    return utils.compact(obj);
+};
+
+
+/***/ }),
+
+/***/ 9954:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var getSideChannel = __nccwpck_require__(4334);
+var utils = __nccwpck_require__(2360);
+var formats = __nccwpck_require__(4907);
+var has = Object.prototype.hasOwnProperty;
+
+var arrayPrefixGenerators = {
+    brackets: function brackets(prefix) {
+        return prefix + '[]';
+    },
+    comma: 'comma',
+    indices: function indices(prefix, key) {
+        return prefix + '[' + key + ']';
+    },
+    repeat: function repeat(prefix) {
+        return prefix;
+    }
+};
+
+var isArray = Array.isArray;
+var push = Array.prototype.push;
+var pushToArray = function (arr, valueOrArray) {
+    push.apply(arr, isArray(valueOrArray) ? valueOrArray : [valueOrArray]);
+};
+
+var toISO = Date.prototype.toISOString;
+
+var defaultFormat = formats['default'];
+var defaults = {
+    addQueryPrefix: false,
+    allowDots: false,
+    allowEmptyArrays: false,
+    arrayFormat: 'indices',
+    charset: 'utf-8',
+    charsetSentinel: false,
+    delimiter: '&',
+    encode: true,
+    encodeDotInKeys: false,
+    encoder: utils.encode,
+    encodeValuesOnly: false,
+    format: defaultFormat,
+    formatter: formats.formatters[defaultFormat],
+    // deprecated
+    indices: false,
+    serializeDate: function serializeDate(date) {
+        return toISO.call(date);
+    },
+    skipNulls: false,
+    strictNullHandling: false
+};
+
+var isNonNullishPrimitive = function isNonNullishPrimitive(v) {
+    return typeof v === 'string'
+        || typeof v === 'number'
+        || typeof v === 'boolean'
+        || typeof v === 'symbol'
+        || typeof v === 'bigint';
+};
+
+var sentinel = {};
+
+var stringify = function stringify(
+    object,
+    prefix,
+    generateArrayPrefix,
+    commaRoundTrip,
+    allowEmptyArrays,
+    strictNullHandling,
+    skipNulls,
+    encodeDotInKeys,
+    encoder,
+    filter,
+    sort,
+    allowDots,
+    serializeDate,
+    format,
+    formatter,
+    encodeValuesOnly,
+    charset,
+    sideChannel
+) {
+    var obj = object;
+
+    var tmpSc = sideChannel;
+    var step = 0;
+    var findFlag = false;
+    while ((tmpSc = tmpSc.get(sentinel)) !== void undefined && !findFlag) {
+        // Where object last appeared in the ref tree
+        var pos = tmpSc.get(object);
+        step += 1;
+        if (typeof pos !== 'undefined') {
+            if (pos === step) {
+                throw new RangeError('Cyclic object value');
+            } else {
+                findFlag = true; // Break while
+            }
+        }
+        if (typeof tmpSc.get(sentinel) === 'undefined') {
+            step = 0;
+        }
+    }
+
+    if (typeof filter === 'function') {
+        obj = filter(prefix, obj);
+    } else if (obj instanceof Date) {
+        obj = serializeDate(obj);
+    } else if (generateArrayPrefix === 'comma' && isArray(obj)) {
+        obj = utils.maybeMap(obj, function (value) {
+            if (value instanceof Date) {
+                return serializeDate(value);
+            }
+            return value;
+        });
+    }
+
+    if (obj === null) {
+        if (strictNullHandling) {
+            return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, 'key', format) : prefix;
+        }
+
+        obj = '';
+    }
+
+    if (isNonNullishPrimitive(obj) || utils.isBuffer(obj)) {
+        if (encoder) {
+            var keyValue = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder, charset, 'key', format);
+            return [formatter(keyValue) + '=' + formatter(encoder(obj, defaults.encoder, charset, 'value', format))];
+        }
+        return [formatter(prefix) + '=' + formatter(String(obj))];
+    }
+
+    var values = [];
+
+    if (typeof obj === 'undefined') {
+        return values;
+    }
+
+    var objKeys;
+    if (generateArrayPrefix === 'comma' && isArray(obj)) {
+        // we need to join elements in
+        if (encodeValuesOnly && encoder) {
+            obj = utils.maybeMap(obj, encoder);
+        }
+        objKeys = [{ value: obj.length > 0 ? obj.join(',') || null : void undefined }];
+    } else if (isArray(filter)) {
+        objKeys = filter;
+    } else {
+        var keys = Object.keys(obj);
+        objKeys = sort ? keys.sort(sort) : keys;
+    }
+
+    var encodedPrefix = encodeDotInKeys ? prefix.replace(/\./g, '%2E') : prefix;
+
+    var adjustedPrefix = commaRoundTrip && isArray(obj) && obj.length === 1 ? encodedPrefix + '[]' : encodedPrefix;
+
+    if (allowEmptyArrays && isArray(obj) && obj.length === 0) {
+        return adjustedPrefix + '[]';
+    }
+
+    for (var j = 0; j < objKeys.length; ++j) {
+        var key = objKeys[j];
+        var value = typeof key === 'object' && typeof key.value !== 'undefined' ? key.value : obj[key];
+
+        if (skipNulls && value === null) {
+            continue;
+        }
+
+        var encodedKey = allowDots && encodeDotInKeys ? key.replace(/\./g, '%2E') : key;
+        var keyPrefix = isArray(obj)
+            ? typeof generateArrayPrefix === 'function' ? generateArrayPrefix(adjustedPrefix, encodedKey) : adjustedPrefix
+            : adjustedPrefix + (allowDots ? '.' + encodedKey : '[' + encodedKey + ']');
+
+        sideChannel.set(object, step);
+        var valueSideChannel = getSideChannel();
+        valueSideChannel.set(sentinel, sideChannel);
+        pushToArray(values, stringify(
+            value,
+            keyPrefix,
+            generateArrayPrefix,
+            commaRoundTrip,
+            allowEmptyArrays,
+            strictNullHandling,
+            skipNulls,
+            encodeDotInKeys,
+            generateArrayPrefix === 'comma' && encodeValuesOnly && isArray(obj) ? null : encoder,
+            filter,
+            sort,
+            allowDots,
+            serializeDate,
+            format,
+            formatter,
+            encodeValuesOnly,
+            charset,
+            valueSideChannel
+        ));
+    }
+
+    return values;
+};
+
+var normalizeStringifyOptions = function normalizeStringifyOptions(opts) {
+    if (!opts) {
+        return defaults;
+    }
+
+    if (typeof opts.allowEmptyArrays !== 'undefined' && typeof opts.allowEmptyArrays !== 'boolean') {
+        throw new TypeError('`allowEmptyArrays` option can only be `true` or `false`, when provided');
+    }
+
+    if (typeof opts.encodeDotInKeys !== 'undefined' && typeof opts.encodeDotInKeys !== 'boolean') {
+        throw new TypeError('`encodeDotInKeys` option can only be `true` or `false`, when provided');
+    }
+
+    if (opts.encoder !== null && typeof opts.encoder !== 'undefined' && typeof opts.encoder !== 'function') {
+        throw new TypeError('Encoder has to be a function.');
+    }
+
+    var charset = opts.charset || defaults.charset;
+    if (typeof opts.charset !== 'undefined' && opts.charset !== 'utf-8' && opts.charset !== 'iso-8859-1') {
+        throw new TypeError('The charset option must be either utf-8, iso-8859-1, or undefined');
+    }
+
+    var format = formats['default'];
+    if (typeof opts.format !== 'undefined') {
+        if (!has.call(formats.formatters, opts.format)) {
+            throw new TypeError('Unknown format option provided.');
+        }
+        format = opts.format;
+    }
+    var formatter = formats.formatters[format];
+
+    var filter = defaults.filter;
+    if (typeof opts.filter === 'function' || isArray(opts.filter)) {
+        filter = opts.filter;
+    }
+
+    var arrayFormat;
+    if (opts.arrayFormat in arrayPrefixGenerators) {
+        arrayFormat = opts.arrayFormat;
+    } else if ('indices' in opts) {
+        arrayFormat = opts.indices ? 'indices' : 'repeat';
+    } else {
+        arrayFormat = defaults.arrayFormat;
+    }
+
+    if ('commaRoundTrip' in opts && typeof opts.commaRoundTrip !== 'boolean') {
+        throw new TypeError('`commaRoundTrip` must be a boolean, or absent');
+    }
+
+    var allowDots = typeof opts.allowDots === 'undefined' ? opts.encodeDotInKeys === true ? true : defaults.allowDots : !!opts.allowDots;
+
+    return {
+        addQueryPrefix: typeof opts.addQueryPrefix === 'boolean' ? opts.addQueryPrefix : defaults.addQueryPrefix,
+        allowDots: allowDots,
+        allowEmptyArrays: typeof opts.allowEmptyArrays === 'boolean' ? !!opts.allowEmptyArrays : defaults.allowEmptyArrays,
+        arrayFormat: arrayFormat,
+        charset: charset,
+        charsetSentinel: typeof opts.charsetSentinel === 'boolean' ? opts.charsetSentinel : defaults.charsetSentinel,
+        commaRoundTrip: opts.commaRoundTrip,
+        delimiter: typeof opts.delimiter === 'undefined' ? defaults.delimiter : opts.delimiter,
+        encode: typeof opts.encode === 'boolean' ? opts.encode : defaults.encode,
+        encodeDotInKeys: typeof opts.encodeDotInKeys === 'boolean' ? opts.encodeDotInKeys : defaults.encodeDotInKeys,
+        encoder: typeof opts.encoder === 'function' ? opts.encoder : defaults.encoder,
+        encodeValuesOnly: typeof opts.encodeValuesOnly === 'boolean' ? opts.encodeValuesOnly : defaults.encodeValuesOnly,
+        filter: filter,
+        format: format,
+        formatter: formatter,
+        serializeDate: typeof opts.serializeDate === 'function' ? opts.serializeDate : defaults.serializeDate,
+        skipNulls: typeof opts.skipNulls === 'boolean' ? opts.skipNulls : defaults.skipNulls,
+        sort: typeof opts.sort === 'function' ? opts.sort : null,
+        strictNullHandling: typeof opts.strictNullHandling === 'boolean' ? opts.strictNullHandling : defaults.strictNullHandling
+    };
+};
+
+module.exports = function (object, opts) {
+    var obj = object;
+    var options = normalizeStringifyOptions(opts);
+
+    var objKeys;
+    var filter;
+
+    if (typeof options.filter === 'function') {
+        filter = options.filter;
+        obj = filter('', obj);
+    } else if (isArray(options.filter)) {
+        filter = options.filter;
+        objKeys = filter;
+    }
+
+    var keys = [];
+
+    if (typeof obj !== 'object' || obj === null) {
+        return '';
+    }
+
+    var generateArrayPrefix = arrayPrefixGenerators[options.arrayFormat];
+    var commaRoundTrip = generateArrayPrefix === 'comma' && options.commaRoundTrip;
+
+    if (!objKeys) {
+        objKeys = Object.keys(obj);
+    }
+
+    if (options.sort) {
+        objKeys.sort(options.sort);
+    }
+
+    var sideChannel = getSideChannel();
+    for (var i = 0; i < objKeys.length; ++i) {
+        var key = objKeys[i];
+
+        if (options.skipNulls && obj[key] === null) {
+            continue;
+        }
+        pushToArray(keys, stringify(
+            obj[key],
+            key,
+            generateArrayPrefix,
+            commaRoundTrip,
+            options.allowEmptyArrays,
+            options.strictNullHandling,
+            options.skipNulls,
+            options.encodeDotInKeys,
+            options.encode ? options.encoder : null,
+            options.filter,
+            options.sort,
+            options.allowDots,
+            options.serializeDate,
+            options.format,
+            options.formatter,
+            options.encodeValuesOnly,
+            options.charset,
+            sideChannel
+        ));
+    }
+
+    var joined = keys.join(options.delimiter);
+    var prefix = options.addQueryPrefix === true ? '?' : '';
+
+    if (options.charsetSentinel) {
+        if (options.charset === 'iso-8859-1') {
+            // encodeURIComponent('&#10003;'), the "numeric entity" representation of a checkmark
+            prefix += 'utf8=%26%2310003%3B&';
+        } else {
+            // encodeURIComponent('✓')
+            prefix += 'utf8=%E2%9C%93&';
+        }
+    }
+
+    return joined.length > 0 ? prefix + joined : '';
+};
+
+
+/***/ }),
+
+/***/ 2360:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var formats = __nccwpck_require__(4907);
+
+var has = Object.prototype.hasOwnProperty;
+var isArray = Array.isArray;
+
+var hexTable = (function () {
+    var array = [];
+    for (var i = 0; i < 256; ++i) {
+        array.push('%' + ((i < 16 ? '0' : '') + i.toString(16)).toUpperCase());
+    }
+
+    return array;
+}());
+
+var compactQueue = function compactQueue(queue) {
+    while (queue.length > 1) {
+        var item = queue.pop();
+        var obj = item.obj[item.prop];
+
+        if (isArray(obj)) {
+            var compacted = [];
+
+            for (var j = 0; j < obj.length; ++j) {
+                if (typeof obj[j] !== 'undefined') {
+                    compacted.push(obj[j]);
+                }
+            }
+
+            item.obj[item.prop] = compacted;
+        }
+    }
+};
+
+var arrayToObject = function arrayToObject(source, options) {
+    var obj = options && options.plainObjects ? Object.create(null) : {};
+    for (var i = 0; i < source.length; ++i) {
+        if (typeof source[i] !== 'undefined') {
+            obj[i] = source[i];
+        }
+    }
+
+    return obj;
+};
+
+var merge = function merge(target, source, options) {
+    /* eslint no-param-reassign: 0 */
+    if (!source) {
+        return target;
+    }
+
+    if (typeof source !== 'object') {
+        if (isArray(target)) {
+            target.push(source);
+        } else if (target && typeof target === 'object') {
+            if ((options && (options.plainObjects || options.allowPrototypes)) || !has.call(Object.prototype, source)) {
+                target[source] = true;
+            }
+        } else {
+            return [target, source];
+        }
+
+        return target;
+    }
+
+    if (!target || typeof target !== 'object') {
+        return [target].concat(source);
+    }
+
+    var mergeTarget = target;
+    if (isArray(target) && !isArray(source)) {
+        mergeTarget = arrayToObject(target, options);
+    }
+
+    if (isArray(target) && isArray(source)) {
+        source.forEach(function (item, i) {
+            if (has.call(target, i)) {
+                var targetItem = target[i];
+                if (targetItem && typeof targetItem === 'object' && item && typeof item === 'object') {
+                    target[i] = merge(targetItem, item, options);
+                } else {
+                    target.push(item);
+                }
+            } else {
+                target[i] = item;
+            }
+        });
+        return target;
+    }
+
+    return Object.keys(source).reduce(function (acc, key) {
+        var value = source[key];
+
+        if (has.call(acc, key)) {
+            acc[key] = merge(acc[key], value, options);
+        } else {
+            acc[key] = value;
+        }
+        return acc;
+    }, mergeTarget);
+};
+
+var assign = function assignSingleSource(target, source) {
+    return Object.keys(source).reduce(function (acc, key) {
+        acc[key] = source[key];
+        return acc;
+    }, target);
+};
+
+var decode = function (str, decoder, charset) {
+    var strWithoutPlus = str.replace(/\+/g, ' ');
+    if (charset === 'iso-8859-1') {
+        // unescape never throws, no try...catch needed:
+        return strWithoutPlus.replace(/%[0-9a-f]{2}/gi, unescape);
+    }
+    // utf-8
+    try {
+        return decodeURIComponent(strWithoutPlus);
+    } catch (e) {
+        return strWithoutPlus;
+    }
+};
+
+var encode = function encode(str, defaultEncoder, charset, kind, format) {
+    // This code was originally written by Brian White (mscdex) for the io.js core querystring library.
+    // It has been adapted here for stricter adherence to RFC 3986
+    if (str.length === 0) {
+        return str;
+    }
+
+    var string = str;
+    if (typeof str === 'symbol') {
+        string = Symbol.prototype.toString.call(str);
+    } else if (typeof str !== 'string') {
+        string = String(str);
+    }
+
+    if (charset === 'iso-8859-1') {
+        return escape(string).replace(/%u[0-9a-f]{4}/gi, function ($0) {
+            return '%26%23' + parseInt($0.slice(2), 16) + '%3B';
+        });
+    }
+
+    var out = '';
+    for (var i = 0; i < string.length; ++i) {
+        var c = string.charCodeAt(i);
+
+        if (
+            c === 0x2D // -
+            || c === 0x2E // .
+            || c === 0x5F // _
+            || c === 0x7E // ~
+            || (c >= 0x30 && c <= 0x39) // 0-9
+            || (c >= 0x41 && c <= 0x5A) // a-z
+            || (c >= 0x61 && c <= 0x7A) // A-Z
+            || (format === formats.RFC1738 && (c === 0x28 || c === 0x29)) // ( )
+        ) {
+            out += string.charAt(i);
+            continue;
+        }
+
+        if (c < 0x80) {
+            out = out + hexTable[c];
+            continue;
+        }
+
+        if (c < 0x800) {
+            out = out + (hexTable[0xC0 | (c >> 6)] + hexTable[0x80 | (c & 0x3F)]);
+            continue;
+        }
+
+        if (c < 0xD800 || c >= 0xE000) {
+            out = out + (hexTable[0xE0 | (c >> 12)] + hexTable[0x80 | ((c >> 6) & 0x3F)] + hexTable[0x80 | (c & 0x3F)]);
+            continue;
+        }
+
+        i += 1;
+        c = 0x10000 + (((c & 0x3FF) << 10) | (string.charCodeAt(i) & 0x3FF));
+        /* eslint operator-linebreak: [2, "before"] */
+        out += hexTable[0xF0 | (c >> 18)]
+            + hexTable[0x80 | ((c >> 12) & 0x3F)]
+            + hexTable[0x80 | ((c >> 6) & 0x3F)]
+            + hexTable[0x80 | (c & 0x3F)];
+    }
+
+    return out;
+};
+
+var compact = function compact(value) {
+    var queue = [{ obj: { o: value }, prop: 'o' }];
+    var refs = [];
+
+    for (var i = 0; i < queue.length; ++i) {
+        var item = queue[i];
+        var obj = item.obj[item.prop];
+
+        var keys = Object.keys(obj);
+        for (var j = 0; j < keys.length; ++j) {
+            var key = keys[j];
+            var val = obj[key];
+            if (typeof val === 'object' && val !== null && refs.indexOf(val) === -1) {
+                queue.push({ obj: obj, prop: key });
+                refs.push(val);
+            }
+        }
+    }
+
+    compactQueue(queue);
+
+    return value;
+};
+
+var isRegExp = function isRegExp(obj) {
+    return Object.prototype.toString.call(obj) === '[object RegExp]';
+};
+
+var isBuffer = function isBuffer(obj) {
+    if (!obj || typeof obj !== 'object') {
+        return false;
+    }
+
+    return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
+};
+
+var combine = function combine(a, b) {
+    return [].concat(a, b);
+};
+
+var maybeMap = function maybeMap(val, fn) {
+    if (isArray(val)) {
+        var mapped = [];
+        for (var i = 0; i < val.length; i += 1) {
+            mapped.push(fn(val[i]));
+        }
+        return mapped;
+    }
+    return fn(val);
+};
+
+module.exports = {
+    arrayToObject: arrayToObject,
+    assign: assign,
+    combine: combine,
+    compact: compact,
+    decode: decode,
+    encode: encode,
+    isBuffer: isBuffer,
+    isRegExp: isRegExp,
+    maybeMap: maybeMap,
+    merge: merge
+};
+
+
+/***/ }),
+
+/***/ 1045:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterRedis = __nccwpck_require__(6770);
+const RateLimiterMongo = __nccwpck_require__(978);
+const RateLimiterMySQL = __nccwpck_require__(2532);
+const RateLimiterPostgres = __nccwpck_require__(414);
+const {RateLimiterClusterMaster, RateLimiterClusterMasterPM2, RateLimiterCluster} = __nccwpck_require__(397);
+const RateLimiterMemory = __nccwpck_require__(1351);
+const RateLimiterMemcache = __nccwpck_require__(8747);
+const RLWrapperBlackAndWhite = __nccwpck_require__(2533);
+const RateLimiterUnion = __nccwpck_require__(5373);
+const RateLimiterQueue = __nccwpck_require__(2967);
+const BurstyRateLimiter = __nccwpck_require__(6779);
+const RateLimiterRes = __nccwpck_require__(9975);
+const RateLimiterDynamo = __nccwpck_require__(9766);
+
+module.exports = {
+  RateLimiterRedis,
+  RateLimiterMongo,
+  RateLimiterMySQL,
+  RateLimiterPostgres,
+  RateLimiterMemory,
+  RateLimiterMemcache,
+  RateLimiterClusterMaster,
+  RateLimiterClusterMasterPM2,
+  RateLimiterCluster,
+  RLWrapperBlackAndWhite,
+  RateLimiterUnion,
+  RateLimiterQueue,
+  BurstyRateLimiter,
+  RateLimiterRes,
+  RateLimiterDynamo
+};
+
+
+/***/ }),
+
+/***/ 6779:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterRes = __nccwpck_require__(9975);
+
+/**
+ * Bursty rate limiter exposes only msBeforeNext time and doesn't expose points from bursty limiter by default
+ * @type {BurstyRateLimiter}
+ */
+module.exports = class BurstyRateLimiter {
+  constructor(rateLimiter, burstLimiter) {
+    this._rateLimiter = rateLimiter;
+    this._burstLimiter = burstLimiter
+  }
+
+  /**
+   * Merge rate limiter response objects. Responses can be null
+   *
+   * @param {RateLimiterRes} [rlRes] Rate limiter response
+   * @param {RateLimiterRes} [blRes] Bursty limiter response
+   */
+  _combineRes(rlRes, blRes) {
+    if (!rlRes) {
+      return null
+    }
+
+    return new RateLimiterRes(
+      rlRes.remainingPoints,
+      Math.min(rlRes.msBeforeNext, blRes ? blRes.msBeforeNext : 0),
+      rlRes.consumedPoints,
+      rlRes.isFirstInDuration
+    )
+  }
+
+  /**
+   * @param key
+   * @param pointsToConsume
+   * @param options
+   * @returns {Promise<any>}
+   */
+  consume(key, pointsToConsume = 1, options = {}) {
+    return this._rateLimiter.consume(key, pointsToConsume, options)
+      .catch((rlRej) => {
+        if (rlRej instanceof RateLimiterRes) {
+          return this._burstLimiter.consume(key, pointsToConsume, options)
+            .then((blRes) => {
+              return Promise.resolve(this._combineRes(rlRej, blRes))
+            })
+            .catch((blRej) => {
+                if (blRej instanceof RateLimiterRes) {
+                  return Promise.reject(this._combineRes(rlRej, blRej))
+                } else {
+                  return Promise.reject(blRej)
+                }
+              }
+            )
+        } else {
+          return Promise.reject(rlRej)
+        }
+      })
+  }
+
+  /**
+   * It doesn't expose available points from burstLimiter
+   *
+   * @param key
+   * @returns {Promise<RateLimiterRes>}
+   */
+  get(key) {
+    return Promise.all([
+      this._rateLimiter.get(key),
+      this._burstLimiter.get(key),
+    ]).then(([rlRes, blRes]) => {
+      return this._combineRes(rlRes, blRes);
+    });
+  }
+
+  get points() {
+    return this._rateLimiter.points;
+  }
+};
+
+
+/***/ }),
+
+/***/ 2533:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterRes = __nccwpck_require__(9975);
+
+module.exports = class RLWrapperBlackAndWhite {
+  constructor(opts = {}) {
+    this.limiter = opts.limiter;
+    this.blackList = opts.blackList;
+    this.whiteList = opts.whiteList;
+    this.isBlackListed = opts.isBlackListed;
+    this.isWhiteListed = opts.isWhiteListed;
+    this.runActionAnyway = opts.runActionAnyway;
+  }
+
+  get limiter() {
+    return this._limiter;
+  }
+
+  set limiter(value) {
+    if (typeof value === 'undefined') {
+      throw new Error('limiter is not set');
+    }
+
+    this._limiter = value;
+  }
+
+  get runActionAnyway() {
+    return this._runActionAnyway;
+  }
+
+  set runActionAnyway(value) {
+    this._runActionAnyway = typeof value === 'undefined' ? false : value;
+  }
+
+  get blackList() {
+    return this._blackList;
+  }
+
+  set blackList(value) {
+    this._blackList = Array.isArray(value) ? value : [];
+  }
+
+  get isBlackListed() {
+    return this._isBlackListed;
+  }
+
+  set isBlackListed(func) {
+    if (typeof func === 'undefined') {
+      func = () => false;
+    }
+    if (typeof func !== 'function') {
+      throw new Error('isBlackListed must be function');
+    }
+    this._isBlackListed = func;
+  }
+
+  get whiteList() {
+    return this._whiteList;
+  }
+
+  set whiteList(value) {
+    this._whiteList = Array.isArray(value) ? value : [];
+  }
+
+  get isWhiteListed() {
+    return this._isWhiteListed;
+  }
+
+  set isWhiteListed(func) {
+    if (typeof func === 'undefined') {
+      func = () => false;
+    }
+    if (typeof func !== 'function') {
+      throw new Error('isWhiteListed must be function');
+    }
+    this._isWhiteListed = func;
+  }
+
+  isBlackListedSomewhere(key) {
+    return this.blackList.indexOf(key) >= 0 || this.isBlackListed(key);
+  }
+
+  isWhiteListedSomewhere(key) {
+    return this.whiteList.indexOf(key) >= 0 || this.isWhiteListed(key);
+  }
+
+  getBlackRes() {
+    return new RateLimiterRes(0, Number.MAX_SAFE_INTEGER, 0, false);
+  }
+
+  getWhiteRes() {
+    return new RateLimiterRes(Number.MAX_SAFE_INTEGER, 0, 0, false);
+  }
+
+  rejectBlack() {
+    return Promise.reject(this.getBlackRes());
+  }
+
+  resolveBlack() {
+    return Promise.resolve(this.getBlackRes());
+  }
+
+  resolveWhite() {
+    return Promise.resolve(this.getWhiteRes());
+  }
+
+  consume(key, pointsToConsume = 1) {
+    let res;
+    if (this.isWhiteListedSomewhere(key)) {
+      res = this.resolveWhite();
+    } else if (this.isBlackListedSomewhere(key)) {
+      res = this.rejectBlack();
+    }
+
+    if (typeof res === 'undefined') {
+      return this.limiter.consume(key, pointsToConsume);
+    }
+
+    if (this.runActionAnyway) {
+      this.limiter.consume(key, pointsToConsume).catch(() => {});
+    }
+    return res;
+  }
+
+  block(key, secDuration) {
+    let res;
+    if (this.isWhiteListedSomewhere(key)) {
+      res = this.resolveWhite();
+    } else if (this.isBlackListedSomewhere(key)) {
+      res = this.resolveBlack();
+    }
+
+    if (typeof res === 'undefined') {
+      return this.limiter.block(key, secDuration);
+    }
+
+    if (this.runActionAnyway) {
+      this.limiter.block(key, secDuration).catch(() => {});
+    }
+    return res;
+  }
+
+  penalty(key, points) {
+    let res;
+    if (this.isWhiteListedSomewhere(key)) {
+      res = this.resolveWhite();
+    } else if (this.isBlackListedSomewhere(key)) {
+      res = this.resolveBlack();
+    }
+
+    if (typeof res === 'undefined') {
+      return this.limiter.penalty(key, points);
+    }
+
+    if (this.runActionAnyway) {
+      this.limiter.penalty(key, points).catch(() => {});
+    }
+    return res;
+  }
+
+  reward(key, points) {
+    let res;
+    if (this.isWhiteListedSomewhere(key)) {
+      res = this.resolveWhite();
+    } else if (this.isBlackListedSomewhere(key)) {
+      res = this.resolveBlack();
+    }
+
+    if (typeof res === 'undefined') {
+      return this.limiter.reward(key, points);
+    }
+
+    if (this.runActionAnyway) {
+      this.limiter.reward(key, points).catch(() => {});
+    }
+    return res;
+  }
+
+  get(key) {
+    let res;
+    if (this.isWhiteListedSomewhere(key)) {
+      res = this.resolveWhite();
+    } else if (this.isBlackListedSomewhere(key)) {
+      res = this.resolveBlack();
+    }
+
+    if (typeof res === 'undefined' || this.runActionAnyway) {
+      return this.limiter.get(key);
+    }
+
+    return res;
+  }
+
+  delete(key) {
+    return this.limiter.delete(key);
+  }
+};
+
+
+/***/ }),
+
+/***/ 363:
+/***/ ((module) => {
+
+module.exports = class RateLimiterAbstract {
+  /**
+   *
+   * @param opts Object Defaults {
+   *   points: 4, // Number of points
+   *   duration: 1, // Per seconds
+   *   blockDuration: 0, // Block if consumed more than points in current duration for blockDuration seconds
+   *   execEvenly: false, // Execute allowed actions evenly over duration
+   *   execEvenlyMinDelayMs: duration * 1000 / points, // ms, works with execEvenly=true option
+   *   keyPrefix: 'rlflx',
+   * }
+   */
+  constructor(opts = {}) {
+    this.points = opts.points;
+    this.duration = opts.duration;
+    this.blockDuration = opts.blockDuration;
+    this.execEvenly = opts.execEvenly;
+    this.execEvenlyMinDelayMs = opts.execEvenlyMinDelayMs;
+    this.keyPrefix = opts.keyPrefix;
+  }
+
+  get points() {
+    return this._points;
+  }
+
+  set points(value) {
+    this._points = value >= 0 ? value : 4;
+  }
+
+  get duration() {
+    return this._duration;
+  }
+
+  set duration(value) {
+    this._duration = typeof value === 'undefined' ? 1 : value;
+  }
+
+  get msDuration() {
+    return this.duration * 1000;
+  }
+
+  get blockDuration() {
+    return this._blockDuration;
+  }
+
+  set blockDuration(value) {
+    this._blockDuration = typeof value === 'undefined' ? 0 : value;
+  }
+
+  get msBlockDuration() {
+    return this.blockDuration * 1000;
+  }
+
+  get execEvenly() {
+    return this._execEvenly;
+  }
+
+  set execEvenly(value) {
+    this._execEvenly = typeof value === 'undefined' ? false : Boolean(value);
+  }
+
+  get execEvenlyMinDelayMs() {
+    return this._execEvenlyMinDelayMs;
+  }
+
+  set execEvenlyMinDelayMs(value) {
+    this._execEvenlyMinDelayMs = typeof value === 'undefined' ? Math.ceil(this.msDuration / this.points) : value;
+  }
+
+  get keyPrefix() {
+    return this._keyPrefix;
+  }
+
+  set keyPrefix(value) {
+    if (typeof value === 'undefined') {
+      value = 'rlflx';
+    }
+    if (typeof value !== 'string') {
+      throw new Error('keyPrefix must be string');
+    }
+    this._keyPrefix = value;
+  }
+
+  _getKeySecDuration(options = {}) {
+    return options && options.customDuration >= 0
+      ? options.customDuration
+      : this.duration;
+  }
+
+  getKey(key) {
+    return this.keyPrefix.length > 0 ? `${this.keyPrefix}:${key}` : key;
+  }
+
+  parseKey(rlKey) {
+    return rlKey.substring(this.keyPrefix.length);
+  }
+
+  consume() {
+    throw new Error("You have to implement the method 'consume'!");
+  }
+
+  penalty() {
+    throw new Error("You have to implement the method 'penalty'!");
+  }
+
+  reward() {
+    throw new Error("You have to implement the method 'reward'!");
+  }
+
+  get() {
+    throw new Error("You have to implement the method 'get'!");
+  }
+
+  set() {
+    throw new Error("You have to implement the method 'set'!");
+  }
+
+  block() {
+    throw new Error("You have to implement the method 'block'!");
+  }
+
+  delete() {
+    throw new Error("You have to implement the method 'delete'!");
+  }
+};
+
+
+/***/ }),
+
+/***/ 397:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+/**
+ * Implements rate limiting in cluster using built-in IPC
+ *
+ * Two classes are described here: master and worker
+ * Master have to be create in the master process without any options.
+ * Any number of rate limiters can be created in workers, but each rate limiter must be with unique keyPrefix
+ *
+ * Workflow:
+ * 1. master rate limiter created in master process
+ * 2. worker rate limiter sends 'init' message with necessary options during creating
+ * 3. master receives options and adds new rate limiter by keyPrefix if it isn't created yet
+ * 4. master sends 'init' back to worker's rate limiter
+ * 5. worker can process requests immediately,
+ *    but they will be postponed by 'workerWaitInit' until master sends 'init' to worker
+ * 6. every request to worker rate limiter creates a promise
+ * 7. if master doesn't response for 'timeout', promise is rejected
+ * 8. master sends 'resolve' or 'reject' command to worker
+ * 9. worker resolves or rejects promise depending on message from master
+ *
+ */
+
+const cluster = __nccwpck_require__(5001);
+const crypto = __nccwpck_require__(6113);
+const RateLimiterAbstract = __nccwpck_require__(363);
+const RateLimiterMemory = __nccwpck_require__(1351);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+const channel = 'rate_limiter_flexible';
+let masterInstance = null;
+
+const masterSendToWorker = function (worker, msg, type, res) {
+  let data;
+  if (res === null || res === true || res === false) {
+    data = res;
+  } else {
+    data = {
+      remainingPoints: res.remainingPoints,
+      msBeforeNext: res.msBeforeNext,
+      consumedPoints: res.consumedPoints,
+      isFirstInDuration: res.isFirstInDuration,
+    };
+  }
+  worker.send({
+    channel,
+    keyPrefix: msg.keyPrefix, // which rate limiter exactly
+    promiseId: msg.promiseId,
+    type,
+    data,
+  });
+};
+
+const workerWaitInit = function (payload) {
+  setTimeout(() => {
+    if (this._initiated) {
+      process.send(payload);
+      // Promise will be removed by timeout if too long
+    } else if (typeof this._promises[payload.promiseId] !== 'undefined') {
+      workerWaitInit.call(this, payload);
+    }
+  }, 30);
+};
+
+const workerSendToMaster = function (func, promiseId, key, arg, opts) {
+  const payload = {
+    channel,
+    keyPrefix: this.keyPrefix,
+    func,
+    promiseId,
+    data: {
+      key,
+      arg,
+      opts,
+    },
+  };
+
+  if (!this._initiated) {
+    // Wait init before sending messages to master
+    workerWaitInit.call(this, payload);
+  } else {
+    process.send(payload);
+  }
+};
+
+const masterProcessMsg = function (worker, msg) {
+  if (!msg || msg.channel !== channel || typeof this._rateLimiters[msg.keyPrefix] === 'undefined') {
+    return false;
+  }
+
+  let promise;
+
+  switch (msg.func) {
+    case 'consume':
+      promise = this._rateLimiters[msg.keyPrefix].consume(msg.data.key, msg.data.arg, msg.data.opts);
+      break;
+    case 'penalty':
+      promise = this._rateLimiters[msg.keyPrefix].penalty(msg.data.key, msg.data.arg, msg.data.opts);
+      break;
+    case 'reward':
+      promise = this._rateLimiters[msg.keyPrefix].reward(msg.data.key, msg.data.arg, msg.data.opts);
+      break;
+    case 'block':
+      promise = this._rateLimiters[msg.keyPrefix].block(msg.data.key, msg.data.arg, msg.data.opts);
+      break;
+    case 'get':
+      promise = this._rateLimiters[msg.keyPrefix].get(msg.data.key, msg.data.opts);
+      break;
+    case 'delete':
+      promise = this._rateLimiters[msg.keyPrefix].delete(msg.data.key, msg.data.opts);
+      break;
+    default:
+      return false;
+  }
+
+  if (promise) {
+    promise
+      .then((res) => {
+        masterSendToWorker(worker, msg, 'resolve', res);
+      })
+      .catch((rejRes) => {
+        masterSendToWorker(worker, msg, 'reject', rejRes);
+      });
+  }
+};
+
+const workerProcessMsg = function (msg) {
+  if (!msg || msg.channel !== channel || msg.keyPrefix !== this.keyPrefix) {
+    return false;
+  }
+
+  if (this._promises[msg.promiseId]) {
+    clearTimeout(this._promises[msg.promiseId].timeoutId);
+    let res;
+    if (msg.data === null || msg.data === true || msg.data === false) {
+      res = msg.data;
+    } else {
+      res = new RateLimiterRes(
+        msg.data.remainingPoints,
+        msg.data.msBeforeNext,
+        msg.data.consumedPoints,
+        msg.data.isFirstInDuration // eslint-disable-line comma-dangle
+      );
+    }
+
+    switch (msg.type) {
+      case 'resolve':
+        this._promises[msg.promiseId].resolve(res);
+        break;
+      case 'reject':
+        this._promises[msg.promiseId].reject(res);
+        break;
+      default:
+        throw new Error(`RateLimiterCluster: no such message type '${msg.type}'`);
+    }
+
+    delete this._promises[msg.promiseId];
+  }
+};
+/**
+ * Prepare options to send to master
+ * Master will create rate limiter depending on options
+ *
+ * @returns {{points: *, duration: *, blockDuration: *, execEvenly: *, execEvenlyMinDelayMs: *, keyPrefix: *}}
+ */
+const getOpts = function () {
+  return {
+    points: this.points,
+    duration: this.duration,
+    blockDuration: this.blockDuration,
+    execEvenly: this.execEvenly,
+    execEvenlyMinDelayMs: this.execEvenlyMinDelayMs,
+    keyPrefix: this.keyPrefix,
+  };
+};
+
+const savePromise = function (resolve, reject) {
+  const hrtime = process.hrtime();
+  let promiseId = hrtime[0].toString() + hrtime[1].toString();
+
+  if (typeof this._promises[promiseId] !== 'undefined') {
+    promiseId += crypto.randomBytes(12).toString('base64');
+  }
+
+  this._promises[promiseId] = {
+    resolve,
+    reject,
+    timeoutId: setTimeout(() => {
+      delete this._promises[promiseId];
+      reject(new Error('RateLimiterCluster timeout: no answer from master in time'));
+    }, this.timeoutMs),
+  };
+
+  return promiseId;
+};
+
+class RateLimiterClusterMaster {
+  constructor() {
+    if (masterInstance) {
+      return masterInstance;
+    }
+
+    this._rateLimiters = {};
+
+    cluster.setMaxListeners(0);
+
+    cluster.on('message', (worker, msg) => {
+      if (msg && msg.channel === channel && msg.type === 'init') {
+        // If init request, check or create rate limiter by key prefix and send 'init' back to worker
+        if (typeof this._rateLimiters[msg.opts.keyPrefix] === 'undefined') {
+          this._rateLimiters[msg.opts.keyPrefix] = new RateLimiterMemory(msg.opts);
+        }
+
+        worker.send({
+          channel,
+          type: 'init',
+          keyPrefix: msg.opts.keyPrefix,
+        });
+      } else {
+        masterProcessMsg.call(this, worker, msg);
+      }
+    });
+
+    masterInstance = this;
+  }
+}
+
+class RateLimiterClusterMasterPM2 {
+  constructor(pm2) {
+    if (masterInstance) {
+      return masterInstance;
+    }
+
+    this._rateLimiters = {};
+
+    pm2.launchBus((err, pm2Bus) => {
+      pm2Bus.on('process:msg', (packet) => {
+        const msg = packet.raw;
+        if (msg && msg.channel === channel && msg.type === 'init') {
+          // If init request, check or create rate limiter by key prefix and send 'init' back to worker
+          if (typeof this._rateLimiters[msg.opts.keyPrefix] === 'undefined') {
+            this._rateLimiters[msg.opts.keyPrefix] = new RateLimiterMemory(msg.opts);
+          }
+
+          pm2.sendDataToProcessId(packet.process.pm_id, {
+            data: {},
+            topic: channel,
+            channel,
+            type: 'init',
+            keyPrefix: msg.opts.keyPrefix,
+          }, (sendErr, res) => {
+            if (sendErr) {
+              console.log(sendErr, res);
+            }
+          });
+        } else {
+          const worker = {
+            send: (msgData) => {
+              const pm2Message = msgData;
+              pm2Message.topic = channel;
+              if (typeof pm2Message.data === 'undefined') {
+                pm2Message.data = {};
+              }
+              pm2.sendDataToProcessId(packet.process.pm_id, pm2Message, (sendErr, res) => {
+                if (sendErr) {
+                  console.log(sendErr, res);
+                }
+              });
+            },
+          };
+          masterProcessMsg.call(this, worker, msg);
+        }
+      });
+    });
+
+    masterInstance = this;
+  }
+}
+
+class RateLimiterClusterWorker extends RateLimiterAbstract {
+  get timeoutMs() {
+    return this._timeoutMs;
+  }
+
+  set timeoutMs(value) {
+    this._timeoutMs = typeof value === 'undefined' ? 5000 : Math.abs(parseInt(value));
+  }
+
+  constructor(opts = {}) {
+    super(opts);
+
+    process.setMaxListeners(0);
+
+    this.timeoutMs = opts.timeoutMs;
+
+    this._initiated = false;
+
+    process.on('message', (msg) => {
+      if (msg && msg.channel === channel && msg.type === 'init' && msg.keyPrefix === this.keyPrefix) {
+        this._initiated = true;
+      } else {
+        workerProcessMsg.call(this, msg);
+      }
+    });
+
+    // Create limiter on master with specific options
+    process.send({
+      channel,
+      type: 'init',
+      opts: getOpts.call(this),
+    });
+
+    this._promises = {};
+  }
+
+  consume(key, pointsToConsume = 1, options = {}) {
+    return new Promise((resolve, reject) => {
+      const promiseId = savePromise.call(this, resolve, reject);
+
+      workerSendToMaster.call(this, 'consume', promiseId, key, pointsToConsume, options);
+    });
+  }
+
+  penalty(key, points = 1, options = {}) {
+    return new Promise((resolve, reject) => {
+      const promiseId = savePromise.call(this, resolve, reject);
+
+      workerSendToMaster.call(this, 'penalty', promiseId, key, points, options);
+    });
+  }
+
+  reward(key, points = 1, options = {}) {
+    return new Promise((resolve, reject) => {
+      const promiseId = savePromise.call(this, resolve, reject);
+
+      workerSendToMaster.call(this, 'reward', promiseId, key, points, options);
+    });
+  }
+
+  block(key, secDuration, options = {}) {
+    return new Promise((resolve, reject) => {
+      const promiseId = savePromise.call(this, resolve, reject);
+
+      workerSendToMaster.call(this, 'block', promiseId, key, secDuration, options);
+    });
+  }
+
+  get(key, options = {}) {
+    return new Promise((resolve, reject) => {
+      const promiseId = savePromise.call(this, resolve, reject);
+
+      workerSendToMaster.call(this, 'get', promiseId, key, options);
+    });
+  }
+
+  delete(key, options = {}) {
+    return new Promise((resolve, reject) => {
+      const promiseId = savePromise.call(this, resolve, reject);
+
+      workerSendToMaster.call(this, 'delete', promiseId, key, options);
+    });
+  }
+}
+
+module.exports = {
+  RateLimiterClusterMaster,
+  RateLimiterClusterMasterPM2,
+  RateLimiterCluster: RateLimiterClusterWorker,
+};
+
+
+/***/ }),
+
+/***/ 9766:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterRes = __nccwpck_require__(9975);
+const RateLimiterStoreAbstract = __nccwpck_require__(5664);
+
+class DynamoItem {
+  /**
+   * Create a DynamoItem.
+   * @param {string} rlKey - The key for the rate limiter.
+   * @param {number} points - The number of points.
+   * @param {number} expire - The expiration time in seconds.
+   */
+  constructor(rlKey, points, expire) {
+    this.key = rlKey;
+    this.points = points;
+    this.expire = expire;
+  }
+}
+
+// Free tier DynamoDB provisioned mode params
+const DEFAULT_READ_CAPACITY_UNITS = 25;
+const DEFAULT_WRITE_CAPACITY_UNITS = 25;
+
+/**
+ * Implementation of RateLimiterStoreAbstract using DynamoDB.
+ * @class RateLimiterDynamo
+ * @extends RateLimiterStoreAbstract
+ */
+class RateLimiterDynamo extends RateLimiterStoreAbstract {
+
+    /**
+     * Constructs a new instance of the class.
+     * The storeClient MUST be an instance of AWS.DynamoDB NOT of AWS.DynamoDBClient.
+     *
+     * @param {Object} opts - The options for the constructor.
+     * @param {function} cb - The callback function (optional).
+     * @return {void}
+     */
+    constructor(opts, cb = null) {
+        super(opts);
+
+        this.client = opts.storeClient;
+        this.tableName = opts.tableName;
+        this.tableCreated = opts.tableCreated;
+        
+        if (!this.tableCreated) {
+          this._createTable(opts.dynamoTableOpts)
+          .then((data) => {
+            this.tableCreated = true;
+
+            this._setTTL()
+            .finally(() => {
+              // Callback invocation
+              if (typeof cb === 'function') {
+                cb();
+              }
+            });
+            
+          })
+          .catch( err => {
+            //callback invocation
+            if (typeof cb === 'function') {
+              cb(err);
+            } else {
+              throw err;
+            }
+          });
+
+        } else {
+
+          this._setTTL()
+          .finally(() => {
+            // Callback invocation
+            if (typeof cb === 'function') {
+              cb();
+            }
+          });
+        }
+    }
+
+    get tableName() {
+        return this._tableName;
+    }
+
+    set tableName(value) {
+        this._tableName = typeof value === 'undefined' ? 'node-rate-limiter-flexible' : value;
+    }
+
+    get tableCreated() {
+        return this._tableCreated
+    }
+    
+    set tableCreated(value) {
+        this._tableCreated = typeof value === 'undefined' ? false : !!value;
+    }
+
+    /**
+     * Creates a table in the database. Return null if the table already exists.
+     * 
+     * @param {{readCapacityUnits: number, writeCapacityUnits: number}} tableOpts
+     * @return {Promise} A promise that resolves with the result of creating the table.
+     */
+    async _createTable(tableOpts) {
+
+      const params = {
+        TableName: this.tableName,
+        AttributeDefinitions: [
+          {
+            AttributeName: 'key',
+            AttributeType: 'S'
+          }
+        ],
+        KeySchema: [
+          {
+            AttributeName: 'key',
+            KeyType: 'HASH'
+          }
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: tableOpts && tableOpts.readCapacityUnits ? tableOpts.readCapacityUnits : DEFAULT_READ_CAPACITY_UNITS,
+          WriteCapacityUnits: tableOpts && tableOpts.writeCapacityUnits ? tableOpts.writeCapacityUnits : DEFAULT_WRITE_CAPACITY_UNITS
+        }
+      };
+      
+      try {
+        const data = await this.client.createTable(params);
+        return data;
+      } catch(err) {
+        if (err.__type && err.__type.includes('ResourceInUseException')) {
+          return null;
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    /**
+     * Retrieves an item from the table based on the provided key.
+     *
+     * @param {string} rlKey - The key used to retrieve the item.
+     * @throws {Error} Throws an error if the table is not created yet.
+     * @return {DynamoItem|null} - The retrieved item, or null if it doesn't exist.
+     */
+    async _get(rlKey) {
+
+      if (!this.tableCreated) {
+        throw new Error('Table is not created yet');
+      }
+
+      const params = {
+        TableName: this.tableName,
+        Key: {
+          key: {S: rlKey}
+        }
+      };
+      
+      const data = await this.client.getItem(params);
+      if(data.Item) {
+        return new DynamoItem(
+          data.Item.key.S,
+          Number(data.Item.points.N),
+          Number(data.Item.expire.N)
+        );
+      } else {
+        return null;
+      }
+    }
+
+    /**
+     * Deletes an item from the table based on the given rlKey.
+     *
+     * @param {string} rlKey - The rlKey of the item to delete.
+     * @throws {Error} Throws an error if the table is not created yet.
+     * @return {boolean} Returns true if the item was successfully deleted, otherwise false.
+     */
+    async _delete(rlKey) {
+
+      if (!this.tableCreated) {
+        throw new Error('Table is not created yet');
+      }
+
+      const params = {
+        TableName: this.tableName,
+        Key: {
+          key: {S: rlKey}
+        },
+        ConditionExpression: 'attribute_exists(#k)',
+        ExpressionAttributeNames: {
+          '#k': 'key'  
+        }
+      }
+      
+      try {
+        const data = await this._client.deleteItem(params);
+        return data.$metadata.httpStatusCode === 200;
+      } catch(err) {
+        // ConditionalCheckFailed, item does not exist in table
+        if (err.__type && err.__type.includes('ConditionalCheckFailedException')) {
+          return false;
+        } else {
+          throw err;
+        }
+      }
+
+    }
+
+    /**
+     * Implemented with DynamoDB Atomic Counters. 3 calls are made to DynamoDB but each call is atomic.
+     * From the documentation: "UpdateItem calls are naturally serialized within DynamoDB,
+     * so there are no race condition concerns with making multiple simultaneous calls."
+     * See: https://aws.amazon.com/it/blogs/database/implement-resource-counters-with-amazon-dynamodb/
+     * @param {*} rlKey 
+     * @param {*} points 
+     * @param {*} msDuration 
+     * @param {*} forceExpire 
+     * @param {*} options 
+     * @returns
+     */
+    async _upsert(rlKey, points, msDuration, forceExpire = false, options = {}) {
+
+      if (!this.tableCreated) {
+        throw new Error('Table is not created yet');
+      }
+
+      const dateNow = Date.now();
+      const dateNowSec = dateNow / 1000;
+      /* -1 means never expire, DynamoDb do not support null values in number fields.
+         DynamoDb TTL use unix timestamp in seconds.
+      */
+      const newExpireSec = msDuration > 0 ? (dateNow + msDuration) / 1000 : -1;
+
+      // Force expire, overwrite points. Create a new entry if not exists
+      if (forceExpire) {
+        return await this._baseUpsert({
+          TableName: this.tableName,
+          Key: { key: {S: rlKey} },
+          UpdateExpression: 'SET points = :points, expire = :expire',
+          ExpressionAttributeValues: {
+            ':points': {N: points.toString()},
+            ':expire': {N: newExpireSec.toString()}
+          },
+          ReturnValues: 'ALL_NEW'
+        });
+      }
+
+      try {        
+        // First try update, success if entry NOT exists or IS expired
+        return await this._baseUpsert({
+          TableName: this.tableName,
+          Key: { key: {S: rlKey} },
+          UpdateExpression: 'SET points = :new_points, expire = :new_expire',
+          ExpressionAttributeValues: {
+            ':new_points': {N: points.toString()},
+            ':new_expire': {N: newExpireSec.toString()},
+            ':where_expire': {N: dateNowSec.toString()}
+          },
+          ConditionExpression: 'expire <= :where_expire OR attribute_not_exists(points)',
+          ReturnValues: 'ALL_NEW'
+        });
+
+      } catch (err) {
+        // Second try update, success if entry exists and IS NOT expired
+        return await this._baseUpsert({
+          TableName: this.tableName,
+          Key: { key: {S: rlKey} },
+          UpdateExpression: 'SET points = points + :new_points',
+          ExpressionAttributeValues: {
+            ':new_points': {N: points.toString()},
+            ':where_expire': {N: dateNowSec.toString()}
+          },
+          ConditionExpression: 'expire > :where_expire',
+          ReturnValues: 'ALL_NEW'
+        });
+      }
+    }
+    
+    /**
+     * Asynchronously upserts data into the table. params is a DynamoDB params object.
+     *
+     * @param {Object} params - The parameters for the upsert operation.
+     * @throws {Error} Throws an error if the table is not created yet.
+     * @return {DynamoItem} Returns a DynamoItem object with the updated data.
+     */
+    async _baseUpsert(params) {
+
+      if (!this.tableCreated) {
+        throw new Error('Table is not created yet');
+      }
+      
+      try {
+        const data = await this.client.updateItem(params);
+        return new DynamoItem(
+          data.Attributes.key.S,
+          Number(data.Attributes.points.N),
+          Number(data.Attributes.expire.N)
+        );
+      } catch (err) {
+        //console.log('_baseUpsert', params, err);
+        throw err;
+      }
+    }
+
+    /**
+     * Sets the Time-to-Live (TTL) for the table. TTL use the expire field in the table.
+     * See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html
+     *
+     * @return {Promise} A promise that resolves when the TTL is successfully set.
+     * @throws {Error} Throws an error if the table is not created yet.
+     * @returns {Promise}
+     */
+    async _setTTL() {
+
+      if (!this.tableCreated) {
+        throw new Error('Table is not created yet');
+      }
+
+      try {
+        
+        // Check if the TTL is already set
+        const isTTLSet = await this._isTTLSet();
+        if (isTTLSet) {
+          return;
+        }
+
+        const params = {
+          TableName: this.tableName,
+          TimeToLiveSpecification: {
+            AttributeName: 'expire',
+            Enabled: true
+          }
+        }
+
+        const res = await this.client.updateTimeToLive(params);
+        return res;
+
+      } catch (err) {
+        throw err;
+      }
+
+    }
+
+    /**
+     * Checks if the Time To Live (TTL) feature is set for the DynamoDB table.
+     *
+     * @return {boolean} Returns true if the TTL feature is enabled for the table, otherwise false.
+     * @throws {Error} Throws an error if the table is not created yet or if there is an error while checking the TTL status.
+     */
+    async _isTTLSet() {
+      
+      if (!this.tableCreated) {
+        throw new Error('Table is not created yet');
+      }
+
+      try {
+
+        const res = await this.client.describeTimeToLive({TableName: this.tableName});
+        return (
+          res.$metadata.httpStatusCode == 200 
+          && res.TimeToLiveDescription.TimeToLiveStatus === 'ENABLED'
+          && res.TimeToLiveDescription.AttributeName === 'expire'
+        );
+        
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    /**
+     * Generate a RateLimiterRes object based on the provided parameters.
+     *
+     * @param {string} rlKey - The key for the rate limiter.
+     * @param {number} changedPoints - The number of points that have changed.
+     * @param {DynamoItem} result - The result object of _get() method.
+     * @returns {RateLimiterRes} - The generated RateLimiterRes object.
+     */
+    _getRateLimiterRes(rlKey, changedPoints, result) {
+
+      const res = new RateLimiterRes();
+      res.isFirstInDuration = changedPoints === result.points;
+      res.consumedPoints = res.isFirstInDuration ? changedPoints : result.points;
+      res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+      // Expire time saved in unix time seconds not ms
+      res.msBeforeNext = result.expire != -1 ? Math.max(result.expire * 1000 - Date.now(), 0) : -1;
+
+      return res;
+    }
+
+}
+
+module.exports = RateLimiterDynamo;
+
+/***/ }),
+
+/***/ 8747:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5664);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+class RateLimiterMemcache extends RateLimiterStoreAbstract {
+  /**
+   *
+   * @param {Object} opts
+   * Defaults {
+   *   ... see other in RateLimiterStoreAbstract
+   *
+   *   storeClient: memcacheClient
+   * }
+   */
+  constructor(opts) {
+    super(opts);
+
+    this.client = opts.storeClient;
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+    res.consumedPoints = parseInt(result.consumedPoints);
+    res.isFirstInDuration = result.consumedPoints === changedPoints;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = result.msBeforeNext;
+
+    return res;
+  }
+
+  _upsert(rlKey, points, msDuration, forceExpire = false, options = {}) {
+    return new Promise((resolve, reject) => {
+      const nowMs = Date.now();
+      const secDuration = Math.floor(msDuration / 1000);
+
+      if (forceExpire) {
+        this.client.set(rlKey, points, secDuration, (err) => {
+          if (!err) {
+            this.client.set(
+              `${rlKey}_expire`,
+              secDuration > 0 ? nowMs + (secDuration * 1000) : -1,
+              secDuration,
+              () => {
+                const res = {
+                  consumedPoints: points,
+                  msBeforeNext: secDuration > 0 ? secDuration * 1000 : -1,
+                };
+                resolve(res);
+              }
+            );
+          } else {
+            reject(err);
+          }
+        });
+      } else {
+        this.client.incr(rlKey, points, (err, consumedPoints) => {
+          if (err || consumedPoints === false) {
+            this.client.add(rlKey, points, secDuration, (errAddKey, createdNew) => {
+              if (errAddKey || !createdNew) {
+                // Try to upsert again in case of race condition
+                if (typeof options.attemptNumber === 'undefined' || options.attemptNumber < 3) {
+                  const nextOptions = Object.assign({}, options);
+                  nextOptions.attemptNumber = nextOptions.attemptNumber ? (nextOptions.attemptNumber + 1) : 1;
+
+                  this._upsert(rlKey, points, msDuration, forceExpire, nextOptions)
+                    .then(resUpsert => resolve(resUpsert))
+                    .catch(errUpsert => reject(errUpsert));
+                } else {
+                  reject(new Error('Can not add key'));
+                }
+              } else {
+                this.client.add(
+                  `${rlKey}_expire`,
+                  secDuration > 0 ? nowMs + (secDuration * 1000) : -1,
+                  secDuration,
+                  () => {
+                    const res = {
+                      consumedPoints: points,
+                      msBeforeNext: secDuration > 0 ? secDuration * 1000 : -1,
+                    };
+                    resolve(res);
+                  }
+                );
+              }
+            });
+          } else {
+            this.client.get(`${rlKey}_expire`, (errGetExpire, resGetExpireMs) => {
+              if (errGetExpire) {
+                reject(errGetExpire);
+              } else {
+                const expireMs = resGetExpireMs === false ? 0 : resGetExpireMs;
+                const res = {
+                  consumedPoints,
+                  msBeforeNext: expireMs >= 0 ? Math.max(expireMs - nowMs, 0) : -1,
+                };
+                resolve(res);
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  _get(rlKey) {
+    return new Promise((resolve, reject) => {
+      const nowMs = Date.now();
+
+      this.client.get(rlKey, (err, consumedPoints) => {
+        if (!consumedPoints) {
+          resolve(null);
+        } else {
+          this.client.get(`${rlKey}_expire`, (errGetExpire, resGetExpireMs) => {
+            if (errGetExpire) {
+              reject(errGetExpire);
+            } else {
+              const expireMs = resGetExpireMs === false ? 0 : resGetExpireMs;
+              const res = {
+                consumedPoints,
+                msBeforeNext: expireMs >= 0 ? Math.max(expireMs - nowMs, 0) : -1,
+              };
+              resolve(res);
+            }
+          });
+        }
+      });
+    });
+  }
+
+  _delete(rlKey) {
+    return new Promise((resolve, reject) => {
+      this.client.del(rlKey, (err, res) => {
+        if (err) {
+          reject(err);
+        } else if (res === false) {
+          resolve(res);
+        } else {
+          this.client.del(`${rlKey}_expire`, (errDelExpire) => {
+            if (errDelExpire) {
+              reject(errDelExpire);
+            } else {
+              resolve(res);
+            }
+          });
+        }
+      });
+    });
+  }
+}
+
+module.exports = RateLimiterMemcache;
+
+
+/***/ }),
+
+/***/ 1351:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterAbstract = __nccwpck_require__(363);
+const MemoryStorage = __nccwpck_require__(7774);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+class RateLimiterMemory extends RateLimiterAbstract {
+  constructor(opts = {}) {
+    super(opts);
+
+    this._memoryStorage = new MemoryStorage();
+  }
+  /**
+   *
+   * @param key
+   * @param pointsToConsume
+   * @param {Object} options
+   * @returns {Promise<RateLimiterRes>}
+   */
+  consume(key, pointsToConsume = 1, options = {}) {
+    return new Promise((resolve, reject) => {
+      const rlKey = this.getKey(key);
+      const secDuration = this._getKeySecDuration(options);
+      let res = this._memoryStorage.incrby(rlKey, pointsToConsume, secDuration);
+      res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+
+      if (res.consumedPoints > this.points) {
+        // Block only first time when consumed more than points
+        if (this.blockDuration > 0 && res.consumedPoints <= (this.points + pointsToConsume)) {
+          // Block key
+          res = this._memoryStorage.set(rlKey, res.consumedPoints, this.blockDuration);
+        }
+        reject(res);
+      } else if (this.execEvenly && res.msBeforeNext > 0 && !res.isFirstInDuration) {
+        // Execute evenly
+        let delay = Math.ceil(res.msBeforeNext / (res.remainingPoints + 2));
+        if (delay < this.execEvenlyMinDelayMs) {
+          delay = res.consumedPoints * this.execEvenlyMinDelayMs;
+        }
+
+        setTimeout(resolve, delay, res);
+      } else {
+        resolve(res);
+      }
+    });
+  }
+
+  penalty(key, points = 1, options = {}) {
+    const rlKey = this.getKey(key);
+    return new Promise((resolve) => {
+      const secDuration = this._getKeySecDuration(options);
+      const res = this._memoryStorage.incrby(rlKey, points, secDuration);
+      res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+      resolve(res);
+    });
+  }
+
+  reward(key, points = 1, options = {}) {
+    const rlKey = this.getKey(key);
+    return new Promise((resolve) => {
+      const secDuration = this._getKeySecDuration(options);
+      const res = this._memoryStorage.incrby(rlKey, -points, secDuration);
+      res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+      resolve(res);
+    });
+  }
+
+  /**
+   * Block any key for secDuration seconds
+   *
+   * @param key
+   * @param secDuration
+   */
+  block(key, secDuration) {
+    const msDuration = secDuration * 1000;
+    const initPoints = this.points + 1;
+
+    this._memoryStorage.set(this.getKey(key), initPoints, secDuration);
+    return Promise.resolve(
+      new RateLimiterRes(0, msDuration === 0 ? -1 : msDuration, initPoints)
+    );
+  }
+
+  set(key, points, secDuration) {
+    const msDuration = (secDuration >= 0 ? secDuration : this.duration) * 1000;
+
+    this._memoryStorage.set(this.getKey(key), points, secDuration);
+    return Promise.resolve(
+      new RateLimiterRes(0, msDuration === 0 ? -1 : msDuration, points)
+    );
+  }
+
+  get(key) {
+    const res = this._memoryStorage.get(this.getKey(key));
+    if (res !== null) {
+      res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    }
+
+    return Promise.resolve(res);
+  }
+
+  delete(key) {
+    return Promise.resolve(this._memoryStorage.delete(this.getKey(key)));
+  }
+}
+
+module.exports = RateLimiterMemory;
+
+
+
+/***/ }),
+
+/***/ 978:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5664);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+/**
+ * Get MongoDB driver version as upsert options differ
+ * @params {Object} Client instance
+ * @returns {Object} Version Object containing major, feature & minor versions.
+ */
+function getDriverVersion(client) {
+  try {
+    const _client = client.client ? client.client : client;
+
+    let _v = [0, 0, 0];
+    if (typeof _client.topology === 'undefined') {
+      const { version } = _client.options.metadata.driver;
+      _v = version.split('|', 1)[0].split('.').map(v => parseInt(v));
+    } else {
+      const { version } = _client.topology.s.options.metadata.driver;
+      _v = version.split('.').map(v => parseInt(v));
+    }
+
+    return {
+      major: _v[0],
+      feature: _v[1],
+      patch: _v[2],
+    };
+  } catch (err) {
+    return { major: 0, feature: 0, patch: 0 };
+  }
+}
+
+class RateLimiterMongo extends RateLimiterStoreAbstract {
+  /**
+   *
+   * @param {Object} opts
+   * Defaults {
+   *   indexKeyPrefix: {attr1: 1, attr2: 1}
+   *   ... see other in RateLimiterStoreAbstract
+   *
+   *   mongo: MongoClient
+   * }
+   */
+  constructor(opts) {
+    super(opts);
+
+    this.dbName = opts.dbName;
+    this.tableName = opts.tableName;
+    this.indexKeyPrefix = opts.indexKeyPrefix;
+
+    if (opts.mongo) {
+      this.client = opts.mongo;
+    } else {
+      this.client = opts.storeClient;
+    }
+    if (typeof this.client.then === 'function') {
+      // If Promise
+      this.client
+        .then((conn) => {
+          this.client = conn;
+          this._initCollection();
+          this._driverVersion = getDriverVersion(this.client);
+        });
+    } else {
+      this._initCollection();
+      this._driverVersion = getDriverVersion(this.client);
+    }
+  }
+
+  get dbName() {
+    return this._dbName;
+  }
+
+  set dbName(value) {
+    this._dbName = typeof value === 'undefined' ? RateLimiterMongo.getDbName() : value;
+  }
+
+  static getDbName() {
+    return 'node-rate-limiter-flexible';
+  }
+
+  get tableName() {
+    return this._tableName;
+  }
+
+  set tableName(value) {
+    this._tableName = typeof value === 'undefined' ? this.keyPrefix : value;
+  }
+
+  get client() {
+    return this._client;
+  }
+
+  set client(value) {
+    if (typeof value === 'undefined') {
+      throw new Error('mongo is not set');
+    }
+    this._client = value;
+  }
+
+  get indexKeyPrefix() {
+    return this._indexKeyPrefix;
+  }
+
+  set indexKeyPrefix(obj) {
+    this._indexKeyPrefix = obj || {};
+  }
+
+  _initCollection() {
+    const db = typeof this.client.db === 'function'
+      ? this.client.db(this.dbName)
+      : this.client;
+
+    const collection = db.collection(this.tableName);
+    collection.createIndex({ expire: -1 }, { expireAfterSeconds: 0 });
+    collection.createIndex(Object.assign({}, this.indexKeyPrefix, { key: 1 }), { unique: true });
+
+    this._collection = collection;
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+
+    let doc;
+    if (typeof result.value === 'undefined') {
+      doc = result;
+    } else {
+      doc = result.value;
+    }
+
+    res.isFirstInDuration = doc.points === changedPoints;
+    res.consumedPoints = doc.points;
+
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = doc.expire !== null
+      ? Math.max(new Date(doc.expire).getTime() - Date.now(), 0)
+      : -1;
+
+    return res;
+  }
+
+  _upsert(key, points, msDuration, forceExpire = false, options = {}) {
+    if (!this._collection) {
+      return Promise.reject(Error('Mongo connection is not established'));
+    }
+
+    const docAttrs = options.attrs || {};
+
+    let where;
+    let upsertData;
+    if (forceExpire) {
+      where = { key };
+      where = Object.assign(where, docAttrs);
+      upsertData = {
+        $set: {
+          key,
+          points,
+          expire: msDuration > 0 ? new Date(Date.now() + msDuration) : null,
+        },
+      };
+      upsertData.$set = Object.assign(upsertData.$set, docAttrs);
+    } else {
+      where = {
+        $or: [
+          { expire: { $gt: new Date() } },
+          { expire: { $eq: null } },
+        ],
+        key,
+      };
+      where = Object.assign(where, docAttrs);
+      upsertData = {
+        $setOnInsert: {
+          key,
+          expire: msDuration > 0 ? new Date(Date.now() + msDuration) : null,
+        },
+        $inc: { points },
+      };
+      upsertData.$setOnInsert = Object.assign(upsertData.$setOnInsert, docAttrs);
+    }
+
+    // Options for collection updates differ between driver versions
+    const upsertOptions = {
+      upsert: true,
+    };
+    if ((this._driverVersion.major >= 4) ||
+        (this._driverVersion.major === 3 &&
+          (this._driverVersion.feature >=7) || 
+          (this._driverVersion.feature >= 6 && 
+              this._driverVersion.patch >= 7 ))) 
+    {
+      upsertOptions.returnDocument = 'after';
+    } else {
+      upsertOptions.returnOriginal = false;
+    }
+
+    /*
+     * 1. Find actual limit and increment points
+     * 2. If limit expired, but Mongo doesn't clean doc by TTL yet, try to replace limit doc completely
+     * 3. If 2 or more Mongo threads try to insert the new limit doc, only the first succeed
+     * 4. Try to upsert from step 1. Actual limit is created now, points are incremented without problems
+     */
+    return new Promise((resolve, reject) => {
+      this._collection.findOneAndUpdate(
+        where,
+        upsertData,
+        upsertOptions
+      ).then((res) => {
+        resolve(res);
+      }).catch((errUpsert) => {
+        if (errUpsert && errUpsert.code === 11000) { // E11000 duplicate key error collection
+          const replaceWhere = Object.assign({ // try to replace OLD limit doc
+            $or: [
+              { expire: { $lte: new Date() } },
+              { expire: { $eq: null } },
+            ],
+            key,
+          }, docAttrs);
+
+          const replaceTo = {
+            $set: Object.assign({
+              key,
+              points,
+              expire: msDuration > 0 ? new Date(Date.now() + msDuration) : null,
+            }, docAttrs)
+          };
+
+          this._collection.findOneAndUpdate(
+            replaceWhere,
+            replaceTo,
+            upsertOptions
+          ).then((res) => {
+            resolve(res);
+          }).catch((errReplace) => {
+            if (errReplace && errReplace.code === 11000) { // E11000 duplicate key error collection
+              this._upsert(key, points, msDuration, forceExpire)
+                .then(res => resolve(res))
+                .catch(err => reject(err));
+            } else {
+              reject(errReplace);
+            }
+          });
+        } else {
+          reject(errUpsert);
+        }
+      });
+    });
+  }
+
+  _get(rlKey, options = {}) {
+    if (!this._collection) {
+      return Promise.reject(Error('Mongo connection is not established'));
+    }
+
+    const docAttrs = options.attrs || {};
+
+    const where = Object.assign({
+      key: rlKey,
+      $or: [
+        { expire: { $gt: new Date() } },
+        { expire: { $eq: null } },
+      ],
+    }, docAttrs);
+
+    return this._collection.findOne(where);
+  }
+
+  _delete(rlKey, options = {}) {
+    if (!this._collection) {
+      return Promise.reject(Error('Mongo connection is not established'));
+    }
+
+    const docAttrs = options.attrs || {};
+    const where = Object.assign({ key: rlKey }, docAttrs);
+
+    return this._collection.deleteOne(where)
+      .then(res => res.deletedCount > 0);
+  }
+}
+
+module.exports = RateLimiterMongo;
+
+
+/***/ }),
+
+/***/ 2532:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5664);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+class RateLimiterMySQL extends RateLimiterStoreAbstract {
+  /**
+   * @callback callback
+   * @param {Object} err
+   *
+   * @param {Object} opts
+   * @param {callback} cb
+   * Defaults {
+   *   ... see other in RateLimiterStoreAbstract
+   *
+   *   storeClient: anySqlClient,
+   *   storeType: 'knex', // required only for Knex instance
+   *   dbName: 'string',
+   *   tableName: 'string',
+   * }
+   */
+  constructor(opts, cb = null) {
+    super(opts);
+
+    this.client = opts.storeClient;
+    this.clientType = opts.storeType;
+
+    this.dbName = opts.dbName;
+    this.tableName = opts.tableName;
+
+    this.clearExpiredByTimeout = opts.clearExpiredByTimeout;
+
+    this.tableCreated = opts.tableCreated;
+    if (!this.tableCreated) {
+      this._createDbAndTable()
+        .then(() => {
+          this.tableCreated = true;
+          if (this.clearExpiredByTimeout) {
+            this._clearExpiredHourAgo();
+          }
+          if (typeof cb === 'function') {
+            cb();
+          }
+        })
+        .catch((err) => {
+          if (typeof cb === 'function') {
+            cb(err);
+          } else {
+            throw err;
+          }
+        });
+    } else {
+      if (this.clearExpiredByTimeout) {
+        this._clearExpiredHourAgo();
+      }
+      if (typeof cb === 'function') {
+        cb();
+      }
+    }
+  }
+
+  clearExpired(expire) {
+    return new Promise((resolve) => {
+      this._getConnection()
+        .then((conn) => {
+          conn.query(`DELETE FROM ??.?? WHERE expire < ?`, [this.dbName, this.tableName, expire], () => {
+            this._releaseConnection(conn);
+            resolve();
+          });
+        })
+        .catch(() => {
+          resolve();
+        });
+    });
+  }
+
+  _clearExpiredHourAgo() {
+    if (this._clearExpiredTimeoutId) {
+      clearTimeout(this._clearExpiredTimeoutId);
+    }
+    this._clearExpiredTimeoutId = setTimeout(() => {
+      this.clearExpired(Date.now() - 3600000) // Never rejected
+        .then(() => {
+          this._clearExpiredHourAgo();
+        });
+    }, 300000);
+    this._clearExpiredTimeoutId.unref();
+  }
+
+  /**
+   *
+   * @return Promise<any>
+   * @private
+   */
+  _getConnection() {
+    switch (this.clientType) {
+      case 'pool':
+        return new Promise((resolve, reject) => {
+          this.client.getConnection((errConn, conn) => {
+            if (errConn) {
+              return reject(errConn);
+            }
+
+            resolve(conn);
+          });
+        });
+      case 'sequelize':
+        return this.client.connectionManager.getConnection();
+      case 'knex':
+        return this.client.client.acquireConnection();
+      default:
+        return Promise.resolve(this.client);
+    }
+  }
+
+  _releaseConnection(conn) {
+    switch (this.clientType) {
+      case 'pool':
+        return conn.release();
+      case 'sequelize':
+        return this.client.connectionManager.releaseConnection(conn);
+      case 'knex':
+        return this.client.client.releaseConnection(conn);
+      default:
+        return true;
+    }
+  }
+
+  /**
+   *
+   * @returns {Promise<any>}
+   * @private
+   */
+  _createDbAndTable() {
+    return new Promise((resolve, reject) => {
+      this._getConnection()
+        .then((conn) => {
+          conn.query(`CREATE DATABASE IF NOT EXISTS \`${this.dbName}\`;`, (errDb) => {
+            if (errDb) {
+              this._releaseConnection(conn);
+              return reject(errDb);
+            }
+            conn.query(this._getCreateTableStmt(), (err) => {
+              if (err) {
+                this._releaseConnection(conn);
+                return reject(err);
+              }
+              this._releaseConnection(conn);
+              resolve();
+            });
+          });
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  }
+
+  _getCreateTableStmt() {
+    return `CREATE TABLE IF NOT EXISTS \`${this.dbName}\`.\`${this.tableName}\` (` +
+      '`key` VARCHAR(255) CHARACTER SET utf8 NOT NULL,' +
+      '`points` INT(9) NOT NULL default 0,' +
+      '`expire` BIGINT UNSIGNED,' +
+      'PRIMARY KEY (`key`)' +
+      ') ENGINE = INNODB;';
+  }
+
+  get clientType() {
+    return this._clientType;
+  }
+
+  set clientType(value) {
+    if (typeof value === 'undefined') {
+      if (this.client.constructor.name === 'Connection') {
+        value = 'connection';
+      } else if (this.client.constructor.name === 'Pool') {
+        value = 'pool';
+      } else if (this.client.constructor.name === 'Sequelize') {
+        value = 'sequelize';
+      } else {
+        throw new Error('storeType is not defined');
+      }
+    }
+    this._clientType = value.toLowerCase();
+  }
+
+  get dbName() {
+    return this._dbName;
+  }
+
+  set dbName(value) {
+    this._dbName = typeof value === 'undefined' ? 'rtlmtrflx' : value;
+  }
+
+  get tableName() {
+    return this._tableName;
+  }
+
+  set tableName(value) {
+    this._tableName = typeof value === 'undefined' ? this.keyPrefix : value;
+  }
+
+  get tableCreated() {
+    return this._tableCreated
+  }
+
+  set tableCreated(value) {
+    this._tableCreated = typeof value === 'undefined' ? false : !!value;
+  }
+
+  get clearExpiredByTimeout() {
+    return this._clearExpiredByTimeout;
+  }
+
+  set clearExpiredByTimeout(value) {
+    this._clearExpiredByTimeout = typeof value === 'undefined' ? true : Boolean(value);
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+    const [row] = result;
+
+    res.isFirstInDuration = changedPoints === row.points;
+    res.consumedPoints = res.isFirstInDuration ? changedPoints : row.points;
+
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = row.expire
+      ? Math.max(row.expire - Date.now(), 0)
+      : -1;
+
+    return res;
+  }
+
+  _upsertTransaction(conn, key, points, msDuration, forceExpire) {
+    return new Promise((resolve, reject) => {
+      conn.query('BEGIN', (errBegin) => {
+        if (errBegin) {
+          conn.rollback();
+
+          return reject(errBegin);
+        }
+
+        const dateNow = Date.now();
+        const newExpire = msDuration > 0 ? dateNow + msDuration : null;
+
+        let q;
+        let values;
+        if (forceExpire) {
+          q = `INSERT INTO ??.?? VALUES (?, ?, ?)
+          ON DUPLICATE KEY UPDATE 
+            points = ?, 
+            expire = ?;`;
+          values = [
+            this.dbName, this.tableName, key, points, newExpire,
+            points,
+            newExpire,
+          ];
+        } else {
+          q = `INSERT INTO ??.?? VALUES (?, ?, ?)
+          ON DUPLICATE KEY UPDATE 
+            points = IF(expire <= ?, ?, points + (?)), 
+            expire = IF(expire <= ?, ?, expire);`;
+          values = [
+            this.dbName, this.tableName, key, points, newExpire,
+            dateNow, points, points,
+            dateNow, newExpire,
+          ];
+        }
+
+        conn.query(q, values, (errUpsert) => {
+          if (errUpsert) {
+            conn.rollback();
+
+            return reject(errUpsert);
+          }
+          conn.query('SELECT points, expire FROM ??.?? WHERE `key` = ?;', [this.dbName, this.tableName, key], (errSelect, res) => {
+            if (errSelect) {
+              conn.rollback();
+
+              return reject(errSelect);
+            }
+
+            conn.query('COMMIT', (err) => {
+              if (err) {
+                conn.rollback();
+
+                return reject(err);
+              }
+
+              resolve(res);
+            });
+          });
+        });
+      });
+    });
+  }
+
+  _upsert(key, points, msDuration, forceExpire = false) {
+    if (!this.tableCreated) {
+      return Promise.reject(Error('Table is not created yet'));
+    }
+
+    return new Promise((resolve, reject) => {
+      this._getConnection()
+        .then((conn) => {
+          this._upsertTransaction(conn, key, points, msDuration, forceExpire)
+            .then((res) => {
+              resolve(res);
+              this._releaseConnection(conn);
+            })
+            .catch((err) => {
+              reject(err);
+              this._releaseConnection(conn);
+            });
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  }
+
+  _get(rlKey) {
+    if (!this.tableCreated) {
+      return Promise.reject(Error('Table is not created yet'));
+    }
+
+    return new Promise((resolve, reject) => {
+      this._getConnection()
+        .then((conn) => {
+          conn.query(
+            'SELECT points, expire FROM ??.?? WHERE `key` = ? AND (`expire` > ? OR `expire` IS NULL)',
+            [this.dbName, this.tableName, rlKey, Date.now()],
+            (err, res) => {
+              if (err) {
+                reject(err);
+              } else if (res.length === 0) {
+                resolve(null);
+              } else {
+                resolve(res);
+              }
+
+              this._releaseConnection(conn);
+            } // eslint-disable-line
+          );
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  }
+
+  _delete(rlKey) {
+    if (!this.tableCreated) {
+      return Promise.reject(Error('Table is not created yet'));
+    }
+
+    return new Promise((resolve, reject) => {
+      this._getConnection()
+        .then((conn) => {
+          conn.query(
+            'DELETE FROM ??.?? WHERE `key` = ?',
+            [this.dbName, this.tableName, rlKey],
+            (err, res) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(res.affectedRows > 0);
+              }
+
+              this._releaseConnection(conn);
+            } // eslint-disable-line
+          );
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  }
+}
+
+module.exports = RateLimiterMySQL;
+
+
+/***/ }),
+
+/***/ 414:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5664);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+class RateLimiterPostgres extends RateLimiterStoreAbstract {
+  /**
+   * @callback callback
+   * @param {Object} err
+   *
+   * @param {Object} opts
+   * @param {callback} cb
+   * Defaults {
+   *   ... see other in RateLimiterStoreAbstract
+   *
+   *   storeClient: postgresClient,
+   *   storeType: 'knex', // required only for Knex instance
+   *   tableName: 'string',
+   *   schemaName: 'string', // optional
+   * }
+   */
+  constructor(opts, cb = null) {
+    super(opts);
+
+    this.client = opts.storeClient;
+    this.clientType = opts.storeType;
+
+    this.tableName = opts.tableName;
+    this.schemaName = opts.schemaName;
+
+    this.clearExpiredByTimeout = opts.clearExpiredByTimeout;
+
+    this.tableCreated = opts.tableCreated;
+    if (!this.tableCreated) {
+      this._createTable()
+        .then(() => {
+          this.tableCreated = true;
+          if (this.clearExpiredByTimeout) {
+            this._clearExpiredHourAgo();
+          }
+          if (typeof cb === 'function') {
+            cb();
+          }
+        })
+        .catch((err) => {
+          if (typeof cb === 'function') {
+            cb(err);
+          } else {
+            throw err;
+          }
+        });
+    } else {
+      if (this.clearExpiredByTimeout) {
+        this._clearExpiredHourAgo();
+      }
+      if (typeof cb === 'function') {
+        cb();
+      }
+    }
+  }
+
+  _getTableIdentifier() {
+    return this.schemaName ? `"${this.schemaName}"."${this.tableName}"` : `"${this.tableName}"`;
+  }
+
+  clearExpired(expire) {
+    return new Promise((resolve) => {
+      const q = {
+        name: 'rlflx-clear-expired',
+        text: `DELETE FROM ${this._getTableIdentifier()} WHERE expire < $1`,
+        values: [expire],
+      };
+      this._query(q)
+        .then(() => {
+          resolve();
+        })
+        .catch(() => {
+          // Deleting expired query is not critical
+          resolve();
+        });
+    });
+  }
+
+  /**
+   * Delete all rows expired 1 hour ago once per 5 minutes
+   *
+   * @private
+   */
+  _clearExpiredHourAgo() {
+    if (this._clearExpiredTimeoutId) {
+      clearTimeout(this._clearExpiredTimeoutId);
+    }
+    this._clearExpiredTimeoutId = setTimeout(() => {
+      this.clearExpired(Date.now() - 3600000) // Never rejected
+        .then(() => {
+          this._clearExpiredHourAgo();
+        });
+    }, 300000);
+    this._clearExpiredTimeoutId.unref();
+  }
+
+  /**
+   *
+   * @return Promise<any>
+   * @private
+   */
+  _getConnection() {
+    switch (this.clientType) {
+      case 'pool':
+        return Promise.resolve(this.client);
+      case 'sequelize':
+        return this.client.connectionManager.getConnection();
+      case 'knex':
+        return this.client.client.acquireConnection();
+      case 'typeorm':
+        return Promise.resolve(this.client.driver.master);
+      default:
+        return Promise.resolve(this.client);
+    }
+  }
+
+  _releaseConnection(conn) {
+    switch (this.clientType) {
+      case 'pool':
+        return true;
+      case 'sequelize':
+        return this.client.connectionManager.releaseConnection(conn);
+      case 'knex':
+        return this.client.client.releaseConnection(conn);
+      case 'typeorm':
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  /**
+   *
+   * @returns {Promise<any>}
+   * @private
+   */
+  _createTable() {
+    return new Promise((resolve, reject) => {
+      this._query({
+        text: this._getCreateTableStmt(),
+      })
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          if (err.code === '23505') {
+            // Error: duplicate key value violates unique constraint "pg_type_typname_nsp_index"
+            // Postgres doesn't handle concurrent table creation
+            // It is supposed, that table is created by another worker
+            resolve();
+          } else {
+            reject(err);
+          }
+        });
+    });
+  }
+
+  _getCreateTableStmt() {
+    return `CREATE TABLE IF NOT EXISTS ${this._getTableIdentifier()} (
+      key varchar(255) PRIMARY KEY,
+      points integer NOT NULL DEFAULT 0,
+      expire bigint
+    );`;
+  }
+
+  get clientType() {
+    return this._clientType;
+  }
+
+  set clientType(value) {
+    const constructorName = this.client.constructor.name;
+
+    if (typeof value === 'undefined') {
+      if (constructorName === 'Client') {
+        value = 'client';
+      } else if (
+        constructorName === 'Pool' ||
+        constructorName === 'BoundPool'
+      ) {
+        value = 'pool';
+      } else if (constructorName === 'Sequelize') {
+        value = 'sequelize';
+      } else {
+        throw new Error('storeType is not defined');
+      }
+    }
+
+    this._clientType = value.toLowerCase();
+  }
+
+  get tableName() {
+    return this._tableName;
+  }
+
+  set tableName(value) {
+    this._tableName = typeof value === 'undefined' ? this.keyPrefix : value;
+  }
+
+  get schemaName() {
+    return this._schemaName;
+  }
+
+  set schemaName(value) {
+    this._schemaName = value;
+  }
+
+  get tableCreated() {
+    return this._tableCreated;
+  }
+
+  set tableCreated(value) {
+    this._tableCreated = typeof value === 'undefined' ? false : !!value;
+  }
+
+  get clearExpiredByTimeout() {
+    return this._clearExpiredByTimeout;
+  }
+
+  set clearExpiredByTimeout(value) {
+    this._clearExpiredByTimeout = typeof value === 'undefined' ? true : Boolean(value);
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+    const row = result.rows[0];
+
+    res.isFirstInDuration = changedPoints === row.points;
+    res.consumedPoints = res.isFirstInDuration ? changedPoints : row.points;
+
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = row.expire
+      ? Math.max(row.expire - Date.now(), 0)
+      : -1;
+
+    return res;
+  }
+
+  _query(q) {
+    const prefix = this.tableName.toLowerCase();
+    const queryObj = { name: `${prefix}:${q.name}`, text: q.text, values: q.values };
+    return new Promise((resolve, reject) => {
+      this._getConnection()
+        .then((conn) => {
+          conn.query(queryObj)
+            .then((res) => {
+              resolve(res);
+              this._releaseConnection(conn);
+            })
+            .catch((err) => {
+              reject(err);
+              this._releaseConnection(conn);
+            });
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  }
+
+  _upsert(key, points, msDuration, forceExpire = false) {
+    if (!this.tableCreated) {
+      return Promise.reject(Error('Table is not created yet'));
+    }
+
+    const newExpire = msDuration > 0 ? Date.now() + msDuration : null;
+    const expireQ = forceExpire
+      ? ' $3 '
+      : ` CASE
+             WHEN ${this._getTableIdentifier()}.expire <= $4 THEN $3
+             ELSE ${this._getTableIdentifier()}.expire
+            END `;
+
+    return this._query({
+      name: forceExpire ? 'rlflx-upsert-force' : 'rlflx-upsert',
+      text: `
+            INSERT INTO ${this._getTableIdentifier()} VALUES ($1, $2, $3)
+              ON CONFLICT(key) DO UPDATE SET
+                points = CASE
+                          WHEN (${this._getTableIdentifier()}.expire <= $4 OR 1=${forceExpire ? 1 : 0}) THEN $2
+                          ELSE ${this._getTableIdentifier()}.points + ($2)
+                         END,
+                expire = ${expireQ}
+            RETURNING points, expire;`,
+      values: [key, points, newExpire, Date.now()],
+    });
+  }
+
+  _get(rlKey) {
+    if (!this.tableCreated) {
+      return Promise.reject(Error('Table is not created yet'));
+    }
+
+    return new Promise((resolve, reject) => {
+      this._query({
+        name: 'rlflx-get',
+        text: `
+            SELECT points, expire FROM ${this._getTableIdentifier()} WHERE key = $1 AND (expire > $2 OR expire IS NULL);`,
+        values: [rlKey, Date.now()],
+      })
+        .then((res) => {
+          if (res.rowCount === 0) {
+            res = null;
+          }
+          resolve(res);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  }
+
+  _delete(rlKey) {
+    if (!this.tableCreated) {
+      return Promise.reject(Error('Table is not created yet'));
+    }
+
+    return this._query({
+      name: 'rlflx-delete',
+      text: `DELETE FROM ${this._getTableIdentifier()} WHERE key = $1`,
+      values: [rlKey],
+    })
+      .then(res => res.rowCount > 0);
+  }
+}
+
+module.exports = RateLimiterPostgres;
+
+
+/***/ }),
+
+/***/ 2967:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterQueueError = __nccwpck_require__(9636)
+const MAX_QUEUE_SIZE = 4294967295;
+const KEY_DEFAULT = 'limiter';
+
+module.exports = class RateLimiterQueue {
+  constructor(limiterFlexible, opts = {
+    maxQueueSize: MAX_QUEUE_SIZE,
+  }) {
+    this._queueLimiters = {
+      KEY_DEFAULT: new RateLimiterQueueInternal(limiterFlexible, opts)
+    };
+    this._limiterFlexible = limiterFlexible;
+    this._maxQueueSize = opts.maxQueueSize
+  }
+
+  getTokensRemaining(key = KEY_DEFAULT) {
+    if (this._queueLimiters[key]) {
+      return this._queueLimiters[key].getTokensRemaining()
+    } else {
+      return Promise.resolve(this._limiterFlexible.points)
+    }
+  }
+
+  removeTokens(tokens, key = KEY_DEFAULT) {
+    if (!this._queueLimiters[key]) {
+      this._queueLimiters[key] = new RateLimiterQueueInternal(
+        this._limiterFlexible, {
+          key,
+          maxQueueSize: this._maxQueueSize,
+        })
+    }
+
+    return this._queueLimiters[key].removeTokens(tokens)
+  }
+};
+
+class RateLimiterQueueInternal {
+
+  constructor(limiterFlexible, opts = {
+    maxQueueSize: MAX_QUEUE_SIZE,
+    key: KEY_DEFAULT,
+  }) {
+    this._key = opts.key;
+    this._waitTimeout = null;
+    this._queue = [];
+    this._limiterFlexible = limiterFlexible;
+
+    this._maxQueueSize = opts.maxQueueSize
+  }
+
+  getTokensRemaining() {
+    return this._limiterFlexible.get(this._key)
+      .then((rlRes) => {
+        return rlRes !== null ? rlRes.remainingPoints : this._limiterFlexible.points;
+      })
+  }
+
+  removeTokens(tokens) {
+    const _this = this;
+
+    return new Promise((resolve, reject) => {
+      if (tokens > _this._limiterFlexible.points) {
+        reject(new RateLimiterQueueError(`Requested tokens ${tokens} exceeds maximum ${_this._limiterFlexible.points} tokens per interval`));
+        return
+      }
+
+      if (_this._queue.length > 0) {
+        _this._queueRequest.call(_this, resolve, reject, tokens);
+      } else {
+        _this._limiterFlexible.consume(_this._key, tokens)
+          .then((res) => {
+            resolve(res.remainingPoints);
+          })
+          .catch((rej) => {
+            if (rej instanceof Error) {
+              reject(rej);
+            } else {
+              _this._queueRequest.call(_this, resolve, reject, tokens);
+              if (_this._waitTimeout === null) {
+                _this._waitTimeout = setTimeout(_this._processFIFO.bind(_this), rej.msBeforeNext);
+              }
+            }
+          });
+      }
+    })
+  }
+
+  _queueRequest(resolve, reject, tokens) {
+    const _this = this;
+    if (_this._queue.length < _this._maxQueueSize) {
+      _this._queue.push({resolve, reject, tokens});
+    } else {
+      reject(new RateLimiterQueueError(`Number of requests reached it's maximum ${_this._maxQueueSize}`))
+    }
+  }
+
+  _processFIFO() {
+    const _this = this;
+
+    if (_this._waitTimeout !== null) {
+      clearTimeout(_this._waitTimeout);
+      _this._waitTimeout = null;
+    }
+
+    if (_this._queue.length === 0) {
+      return;
+    }
+
+    const item = _this._queue.shift();
+    _this._limiterFlexible.consume(_this._key, item.tokens)
+      .then((res) => {
+        item.resolve(res.remainingPoints);
+        _this._processFIFO.call(_this);
+      })
+      .catch((rej) => {
+        if (rej instanceof Error) {
+          item.reject(rej);
+          _this._processFIFO.call(_this);
+        } else {
+          _this._queue.unshift(item);
+          if (_this._waitTimeout === null) {
+            _this._waitTimeout = setTimeout(_this._processFIFO.bind(_this), rej.msBeforeNext);
+          }
+        }
+      });
+  }
+}
+
+
+/***/ }),
+
+/***/ 6770:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5664);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+const incrTtlLuaScript = `redis.call('set', KEYS[1], 0, 'EX', ARGV[2], 'NX') \
+local consumed = redis.call('incrby', KEYS[1], ARGV[1]) \
+local ttl = redis.call('pttl', KEYS[1]) \
+if ttl == -1 then \
+  redis.call('expire', KEYS[1], ARGV[2]) \
+  ttl = 1000 * ARGV[2] \
+end \
+return {consumed, ttl} \
+`;
+
+class RateLimiterRedis extends RateLimiterStoreAbstract {
+  /**
+   *
+   * @param {Object} opts
+   * Defaults {
+   *   ... see other in RateLimiterStoreAbstract
+   *
+   *   redis: RedisClient
+   *   rejectIfRedisNotReady: boolean = false - reject / invoke insuranceLimiter immediately when redis connection is not "ready"
+   * }
+   */
+  constructor(opts) {
+    super(opts);
+    this.client = opts.storeClient;
+
+    this._rejectIfRedisNotReady = !!opts.rejectIfRedisNotReady;
+
+    this.useRedisPackage = opts.useRedisPackage || this.client.constructor.name === 'Commander' || false;
+    this.useRedis3AndLowerPackage = opts.useRedis3AndLowerPackage;
+    if (typeof this.client.defineCommand === 'function') {
+      this.client.defineCommand("rlflxIncr", {
+        numberOfKeys: 1,
+        lua: incrTtlLuaScript,
+      });
+    }
+  }
+
+  /**
+   * Prevent actual redis call if redis connection is not ready
+   * Because of different connection state checks for ioredis and node-redis, only this clients would be actually checked.
+   * For any other clients all the requests would be passed directly to redis client
+   * @return {boolean}
+   * @private
+   */
+  _isRedisReady() {
+    if (!this._rejectIfRedisNotReady) {
+      return true;
+    }
+    // ioredis client
+    if (this.client.status && this.client.status !== 'ready') {
+      return false;
+    }
+    // node-redis client
+    if (typeof this.client.isReady === 'function' && !this.client.isReady()) {
+      return false;
+    }
+    return true;
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    let [consumed, resTtlMs] = result;
+    // Support ioredis results format
+    if (Array.isArray(consumed)) {
+      [, consumed] = consumed;
+      [, resTtlMs] = resTtlMs;
+    }
+
+    const res = new RateLimiterRes();
+    res.consumedPoints = parseInt(consumed);
+    res.isFirstInDuration = res.consumedPoints === changedPoints;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = resTtlMs;
+
+    return res;
+  }
+
+  async _upsert(rlKey, points, msDuration, forceExpire = false) {
+    if (!this._isRedisReady()) {
+      throw new Error('Redis connection is not ready');
+    }
+
+    const secDuration = Math.floor(msDuration / 1000);
+    const multi = this.client.multi();
+
+    if (forceExpire) {
+      if (secDuration > 0) {
+        if(!this.useRedisPackage && !this.useRedis3AndLowerPackage){
+          multi.set(rlKey, points, "EX", secDuration);
+        }else{
+          multi.set(rlKey, points, { EX: secDuration });
+        }
+      } else {
+        multi.set(rlKey, points);
+      }
+
+      if(!this.useRedisPackage && !this.useRedis3AndLowerPackage){
+        return multi.pttl(rlKey).exec(true);
+      }
+      return multi.pTTL(rlKey).exec(true);
+    }
+
+    if (secDuration > 0) {
+      if(!this.useRedisPackage && !this.useRedis3AndLowerPackage){
+        return this.client.rlflxIncr(
+          [rlKey].concat([String(points), String(secDuration)]));
+      }
+      if (this.useRedis3AndLowerPackage) {
+        return new Promise((resolve, reject) => {
+          const incrCallback = function (err, result) {
+            if (err) {
+              return reject(err);
+            }
+
+            return resolve(result);
+          };
+
+          if (typeof this.client.rlflxIncr === 'function') {
+            this.client.rlflxIncr(rlKey, points, secDuration, incrCallback);
+          } else {
+            this.client.eval(incrTtlLuaScript, 1, rlKey, points, secDuration, incrCallback);
+          }
+        });
+      } else {
+        return this.client.eval(incrTtlLuaScript, {
+          keys: [rlKey],
+          arguments: [String(points), String(secDuration)],
+        });
+      }
+    } else {
+      if(!this.useRedisPackage && !this.useRedis3AndLowerPackage){
+        return multi.incrby(rlKey, points).pttl(rlKey).exec(true);
+      }
+
+      return multi.incrBy(rlKey, points).pTTL(rlKey).exec(true);
+    }
+  }
+
+  async _get(rlKey) {
+    if (!this._isRedisReady()) {
+      throw new Error('Redis connection is not ready');
+    }
+    if(!this.useRedisPackage && !this.useRedis3AndLowerPackage){
+      return this.client
+        .multi()
+        .get(rlKey)
+        .pttl(rlKey)
+        .exec()
+        .then((result) => {
+          const [[,points]] = result;
+          if (points === null) return null;
+          return result;
+        });
+    }
+
+    return this.client
+      .multi()
+      .get(rlKey)
+      .pTTL(rlKey)
+      .exec(true)
+      .then((result) => {
+        const [points] = result;
+        if (points === null) return null;
+        return result;
+      });
+  }
+
+  _delete(rlKey) {
+    return this.client
+      .del(rlKey)
+      .then(result => result > 0);
+  }
+}
+
+module.exports = RateLimiterRedis;
+
+
+/***/ }),
+
+/***/ 9975:
+/***/ ((module) => {
+
+module.exports = class RateLimiterRes {
+  constructor(remainingPoints, msBeforeNext, consumedPoints, isFirstInDuration) {
+    this.remainingPoints = typeof remainingPoints === 'undefined' ? 0 : remainingPoints; // Remaining points in current duration
+    this.msBeforeNext = typeof msBeforeNext === 'undefined' ? 0 : msBeforeNext; // Milliseconds before next action
+    this.consumedPoints = typeof consumedPoints === 'undefined' ? 0 : consumedPoints; // Consumed points in current duration
+    this.isFirstInDuration = typeof isFirstInDuration === 'undefined' ? false : isFirstInDuration;
+  }
+
+  get msBeforeNext() {
+    return this._msBeforeNext;
+  }
+
+  set msBeforeNext(ms) {
+    this._msBeforeNext = ms;
+    return this;
+  }
+
+  get remainingPoints() {
+    return this._remainingPoints;
+  }
+
+  set remainingPoints(p) {
+    this._remainingPoints = p;
+    return this;
+  }
+
+  get consumedPoints() {
+    return this._consumedPoints;
+  }
+
+  set consumedPoints(p) {
+    this._consumedPoints = p;
+    return this;
+  }
+
+  get isFirstInDuration() {
+    return this._isFirstInDuration;
+  }
+
+  set isFirstInDuration(value) {
+    this._isFirstInDuration = Boolean(value);
+  }
+
+  _getDecoratedProperties() {
+    return {
+      remainingPoints: this.remainingPoints,
+      msBeforeNext: this.msBeforeNext,
+      consumedPoints: this.consumedPoints,
+      isFirstInDuration: this.isFirstInDuration,
+    };
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")]() {
+    return this._getDecoratedProperties();
+  }
+
+  toString() {
+    return JSON.stringify(this._getDecoratedProperties());
+  }
+
+  toJSON() {
+    return this._getDecoratedProperties();
+  }
+};
+
+
+/***/ }),
+
+/***/ 5664:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterAbstract = __nccwpck_require__(363);
+const BlockedKeys = __nccwpck_require__(7905);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+module.exports = class RateLimiterStoreAbstract extends RateLimiterAbstract {
+  /**
+   *
+   * @param opts Object Defaults {
+   *   ... see other in RateLimiterAbstract
+   *
+   *   inMemoryBlockOnConsumed: 40, // Number of points when key is blocked
+   *   inMemoryBlockDuration: 10, // Block duration in seconds
+   *   insuranceLimiter: RateLimiterAbstract
+   * }
+   */
+  constructor(opts = {}) {
+    super(opts);
+
+    this.inMemoryBlockOnConsumed = opts.inMemoryBlockOnConsumed;
+    this.inMemoryBlockDuration = opts.inMemoryBlockDuration;
+    this.insuranceLimiter = opts.insuranceLimiter;
+    this._inMemoryBlockedKeys = new BlockedKeys();
+  }
+
+  get client() {
+    return this._client;
+  }
+
+  set client(value) {
+    if (typeof value === 'undefined') {
+      throw new Error('storeClient is not set');
+    }
+    this._client = value;
+  }
+
+  /**
+   * Have to be launched after consume
+   * It blocks key and execute evenly depending on result from store
+   *
+   * It uses _getRateLimiterRes function to prepare RateLimiterRes from store result
+   *
+   * @param resolve
+   * @param reject
+   * @param rlKey
+   * @param changedPoints
+   * @param storeResult
+   * @param {Object} options
+   * @private
+   */
+  _afterConsume(resolve, reject, rlKey, changedPoints, storeResult, options = {}) {
+    const res = this._getRateLimiterRes(rlKey, changedPoints, storeResult);
+
+    if (this.inMemoryBlockOnConsumed > 0 && !(this.inMemoryBlockDuration > 0)
+      && res.consumedPoints >= this.inMemoryBlockOnConsumed
+    ) {
+      this._inMemoryBlockedKeys.addMs(rlKey, res.msBeforeNext);
+      if (res.consumedPoints > this.points) {
+        return reject(res);
+      } else {
+        return resolve(res)
+      }
+    } else if (res.consumedPoints > this.points) {
+      let blockPromise = Promise.resolve();
+      // Block only first time when consumed more than points
+      if (this.blockDuration > 0 && res.consumedPoints <= (this.points + changedPoints)) {
+        res.msBeforeNext = this.msBlockDuration;
+        blockPromise = this._block(rlKey, res.consumedPoints, this.msBlockDuration, options);
+      }
+
+      if (this.inMemoryBlockOnConsumed > 0 && res.consumedPoints >= this.inMemoryBlockOnConsumed) {
+        // Block key for this.inMemoryBlockDuration seconds
+        this._inMemoryBlockedKeys.add(rlKey, this.inMemoryBlockDuration);
+        res.msBeforeNext = this.msInMemoryBlockDuration;
+      }
+
+      blockPromise
+        .then(() => {
+          reject(res);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    } else if (this.execEvenly && res.msBeforeNext > 0 && !res.isFirstInDuration) {
+      let delay = Math.ceil(res.msBeforeNext / (res.remainingPoints + 2));
+      if (delay < this.execEvenlyMinDelayMs) {
+        delay = res.consumedPoints * this.execEvenlyMinDelayMs;
+      }
+
+      setTimeout(resolve, delay, res);
+    } else {
+      resolve(res);
+    }
+  }
+
+  _handleError(err, funcName, resolve, reject, key, data = false, options = {}) {
+    if (!(this.insuranceLimiter instanceof RateLimiterAbstract)) {
+      reject(err);
+    } else {
+      this.insuranceLimiter[funcName](key, data, options)
+        .then((res) => {
+          resolve(res);
+        })
+        .catch((res) => {
+          reject(res);
+        });
+    }
+  }
+
+  getInMemoryBlockMsBeforeExpire(rlKey) {
+    if (this.inMemoryBlockOnConsumed > 0) {
+      return this._inMemoryBlockedKeys.msBeforeExpire(rlKey);
+    }
+
+    return 0;
+  }
+
+  get inMemoryBlockOnConsumed() {
+    return this._inMemoryBlockOnConsumed;
+  }
+
+  set inMemoryBlockOnConsumed(value) {
+    this._inMemoryBlockOnConsumed = value ? parseInt(value) : 0;
+    if (this.inMemoryBlockOnConsumed > 0 && this.points > this.inMemoryBlockOnConsumed) {
+      throw new Error('inMemoryBlockOnConsumed option must be greater or equal "points" option');
+    }
+  }
+
+  get inMemoryBlockDuration() {
+    return this._inMemoryBlockDuration;
+  }
+
+  set inMemoryBlockDuration(value) {
+    this._inMemoryBlockDuration = value ? parseInt(value) : 0;
+    if (this.inMemoryBlockDuration > 0 && this.inMemoryBlockOnConsumed === 0) {
+      throw new Error('inMemoryBlockOnConsumed option must be set up');
+    }
+  }
+
+  get msInMemoryBlockDuration() {
+    return this._inMemoryBlockDuration * 1000;
+  }
+
+  get insuranceLimiter() {
+    return this._insuranceLimiter;
+  }
+
+  set insuranceLimiter(value) {
+    if (typeof value !== 'undefined' && !(value instanceof RateLimiterAbstract)) {
+      throw new Error('insuranceLimiter must be instance of RateLimiterAbstract');
+    }
+    this._insuranceLimiter = value;
+    if (this._insuranceLimiter) {
+      this._insuranceLimiter.blockDuration = this.blockDuration;
+      this._insuranceLimiter.execEvenly = this.execEvenly;
+    }
+  }
+
+  /**
+   * Block any key for secDuration seconds
+   *
+   * @param key
+   * @param secDuration
+   * @param {Object} options
+   *
+   * @return Promise<RateLimiterRes>
+   */
+  block(key, secDuration, options = {}) {
+    const msDuration = secDuration * 1000;
+    return this._block(this.getKey(key), this.points + 1, msDuration, options);
+  }
+
+  /**
+   * Set points by key for any duration
+   *
+   * @param key
+   * @param points
+   * @param secDuration
+   * @param {Object} options
+   *
+   * @return Promise<RateLimiterRes>
+   */
+  set(key, points, secDuration, options = {}) {
+    const msDuration = (secDuration >= 0 ? secDuration : this.duration) * 1000;
+    return this._block(this.getKey(key), points, msDuration, options);
+  }
+
+  /**
+   *
+   * @param key
+   * @param pointsToConsume
+   * @param {Object} options
+   * @returns Promise<RateLimiterRes>
+   */
+  consume(key, pointsToConsume = 1, options = {}) {
+    return new Promise((resolve, reject) => {
+      const rlKey = this.getKey(key);
+
+      const inMemoryBlockMsBeforeExpire = this.getInMemoryBlockMsBeforeExpire(rlKey);
+      if (inMemoryBlockMsBeforeExpire > 0) {
+        return reject(new RateLimiterRes(0, inMemoryBlockMsBeforeExpire));
+      }
+
+      this._upsert(rlKey, pointsToConsume, this._getKeySecDuration(options) * 1000, false, options)
+        .then((res) => {
+          this._afterConsume(resolve, reject, rlKey, pointsToConsume, res);
+        })
+        .catch((err) => {
+          this._handleError(err, 'consume', resolve, reject, key, pointsToConsume, options);
+        });
+    });
+  }
+
+  /**
+   *
+   * @param key
+   * @param points
+   * @param {Object} options
+   * @returns Promise<RateLimiterRes>
+   */
+  penalty(key, points = 1, options = {}) {
+    const rlKey = this.getKey(key);
+    return new Promise((resolve, reject) => {
+      this._upsert(rlKey, points, this._getKeySecDuration(options) * 1000, false, options)
+        .then((res) => {
+          resolve(this._getRateLimiterRes(rlKey, points, res));
+        })
+        .catch((err) => {
+          this._handleError(err, 'penalty', resolve, reject, key, points, options);
+        });
+    });
+  }
+
+  /**
+   *
+   * @param key
+   * @param points
+   * @param {Object} options
+   * @returns Promise<RateLimiterRes>
+   */
+  reward(key, points = 1, options = {}) {
+    const rlKey = this.getKey(key);
+    return new Promise((resolve, reject) => {
+      this._upsert(rlKey, -points, this._getKeySecDuration(options) * 1000, false, options)
+        .then((res) => {
+          resolve(this._getRateLimiterRes(rlKey, -points, res));
+        })
+        .catch((err) => {
+          this._handleError(err, 'reward', resolve, reject, key, points, options);
+        });
+    });
+  }
+
+  /**
+   *
+   * @param key
+   * @param {Object} options
+   * @returns Promise<RateLimiterRes>|null
+   */
+  get(key, options = {}) {
+    const rlKey = this.getKey(key);
+    return new Promise((resolve, reject) => {
+      this._get(rlKey, options)
+        .then((res) => {
+          if (res === null || typeof res === 'undefined') {
+            resolve(null);
+          } else {
+            resolve(this._getRateLimiterRes(rlKey, 0, res));
+          }
+        })
+        .catch((err) => {
+          this._handleError(err, 'get', resolve, reject, key, options);
+        });
+    });
+  }
+
+  /**
+   *
+   * @param key
+   * @param {Object} options
+   * @returns Promise<boolean>
+   */
+  delete(key, options = {}) {
+    const rlKey = this.getKey(key);
+    return new Promise((resolve, reject) => {
+      this._delete(rlKey, options)
+        .then((res) => {
+          this._inMemoryBlockedKeys.delete(rlKey);
+          resolve(res);
+        })
+        .catch((err) => {
+          this._handleError(err, 'delete', resolve, reject, key, options);
+        });
+    });
+  }
+
+  /**
+   * Cleanup keys no-matter expired or not.
+   */
+  deleteInMemoryBlockedAll() {
+    this._inMemoryBlockedKeys.delete();
+  }
+
+  /**
+   * Get RateLimiterRes object filled depending on storeResult, which specific for exact store
+   *
+   * @param rlKey
+   * @param changedPoints
+   * @param storeResult
+   * @private
+   */
+  _getRateLimiterRes(rlKey, changedPoints, storeResult) { // eslint-disable-line no-unused-vars
+    throw new Error("You have to implement the method '_getRateLimiterRes'!");
+  }
+
+  /**
+   * Block key for this.msBlockDuration milliseconds
+   * Usually, it just prolongs lifetime of key
+   *
+   * @param rlKey
+   * @param initPoints
+   * @param msDuration
+   * @param {Object} options
+   *
+   * @return Promise<any>
+   */
+  _block(rlKey, initPoints, msDuration, options = {}) {
+    return new Promise((resolve, reject) => {
+      this._upsert(rlKey, initPoints, msDuration, true, options)
+        .then(() => {
+          resolve(new RateLimiterRes(0, msDuration > 0 ? msDuration : -1, initPoints));
+        })
+        .catch((err) => {
+          this._handleError(err, 'block', resolve, reject, this.parseKey(rlKey), msDuration / 1000, options);
+        });
+    });
+  }
+
+  /**
+   * Have to be implemented in every limiter
+   * Resolve with raw result from Store OR null if rlKey is not set
+   * or Reject with error
+   *
+   * @param rlKey
+   * @param {Object} options
+   * @private
+   *
+   * @return Promise<any>
+   */
+  _get(rlKey, options = {}) { // eslint-disable-line no-unused-vars
+    throw new Error("You have to implement the method '_get'!");
+  }
+
+  /**
+   * Have to be implemented
+   * Resolve with true OR false if rlKey doesn't exist
+   * or Reject with error
+   *
+   * @param rlKey
+   * @param {Object} options
+   * @private
+   *
+   * @return Promise<any>
+   */
+  _delete(rlKey, options = {}) { // eslint-disable-line no-unused-vars
+    throw new Error("You have to implement the method '_delete'!");
+  }
+
+  /**
+   * Have to be implemented
+   * Resolve with object used for {@link _getRateLimiterRes} to generate {@link RateLimiterRes}
+   *
+   * @param {string} rlKey
+   * @param {number} points
+   * @param {number} msDuration
+   * @param {boolean} forceExpire
+   * @param {Object} options
+   * @abstract
+   *
+   * @return Promise<Object>
+   */
+  _upsert(rlKey, points, msDuration, forceExpire = false, options = {}) {
+    throw new Error("You have to implement the method '_upsert'!");
+  }
+};
+
+
+/***/ }),
+
+/***/ 5373:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterAbstract = __nccwpck_require__(363);
+
+module.exports = class RateLimiterUnion {
+  constructor(...limiters) {
+    if (limiters.length < 1) {
+      throw new Error('RateLimiterUnion: at least one limiter have to be passed');
+    }
+    limiters.forEach((limiter) => {
+      if (!(limiter instanceof RateLimiterAbstract)) {
+        throw new Error('RateLimiterUnion: all limiters have to be instance of RateLimiterAbstract');
+      }
+    });
+
+    this._limiters = limiters;
+  }
+
+  consume(key, points = 1) {
+    return new Promise((resolve, reject) => {
+      const promises = [];
+      this._limiters.forEach((limiter) => {
+        promises.push(limiter.consume(key, points).catch(rej => ({ rejected: true, rej })));
+      });
+
+      Promise.all(promises)
+        .then((res) => {
+          const resObj = {};
+          let rejected = false;
+
+          res.forEach((item) => {
+            if (item.rejected === true) {
+              rejected = true;
+            }
+          });
+
+          for (let i = 0; i < res.length; i++) {
+            if (rejected && res[i].rejected === true) {
+              resObj[this._limiters[i].keyPrefix] = res[i].rej;
+            } else if (!rejected) {
+              resObj[this._limiters[i].keyPrefix] = res[i];
+            }
+          }
+
+          if (rejected) {
+            reject(resObj);
+          } else {
+            resolve(resObj);
+          }
+        });
+    });
+  }
+};
+
+
+/***/ }),
+
+/***/ 8733:
+/***/ ((module) => {
+
+module.exports = class BlockedKeys {
+  constructor() {
+    this._keys = {}; // {'key': 1526279430331}
+    this._addedKeysAmount = 0;
+  }
+
+  collectExpired() {
+    const now = Date.now();
+
+    Object.keys(this._keys).forEach((key) => {
+      if (this._keys[key] <= now) {
+        delete this._keys[key];
+      }
+    });
+
+    this._addedKeysAmount = Object.keys(this._keys).length;
+  }
+
+  /**
+   * Add new blocked key
+   *
+   * @param key String
+   * @param sec Number
+   */
+  add(key, sec) {
+    this.addMs(key, sec * 1000);
+  }
+
+  /**
+   * Add new blocked key for ms
+   *
+   * @param key String
+   * @param ms Number
+   */
+  addMs(key, ms) {
+    this._keys[key] = Date.now() + ms;
+    this._addedKeysAmount++;
+    if (this._addedKeysAmount > 999) {
+      this.collectExpired();
+    }
+  }
+
+  /**
+   * 0 means not blocked
+   *
+   * @param key
+   * @returns {number}
+   */
+  msBeforeExpire(key) {
+    const expire = this._keys[key];
+
+    if (expire && expire >= Date.now()) {
+      this.collectExpired();
+      const now = Date.now();
+      return expire >= now ? expire - now : 0;
+    }
+
+    return 0;
+  }
+
+  /**
+   * If key is not given, delete all data in memory
+   * 
+   * @param {string|undefined} key
+   */
+  delete(key) {
+    if (key) {
+      delete this._keys[key];
+    } else {
+      Object.keys(this._keys).forEach((key) => {
+        delete this._keys[key];
+      });
+    }
+  }
+};
+
+
+/***/ }),
+
+/***/ 7905:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BlockedKeys = __nccwpck_require__(8733);
+
+module.exports = BlockedKeys;
+
+
+/***/ }),
+
+/***/ 7774:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Record = __nccwpck_require__(532);
+const RateLimiterRes = __nccwpck_require__(9975);
+
+module.exports = class MemoryStorage {
+  constructor() {
+    /**
+     * @type {Object.<string, Record>}
+     * @private
+     */
+    this._storage = {};
+  }
+
+  incrby(key, value, durationSec) {
+    if (this._storage[key]) {
+      const msBeforeExpires = this._storage[key].expiresAt
+        ? this._storage[key].expiresAt.getTime() - new Date().getTime()
+        : -1;
+      if (!this._storage[key].expiresAt || msBeforeExpires > 0) {
+        // Change value
+        this._storage[key].value = this._storage[key].value + value;
+
+        return new RateLimiterRes(0, msBeforeExpires, this._storage[key].value, false);
+      }
+
+      return this.set(key, value, durationSec);
+    }
+    return this.set(key, value, durationSec);
+  }
+
+  set(key, value, durationSec) {
+    const durationMs = durationSec * 1000;
+
+    if (this._storage[key] && this._storage[key].timeoutId) {
+      clearTimeout(this._storage[key].timeoutId);
+    }
+
+    this._storage[key] = new Record(
+      value,
+      durationMs > 0 ? new Date(Date.now() + durationMs) : null
+    );
+    if (durationMs > 0) {
+      this._storage[key].timeoutId = setTimeout(() => {
+        delete this._storage[key];
+      }, durationMs);
+      if (this._storage[key].timeoutId.unref) {
+        this._storage[key].timeoutId.unref();
+      }
+    }
+
+    return new RateLimiterRes(0, durationMs === 0 ? -1 : durationMs, this._storage[key].value, true);
+  }
+
+  /**
+   *
+   * @param key
+   * @returns {*}
+   */
+  get(key) {
+    if (this._storage[key]) {
+      const msBeforeExpires = this._storage[key].expiresAt
+        ? this._storage[key].expiresAt.getTime() - new Date().getTime()
+        : -1;
+      return new RateLimiterRes(0, msBeforeExpires, this._storage[key].value, false);
+    }
+    return null;
+  }
+
+  /**
+   *
+   * @param key
+   * @returns {boolean}
+   */
+  delete(key) {
+    if (this._storage[key]) {
+      if (this._storage[key].timeoutId) {
+        clearTimeout(this._storage[key].timeoutId);
+      }
+      delete this._storage[key];
+      return true;
+    }
+    return false;
+  }
+};
+
+
+/***/ }),
+
+/***/ 532:
+/***/ ((module) => {
+
+module.exports = class Record {
+  /**
+   *
+   * @param value int
+   * @param expiresAt Date|int
+   * @param timeoutId
+   */
+  constructor(value, expiresAt, timeoutId = null) {
+    this.value = value;
+    this.expiresAt = expiresAt;
+    this.timeoutId = timeoutId;
+  }
+
+  get value() {
+    return this._value;
+  }
+
+  set value(value) {
+    this._value = parseInt(value);
+  }
+
+  get expiresAt() {
+    return this._expiresAt;
+  }
+
+  set expiresAt(value) {
+    if (!(value instanceof Date) && Number.isInteger(value)) {
+      value = new Date(value);
+    }
+    this._expiresAt = value;
+  }
+
+  get timeoutId() {
+    return this._timeoutId;
+  }
+
+  set timeoutId(value) {
+    this._timeoutId = value;
+  }
+};
+
+
+/***/ }),
+
+/***/ 9636:
+/***/ ((module) => {
+
+module.exports = class RateLimiterQueueError extends Error {
+  constructor(message, extra) {
+    super();
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+    this.name = 'CustomError';
+    this.message = message;
+    if (extra) {
+      this.extra = extra;
+    }
+  }
+};
+
+
+/***/ }),
+
+/***/ 1532:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const ANY = Symbol('SemVer ANY')
+// hoisted class for cyclic dependency
+class Comparator {
+  static get ANY () {
+    return ANY
+  }
+
+  constructor (comp, options) {
+    options = parseOptions(options)
+
+    if (comp instanceof Comparator) {
+      if (comp.loose === !!options.loose) {
+        return comp
+      } else {
+        comp = comp.value
+      }
+    }
+
+    comp = comp.trim().split(/\s+/).join(' ')
+    debug('comparator', comp, options)
+    this.options = options
+    this.loose = !!options.loose
+    this.parse(comp)
+
+    if (this.semver === ANY) {
+      this.value = ''
+    } else {
+      this.value = this.operator + this.semver.version
+    }
+
+    debug('comp', this)
+  }
+
+  parse (comp) {
+    const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
+    const m = comp.match(r)
+
+    if (!m) {
+      throw new TypeError(`Invalid comparator: ${comp}`)
+    }
+
+    this.operator = m[1] !== undefined ? m[1] : ''
+    if (this.operator === '=') {
+      this.operator = ''
+    }
+
+    // if it literally is just '>' or '' then allow anything.
+    if (!m[2]) {
+      this.semver = ANY
+    } else {
+      this.semver = new SemVer(m[2], this.options.loose)
+    }
+  }
+
+  toString () {
+    return this.value
+  }
+
+  test (version) {
+    debug('Comparator.test', version, this.options.loose)
+
+    if (this.semver === ANY || version === ANY) {
+      return true
+    }
+
+    if (typeof version === 'string') {
+      try {
+        version = new SemVer(version, this.options)
+      } catch (er) {
+        return false
+      }
+    }
+
+    return cmp(version, this.operator, this.semver, this.options)
+  }
+
+  intersects (comp, options) {
+    if (!(comp instanceof Comparator)) {
+      throw new TypeError('a Comparator is required')
+    }
+
+    if (this.operator === '') {
+      if (this.value === '') {
+        return true
+      }
+      return new Range(comp.value, options).test(this.value)
+    } else if (comp.operator === '') {
+      if (comp.value === '') {
+        return true
+      }
+      return new Range(this.value, options).test(comp.semver)
+    }
+
+    options = parseOptions(options)
+
+    // Special cases where nothing can possibly be lower
+    if (options.includePrerelease &&
+      (this.value === '<0.0.0-0' || comp.value === '<0.0.0-0')) {
+      return false
+    }
+    if (!options.includePrerelease &&
+      (this.value.startsWith('<0.0.0') || comp.value.startsWith('<0.0.0'))) {
+      return false
+    }
+
+    // Same direction increasing (> or >=)
+    if (this.operator.startsWith('>') && comp.operator.startsWith('>')) {
+      return true
+    }
+    // Same direction decreasing (< or <=)
+    if (this.operator.startsWith('<') && comp.operator.startsWith('<')) {
+      return true
+    }
+    // same SemVer and both sides are inclusive (<= or >=)
+    if (
+      (this.semver.version === comp.semver.version) &&
+      this.operator.includes('=') && comp.operator.includes('=')) {
+      return true
+    }
+    // opposite directions less than
+    if (cmp(this.semver, '<', comp.semver, options) &&
+      this.operator.startsWith('>') && comp.operator.startsWith('<')) {
+      return true
+    }
+    // opposite directions greater than
+    if (cmp(this.semver, '>', comp.semver, options) &&
+      this.operator.startsWith('<') && comp.operator.startsWith('>')) {
+      return true
+    }
+    return false
+  }
+}
+
+module.exports = Comparator
+
+const parseOptions = __nccwpck_require__(785)
+const { safeRe: re, t } = __nccwpck_require__(9523)
+const cmp = __nccwpck_require__(5098)
+const debug = __nccwpck_require__(427)
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+
+
+/***/ }),
+
+/***/ 9828:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// hoisted class for cyclic dependency
+class Range {
+  constructor (range, options) {
+    options = parseOptions(options)
+
+    if (range instanceof Range) {
+      if (
+        range.loose === !!options.loose &&
+        range.includePrerelease === !!options.includePrerelease
+      ) {
+        return range
+      } else {
+        return new Range(range.raw, options)
+      }
+    }
+
+    if (range instanceof Comparator) {
+      // just put it in the set and return
+      this.raw = range.value
+      this.set = [[range]]
+      this.format()
+      return this
+    }
+
+    this.options = options
+    this.loose = !!options.loose
+    this.includePrerelease = !!options.includePrerelease
+
+    // First reduce all whitespace as much as possible so we do not have to rely
+    // on potentially slow regexes like \s*. This is then stored and used for
+    // future error messages as well.
+    this.raw = range
+      .trim()
+      .split(/\s+/)
+      .join(' ')
+
+    // First, split on ||
+    this.set = this.raw
+      .split('||')
+      // map the range to a 2d array of comparators
+      .map(r => this.parseRange(r.trim()))
+      // throw out any comparator lists that are empty
+      // this generally means that it was not a valid range, which is allowed
+      // in loose mode, but will still throw if the WHOLE range is invalid.
+      .filter(c => c.length)
+
+    if (!this.set.length) {
+      throw new TypeError(`Invalid SemVer Range: ${this.raw}`)
+    }
+
+    // if we have any that are not the null set, throw out null sets.
+    if (this.set.length > 1) {
+      // keep the first one, in case they're all null sets
+      const first = this.set[0]
+      this.set = this.set.filter(c => !isNullSet(c[0]))
+      if (this.set.length === 0) {
+        this.set = [first]
+      } else if (this.set.length > 1) {
+        // if we have any that are *, then the range is just *
+        for (const c of this.set) {
+          if (c.length === 1 && isAny(c[0])) {
+            this.set = [c]
+            break
+          }
+        }
+      }
+    }
+
+    this.format()
+  }
+
+  format () {
+    this.range = this.set
+      .map((comps) => comps.join(' ').trim())
+      .join('||')
+      .trim()
+    return this.range
+  }
+
+  toString () {
+    return this.range
+  }
+
+  parseRange (range) {
+    // memoize range parsing for performance.
+    // this is a very hot path, and fully deterministic.
+    const memoOpts =
+      (this.options.includePrerelease && FLAG_INCLUDE_PRERELEASE) |
+      (this.options.loose && FLAG_LOOSE)
+    const memoKey = memoOpts + ':' + range
+    const cached = cache.get(memoKey)
+    if (cached) {
+      return cached
+    }
+
+    const loose = this.options.loose
+    // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
+    const hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE]
+    range = range.replace(hr, hyphenReplace(this.options.includePrerelease))
+    debug('hyphen replace', range)
+
+    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
+    range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace)
+    debug('comparator trim', range)
+
+    // `~ 1.2.3` => `~1.2.3`
+    range = range.replace(re[t.TILDETRIM], tildeTrimReplace)
+    debug('tilde trim', range)
+
+    // `^ 1.2.3` => `^1.2.3`
+    range = range.replace(re[t.CARETTRIM], caretTrimReplace)
+    debug('caret trim', range)
+
+    // At this point, the range is completely trimmed and
+    // ready to be split into comparators.
+
+    let rangeList = range
+      .split(' ')
+      .map(comp => parseComparator(comp, this.options))
+      .join(' ')
+      .split(/\s+/)
+      // >=0.0.0 is equivalent to *
+      .map(comp => replaceGTE0(comp, this.options))
+
+    if (loose) {
+      // in loose mode, throw out any that are not valid comparators
+      rangeList = rangeList.filter(comp => {
+        debug('loose invalid filter', comp, this.options)
+        return !!comp.match(re[t.COMPARATORLOOSE])
+      })
+    }
+    debug('range list', rangeList)
+
+    // if any comparators are the null set, then replace with JUST null set
+    // if more than one comparator, remove any * comparators
+    // also, don't include the same comparator more than once
+    const rangeMap = new Map()
+    const comparators = rangeList.map(comp => new Comparator(comp, this.options))
+    for (const comp of comparators) {
+      if (isNullSet(comp)) {
+        return [comp]
+      }
+      rangeMap.set(comp.value, comp)
+    }
+    if (rangeMap.size > 1 && rangeMap.has('')) {
+      rangeMap.delete('')
+    }
+
+    const result = [...rangeMap.values()]
+    cache.set(memoKey, result)
+    return result
+  }
+
+  intersects (range, options) {
+    if (!(range instanceof Range)) {
+      throw new TypeError('a Range is required')
+    }
+
+    return this.set.some((thisComparators) => {
+      return (
+        isSatisfiable(thisComparators, options) &&
+        range.set.some((rangeComparators) => {
+          return (
+            isSatisfiable(rangeComparators, options) &&
+            thisComparators.every((thisComparator) => {
+              return rangeComparators.every((rangeComparator) => {
+                return thisComparator.intersects(rangeComparator, options)
+              })
+            })
+          )
+        })
+      )
+    })
+  }
+
+  // if ANY of the sets match ALL of its comparators, then pass
+  test (version) {
+    if (!version) {
+      return false
+    }
+
+    if (typeof version === 'string') {
+      try {
+        version = new SemVer(version, this.options)
+      } catch (er) {
+        return false
+      }
+    }
+
+    for (let i = 0; i < this.set.length; i++) {
+      if (testSet(this.set[i], version, this.options)) {
+        return true
+      }
+    }
+    return false
+  }
+}
+
+module.exports = Range
+
+const LRU = __nccwpck_require__(1196)
+const cache = new LRU({ max: 1000 })
+
+const parseOptions = __nccwpck_require__(785)
+const Comparator = __nccwpck_require__(1532)
+const debug = __nccwpck_require__(427)
+const SemVer = __nccwpck_require__(8088)
+const {
+  safeRe: re,
+  t,
+  comparatorTrimReplace,
+  tildeTrimReplace,
+  caretTrimReplace,
+} = __nccwpck_require__(9523)
+const { FLAG_INCLUDE_PRERELEASE, FLAG_LOOSE } = __nccwpck_require__(2293)
+
+const isNullSet = c => c.value === '<0.0.0-0'
+const isAny = c => c.value === ''
+
+// take a set of comparators and determine whether there
+// exists a version which can satisfy it
+const isSatisfiable = (comparators, options) => {
+  let result = true
+  const remainingComparators = comparators.slice()
+  let testComparator = remainingComparators.pop()
+
+  while (result && remainingComparators.length) {
+    result = remainingComparators.every((otherComparator) => {
+      return testComparator.intersects(otherComparator, options)
+    })
+
+    testComparator = remainingComparators.pop()
+  }
+
+  return result
+}
+
+// comprised of xranges, tildes, stars, and gtlt's at this point.
+// already replaced the hyphen ranges
+// turn into a set of JUST comparators.
+const parseComparator = (comp, options) => {
+  debug('comp', comp, options)
+  comp = replaceCarets(comp, options)
+  debug('caret', comp)
+  comp = replaceTildes(comp, options)
+  debug('tildes', comp)
+  comp = replaceXRanges(comp, options)
+  debug('xrange', comp)
+  comp = replaceStars(comp, options)
+  debug('stars', comp)
+  return comp
+}
+
+const isX = id => !id || id.toLowerCase() === 'x' || id === '*'
+
+// ~, ~> --> * (any, kinda silly)
+// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0-0
+// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0-0
+// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
+// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
+// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
+// ~0.0.1 --> >=0.0.1 <0.1.0-0
+const replaceTildes = (comp, options) => {
+  return comp
+    .trim()
+    .split(/\s+/)
+    .map((c) => replaceTilde(c, options))
+    .join(' ')
+}
+
+const replaceTilde = (comp, options) => {
+  const r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE]
+  return comp.replace(r, (_, M, m, p, pr) => {
+    debug('tilde', comp, _, M, m, p, pr)
+    let ret
+
+    if (isX(M)) {
+      ret = ''
+    } else if (isX(m)) {
+      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`
+    } else if (isX(p)) {
+      // ~1.2 == >=1.2.0 <1.3.0-0
+      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`
+    } else if (pr) {
+      debug('replaceTilde pr', pr)
+      ret = `>=${M}.${m}.${p}-${pr
+      } <${M}.${+m + 1}.0-0`
+    } else {
+      // ~1.2.3 == >=1.2.3 <1.3.0-0
+      ret = `>=${M}.${m}.${p
+      } <${M}.${+m + 1}.0-0`
+    }
+
+    debug('tilde return', ret)
+    return ret
+  })
+}
+
+// ^ --> * (any, kinda silly)
+// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0-0
+// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0-0
+// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
+// ^1.2.3 --> >=1.2.3 <2.0.0-0
+// ^1.2.0 --> >=1.2.0 <2.0.0-0
+// ^0.0.1 --> >=0.0.1 <0.0.2-0
+// ^0.1.0 --> >=0.1.0 <0.2.0-0
+const replaceCarets = (comp, options) => {
+  return comp
+    .trim()
+    .split(/\s+/)
+    .map((c) => replaceCaret(c, options))
+    .join(' ')
+}
+
+const replaceCaret = (comp, options) => {
+  debug('caret', comp, options)
+  const r = options.loose ? re[t.CARETLOOSE] : re[t.CARET]
+  const z = options.includePrerelease ? '-0' : ''
+  return comp.replace(r, (_, M, m, p, pr) => {
+    debug('caret', comp, _, M, m, p, pr)
+    let ret
+
+    if (isX(M)) {
+      ret = ''
+    } else if (isX(m)) {
+      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`
+    } else if (isX(p)) {
+      if (M === '0') {
+        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`
+      } else {
+        ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`
+      }
+    } else if (pr) {
+      debug('replaceCaret pr', pr)
+      if (M === '0') {
+        if (m === '0') {
+          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${m}.${+p + 1}-0`
+        } else {
+          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${+m + 1}.0-0`
+        }
+      } else {
+        ret = `>=${M}.${m}.${p}-${pr
+        } <${+M + 1}.0.0-0`
+      }
+    } else {
+      debug('no pr')
+      if (M === '0') {
+        if (m === '0') {
+          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${m}.${+p + 1}-0`
+        } else {
+          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${+m + 1}.0-0`
+        }
+      } else {
+        ret = `>=${M}.${m}.${p
+        } <${+M + 1}.0.0-0`
+      }
+    }
+
+    debug('caret return', ret)
+    return ret
+  })
+}
+
+const replaceXRanges = (comp, options) => {
+  debug('replaceXRanges', comp, options)
+  return comp
+    .split(/\s+/)
+    .map((c) => replaceXRange(c, options))
+    .join(' ')
+}
+
+const replaceXRange = (comp, options) => {
+  comp = comp.trim()
+  const r = options.loose ? re[t.XRANGELOOSE] : re[t.XRANGE]
+  return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+    debug('xRange', comp, ret, gtlt, M, m, p, pr)
+    const xM = isX(M)
+    const xm = xM || isX(m)
+    const xp = xm || isX(p)
+    const anyX = xp
+
+    if (gtlt === '=' && anyX) {
+      gtlt = ''
+    }
+
+    // if we're including prereleases in the match, then we need
+    // to fix this to -0, the lowest possible prerelease value
+    pr = options.includePrerelease ? '-0' : ''
+
+    if (xM) {
+      if (gtlt === '>' || gtlt === '<') {
+        // nothing is allowed
+        ret = '<0.0.0-0'
+      } else {
+        // nothing is forbidden
+        ret = '*'
+      }
+    } else if (gtlt && anyX) {
+      // we know patch is an x, because we have any x at all.
+      // replace X with 0
+      if (xm) {
+        m = 0
+      }
+      p = 0
+
+      if (gtlt === '>') {
+        // >1 => >=2.0.0
+        // >1.2 => >=1.3.0
+        gtlt = '>='
+        if (xm) {
+          M = +M + 1
+          m = 0
+          p = 0
+        } else {
+          m = +m + 1
+          p = 0
+        }
+      } else if (gtlt === '<=') {
+        // <=0.7.x is actually <0.8.0, since any 0.7.x should
+        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
+        gtlt = '<'
+        if (xm) {
+          M = +M + 1
+        } else {
+          m = +m + 1
+        }
+      }
+
+      if (gtlt === '<') {
+        pr = '-0'
+      }
+
+      ret = `${gtlt + M}.${m}.${p}${pr}`
+    } else if (xm) {
+      ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`
+    } else if (xp) {
+      ret = `>=${M}.${m}.0${pr
+      } <${M}.${+m + 1}.0-0`
+    }
+
+    debug('xRange return', ret)
+
+    return ret
+  })
+}
+
+// Because * is AND-ed with everything else in the comparator,
+// and '' means "any version", just remove the *s entirely.
+const replaceStars = (comp, options) => {
+  debug('replaceStars', comp, options)
+  // Looseness is ignored here.  star is always as loose as it gets!
+  return comp
+    .trim()
+    .replace(re[t.STAR], '')
+}
+
+const replaceGTE0 = (comp, options) => {
+  debug('replaceGTE0', comp, options)
+  return comp
+    .trim()
+    .replace(re[options.includePrerelease ? t.GTE0PRE : t.GTE0], '')
+}
+
+// This function is passed to string.replace(re[t.HYPHENRANGE])
+// M, m, patch, prerelease, build
+// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
+// 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
+// 1.2 - 3.4 => >=1.2.0 <3.5.0-0
+const hyphenReplace = incPr => ($0,
+  from, fM, fm, fp, fpr, fb,
+  to, tM, tm, tp, tpr, tb) => {
+  if (isX(fM)) {
+    from = ''
+  } else if (isX(fm)) {
+    from = `>=${fM}.0.0${incPr ? '-0' : ''}`
+  } else if (isX(fp)) {
+    from = `>=${fM}.${fm}.0${incPr ? '-0' : ''}`
+  } else if (fpr) {
+    from = `>=${from}`
+  } else {
+    from = `>=${from}${incPr ? '-0' : ''}`
+  }
+
+  if (isX(tM)) {
+    to = ''
+  } else if (isX(tm)) {
+    to = `<${+tM + 1}.0.0-0`
+  } else if (isX(tp)) {
+    to = `<${tM}.${+tm + 1}.0-0`
+  } else if (tpr) {
+    to = `<=${tM}.${tm}.${tp}-${tpr}`
+  } else if (incPr) {
+    to = `<${tM}.${tm}.${+tp + 1}-0`
+  } else {
+    to = `<=${to}`
+  }
+
+  return `${from} ${to}`.trim()
+}
+
+const testSet = (set, version, options) => {
+  for (let i = 0; i < set.length; i++) {
+    if (!set[i].test(version)) {
+      return false
+    }
+  }
+
+  if (version.prerelease.length && !options.includePrerelease) {
+    // Find the set of versions that are allowed to have prereleases
+    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
+    // That should allow `1.2.3-pr.2` to pass.
+    // However, `1.2.4-alpha.notready` should NOT be allowed,
+    // even though it's within the range set by the comparators.
+    for (let i = 0; i < set.length; i++) {
+      debug(set[i].semver)
+      if (set[i].semver === Comparator.ANY) {
+        continue
+      }
+
+      if (set[i].semver.prerelease.length > 0) {
+        const allowed = set[i].semver
+        if (allowed.major === version.major &&
+            allowed.minor === version.minor &&
+            allowed.patch === version.patch) {
+          return true
+        }
+      }
+    }
+
+    // Version has a -pre, but it's not one of the ones we like.
+    return false
+  }
+
+  return true
+}
+
+
+/***/ }),
+
+/***/ 8088:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const debug = __nccwpck_require__(427)
+const { MAX_LENGTH, MAX_SAFE_INTEGER } = __nccwpck_require__(2293)
+const { safeRe: re, t } = __nccwpck_require__(9523)
+
+const parseOptions = __nccwpck_require__(785)
+const { compareIdentifiers } = __nccwpck_require__(2463)
+class SemVer {
+  constructor (version, options) {
+    options = parseOptions(options)
+
+    if (version instanceof SemVer) {
+      if (version.loose === !!options.loose &&
+          version.includePrerelease === !!options.includePrerelease) {
+        return version
+      } else {
+        version = version.version
+      }
+    } else if (typeof version !== 'string') {
+      throw new TypeError(`Invalid version. Must be a string. Got type "${typeof version}".`)
+    }
+
+    if (version.length > MAX_LENGTH) {
+      throw new TypeError(
+        `version is longer than ${MAX_LENGTH} characters`
+      )
+    }
+
+    debug('SemVer', version, options)
+    this.options = options
+    this.loose = !!options.loose
+    // this isn't actually relevant for versions, but keep it so that we
+    // don't run into trouble passing this.options around.
+    this.includePrerelease = !!options.includePrerelease
+
+    const m = version.trim().match(options.loose ? re[t.LOOSE] : re[t.FULL])
+
+    if (!m) {
+      throw new TypeError(`Invalid Version: ${version}`)
+    }
+
+    this.raw = version
+
+    // these are actually numbers
+    this.major = +m[1]
+    this.minor = +m[2]
+    this.patch = +m[3]
+
+    if (this.major > MAX_SAFE_INTEGER || this.major < 0) {
+      throw new TypeError('Invalid major version')
+    }
+
+    if (this.minor > MAX_SAFE_INTEGER || this.minor < 0) {
+      throw new TypeError('Invalid minor version')
+    }
+
+    if (this.patch > MAX_SAFE_INTEGER || this.patch < 0) {
+      throw new TypeError('Invalid patch version')
+    }
+
+    // numberify any prerelease numeric ids
+    if (!m[4]) {
+      this.prerelease = []
+    } else {
+      this.prerelease = m[4].split('.').map((id) => {
+        if (/^[0-9]+$/.test(id)) {
+          const num = +id
+          if (num >= 0 && num < MAX_SAFE_INTEGER) {
+            return num
+          }
+        }
+        return id
+      })
+    }
+
+    this.build = m[5] ? m[5].split('.') : []
+    this.format()
+  }
+
+  format () {
+    this.version = `${this.major}.${this.minor}.${this.patch}`
+    if (this.prerelease.length) {
+      this.version += `-${this.prerelease.join('.')}`
+    }
+    return this.version
+  }
+
+  toString () {
+    return this.version
+  }
+
+  compare (other) {
+    debug('SemVer.compare', this.version, this.options, other)
+    if (!(other instanceof SemVer)) {
+      if (typeof other === 'string' && other === this.version) {
+        return 0
+      }
+      other = new SemVer(other, this.options)
+    }
+
+    if (other.version === this.version) {
+      return 0
+    }
+
+    return this.compareMain(other) || this.comparePre(other)
+  }
+
+  compareMain (other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options)
+    }
+
+    return (
+      compareIdentifiers(this.major, other.major) ||
+      compareIdentifiers(this.minor, other.minor) ||
+      compareIdentifiers(this.patch, other.patch)
+    )
+  }
+
+  comparePre (other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options)
+    }
+
+    // NOT having a prerelease is > having one
+    if (this.prerelease.length && !other.prerelease.length) {
+      return -1
+    } else if (!this.prerelease.length && other.prerelease.length) {
+      return 1
+    } else if (!this.prerelease.length && !other.prerelease.length) {
+      return 0
+    }
+
+    let i = 0
+    do {
+      const a = this.prerelease[i]
+      const b = other.prerelease[i]
+      debug('prerelease compare', i, a, b)
+      if (a === undefined && b === undefined) {
+        return 0
+      } else if (b === undefined) {
+        return 1
+      } else if (a === undefined) {
+        return -1
+      } else if (a === b) {
+        continue
+      } else {
+        return compareIdentifiers(a, b)
+      }
+    } while (++i)
+  }
+
+  compareBuild (other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options)
+    }
+
+    let i = 0
+    do {
+      const a = this.build[i]
+      const b = other.build[i]
+      debug('prerelease compare', i, a, b)
+      if (a === undefined && b === undefined) {
+        return 0
+      } else if (b === undefined) {
+        return 1
+      } else if (a === undefined) {
+        return -1
+      } else if (a === b) {
+        continue
+      } else {
+        return compareIdentifiers(a, b)
+      }
+    } while (++i)
+  }
+
+  // preminor will bump the version up to the next minor release, and immediately
+  // down to pre-release. premajor and prepatch work the same way.
+  inc (release, identifier, identifierBase) {
+    switch (release) {
+      case 'premajor':
+        this.prerelease.length = 0
+        this.patch = 0
+        this.minor = 0
+        this.major++
+        this.inc('pre', identifier, identifierBase)
+        break
+      case 'preminor':
+        this.prerelease.length = 0
+        this.patch = 0
+        this.minor++
+        this.inc('pre', identifier, identifierBase)
+        break
+      case 'prepatch':
+        // If this is already a prerelease, it will bump to the next version
+        // drop any prereleases that might already exist, since they are not
+        // relevant at this point.
+        this.prerelease.length = 0
+        this.inc('patch', identifier, identifierBase)
+        this.inc('pre', identifier, identifierBase)
+        break
+      // If the input is a non-prerelease version, this acts the same as
+      // prepatch.
+      case 'prerelease':
+        if (this.prerelease.length === 0) {
+          this.inc('patch', identifier, identifierBase)
+        }
+        this.inc('pre', identifier, identifierBase)
+        break
+
+      case 'major':
+        // If this is a pre-major version, bump up to the same major version.
+        // Otherwise increment major.
+        // 1.0.0-5 bumps to 1.0.0
+        // 1.1.0 bumps to 2.0.0
+        if (
+          this.minor !== 0 ||
+          this.patch !== 0 ||
+          this.prerelease.length === 0
+        ) {
+          this.major++
+        }
+        this.minor = 0
+        this.patch = 0
+        this.prerelease = []
+        break
+      case 'minor':
+        // If this is a pre-minor version, bump up to the same minor version.
+        // Otherwise increment minor.
+        // 1.2.0-5 bumps to 1.2.0
+        // 1.2.1 bumps to 1.3.0
+        if (this.patch !== 0 || this.prerelease.length === 0) {
+          this.minor++
+        }
+        this.patch = 0
+        this.prerelease = []
+        break
+      case 'patch':
+        // If this is not a pre-release version, it will increment the patch.
+        // If it is a pre-release it will bump up to the same patch version.
+        // 1.2.0-5 patches to 1.2.0
+        // 1.2.0 patches to 1.2.1
+        if (this.prerelease.length === 0) {
+          this.patch++
+        }
+        this.prerelease = []
+        break
+      // This probably shouldn't be used publicly.
+      // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
+      case 'pre': {
+        const base = Number(identifierBase) ? 1 : 0
+
+        if (!identifier && identifierBase === false) {
+          throw new Error('invalid increment argument: identifier is empty')
+        }
+
+        if (this.prerelease.length === 0) {
+          this.prerelease = [base]
+        } else {
+          let i = this.prerelease.length
+          while (--i >= 0) {
+            if (typeof this.prerelease[i] === 'number') {
+              this.prerelease[i]++
+              i = -2
+            }
+          }
+          if (i === -1) {
+            // didn't increment anything
+            if (identifier === this.prerelease.join('.') && identifierBase === false) {
+              throw new Error('invalid increment argument: identifier already exists')
+            }
+            this.prerelease.push(base)
+          }
+        }
+        if (identifier) {
+          // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+          let prerelease = [identifier, base]
+          if (identifierBase === false) {
+            prerelease = [identifier]
+          }
+          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+            if (isNaN(this.prerelease[1])) {
+              this.prerelease = prerelease
+            }
+          } else {
+            this.prerelease = prerelease
+          }
+        }
+        break
+      }
+      default:
+        throw new Error(`invalid increment argument: ${release}`)
+    }
+    this.raw = this.format()
+    if (this.build.length) {
+      this.raw += `+${this.build.join('.')}`
+    }
+    return this
+  }
+}
+
+module.exports = SemVer
+
+
+/***/ }),
+
+/***/ 8848:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const parse = __nccwpck_require__(5925)
+const clean = (version, options) => {
+  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
+  return s ? s.version : null
+}
+module.exports = clean
+
+
+/***/ }),
+
+/***/ 5098:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const eq = __nccwpck_require__(1898)
+const neq = __nccwpck_require__(6017)
+const gt = __nccwpck_require__(4123)
+const gte = __nccwpck_require__(5522)
+const lt = __nccwpck_require__(194)
+const lte = __nccwpck_require__(7520)
+
+const cmp = (a, op, b, loose) => {
+  switch (op) {
+    case '===':
+      if (typeof a === 'object') {
+        a = a.version
+      }
+      if (typeof b === 'object') {
+        b = b.version
+      }
+      return a === b
+
+    case '!==':
+      if (typeof a === 'object') {
+        a = a.version
+      }
+      if (typeof b === 'object') {
+        b = b.version
+      }
+      return a !== b
+
+    case '':
+    case '=':
+    case '==':
+      return eq(a, b, loose)
+
+    case '!=':
+      return neq(a, b, loose)
+
+    case '>':
+      return gt(a, b, loose)
+
+    case '>=':
+      return gte(a, b, loose)
+
+    case '<':
+      return lt(a, b, loose)
+
+    case '<=':
+      return lte(a, b, loose)
+
+    default:
+      throw new TypeError(`Invalid operator: ${op}`)
+  }
+}
+module.exports = cmp
+
+
+/***/ }),
+
+/***/ 3466:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const parse = __nccwpck_require__(5925)
+const { safeRe: re, t } = __nccwpck_require__(9523)
+
+const coerce = (version, options) => {
+  if (version instanceof SemVer) {
+    return version
+  }
+
+  if (typeof version === 'number') {
+    version = String(version)
+  }
+
+  if (typeof version !== 'string') {
+    return null
+  }
+
+  options = options || {}
+
+  let match = null
+  if (!options.rtl) {
+    match = version.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE])
+  } else {
+    // Find the right-most coercible string that does not share
+    // a terminus with a more left-ward coercible string.
+    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+    // With includePrerelease option set, '1.2.3.4-rc' wants to coerce '2.3.4-rc', not '2.3.4'
+    //
+    // Walk through the string checking with a /g regexp
+    // Manually set the index so as to pick up overlapping matches.
+    // Stop when we get a match that ends at the string end, since no
+    // coercible string can be more right-ward without the same terminus.
+    const coerceRtlRegex = options.includePrerelease ? re[t.COERCERTLFULL] : re[t.COERCERTL]
+    let next
+    while ((next = coerceRtlRegex.exec(version)) &&
+        (!match || match.index + match[0].length !== version.length)
+    ) {
+      if (!match ||
+            next.index + next[0].length !== match.index + match[0].length) {
+        match = next
+      }
+      coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length
+    }
+    // leave it in a clean state
+    coerceRtlRegex.lastIndex = -1
+  }
+
+  if (match === null) {
+    return null
+  }
+
+  const major = match[2]
+  const minor = match[3] || '0'
+  const patch = match[4] || '0'
+  const prerelease = options.includePrerelease && match[5] ? `-${match[5]}` : ''
+  const build = options.includePrerelease && match[6] ? `+${match[6]}` : ''
+
+  return parse(`${major}.${minor}.${patch}${prerelease}${build}`, options)
+}
+module.exports = coerce
+
+
+/***/ }),
+
+/***/ 2156:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const compareBuild = (a, b, loose) => {
+  const versionA = new SemVer(a, loose)
+  const versionB = new SemVer(b, loose)
+  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+}
+module.exports = compareBuild
+
+
+/***/ }),
+
+/***/ 2804:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const compareLoose = (a, b) => compare(a, b, true)
+module.exports = compareLoose
+
+
+/***/ }),
+
+/***/ 4309:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const compare = (a, b, loose) =>
+  new SemVer(a, loose).compare(new SemVer(b, loose))
+
+module.exports = compare
+
+
+/***/ }),
+
+/***/ 4297:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const parse = __nccwpck_require__(5925)
+
+const diff = (version1, version2) => {
+  const v1 = parse(version1, null, true)
+  const v2 = parse(version2, null, true)
+  const comparison = v1.compare(v2)
+
+  if (comparison === 0) {
+    return null
+  }
+
+  const v1Higher = comparison > 0
+  const highVersion = v1Higher ? v1 : v2
+  const lowVersion = v1Higher ? v2 : v1
+  const highHasPre = !!highVersion.prerelease.length
+  const lowHasPre = !!lowVersion.prerelease.length
+
+  if (lowHasPre && !highHasPre) {
+    // Going from prerelease -> no prerelease requires some special casing
+
+    // If the low version has only a major, then it will always be a major
+    // Some examples:
+    // 1.0.0-1 -> 1.0.0
+    // 1.0.0-1 -> 1.1.1
+    // 1.0.0-1 -> 2.0.0
+    if (!lowVersion.patch && !lowVersion.minor) {
+      return 'major'
+    }
+
+    // Otherwise it can be determined by checking the high version
+
+    if (highVersion.patch) {
+      // anything higher than a patch bump would result in the wrong version
+      return 'patch'
+    }
+
+    if (highVersion.minor) {
+      // anything higher than a minor bump would result in the wrong version
+      return 'minor'
+    }
+
+    // bumping major/minor/patch all have same result
+    return 'major'
+  }
+
+  // add the `pre` prefix if we are going to a prerelease version
+  const prefix = highHasPre ? 'pre' : ''
+
+  if (v1.major !== v2.major) {
+    return prefix + 'major'
+  }
+
+  if (v1.minor !== v2.minor) {
+    return prefix + 'minor'
+  }
+
+  if (v1.patch !== v2.patch) {
+    return prefix + 'patch'
+  }
+
+  // high and low are preleases
+  return 'prerelease'
+}
+
+module.exports = diff
+
+
+/***/ }),
+
+/***/ 1898:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const eq = (a, b, loose) => compare(a, b, loose) === 0
+module.exports = eq
+
+
+/***/ }),
+
+/***/ 4123:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const gt = (a, b, loose) => compare(a, b, loose) > 0
+module.exports = gt
+
+
+/***/ }),
+
+/***/ 5522:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const gte = (a, b, loose) => compare(a, b, loose) >= 0
+module.exports = gte
+
+
+/***/ }),
+
+/***/ 900:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+
+const inc = (version, release, options, identifier, identifierBase) => {
+  if (typeof (options) === 'string') {
+    identifierBase = identifier
+    identifier = options
+    options = undefined
+  }
+
+  try {
+    return new SemVer(
+      version instanceof SemVer ? version.version : version,
+      options
+    ).inc(release, identifier, identifierBase).version
+  } catch (er) {
+    return null
+  }
+}
+module.exports = inc
+
+
+/***/ }),
+
+/***/ 194:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const lt = (a, b, loose) => compare(a, b, loose) < 0
+module.exports = lt
+
+
+/***/ }),
+
+/***/ 7520:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const lte = (a, b, loose) => compare(a, b, loose) <= 0
+module.exports = lte
+
+
+/***/ }),
+
+/***/ 6688:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const major = (a, loose) => new SemVer(a, loose).major
+module.exports = major
+
+
+/***/ }),
+
+/***/ 8447:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const minor = (a, loose) => new SemVer(a, loose).minor
+module.exports = minor
+
+
+/***/ }),
+
+/***/ 6017:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const neq = (a, b, loose) => compare(a, b, loose) !== 0
+module.exports = neq
+
+
+/***/ }),
+
+/***/ 5925:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const parse = (version, options, throwErrors = false) => {
+  if (version instanceof SemVer) {
+    return version
+  }
+  try {
+    return new SemVer(version, options)
+  } catch (er) {
+    if (!throwErrors) {
+      return null
+    }
+    throw er
+  }
+}
+
+module.exports = parse
+
+
+/***/ }),
+
+/***/ 2866:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const patch = (a, loose) => new SemVer(a, loose).patch
+module.exports = patch
+
+
+/***/ }),
+
+/***/ 4016:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const parse = __nccwpck_require__(5925)
+const prerelease = (version, options) => {
+  const parsed = parse(version, options)
+  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
+}
+module.exports = prerelease
+
+
+/***/ }),
+
+/***/ 6417:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const rcompare = (a, b, loose) => compare(b, a, loose)
+module.exports = rcompare
+
+
+/***/ }),
+
+/***/ 8701:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compareBuild = __nccwpck_require__(2156)
+const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
+module.exports = rsort
+
+
+/***/ }),
+
+/***/ 6055:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const satisfies = (version, range, options) => {
+  try {
+    range = new Range(range, options)
+  } catch (er) {
+    return false
+  }
+  return range.test(version)
+}
+module.exports = satisfies
+
+
+/***/ }),
+
+/***/ 1426:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compareBuild = __nccwpck_require__(2156)
+const sort = (list, loose) => list.sort((a, b) => compareBuild(a, b, loose))
+module.exports = sort
+
+
+/***/ }),
+
+/***/ 9601:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const parse = __nccwpck_require__(5925)
+const valid = (version, options) => {
+  const v = parse(version, options)
+  return v ? v.version : null
+}
+module.exports = valid
+
+
+/***/ }),
+
+/***/ 1383:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// just pre-load all the stuff that index.js lazily exports
+const internalRe = __nccwpck_require__(9523)
+const constants = __nccwpck_require__(2293)
+const SemVer = __nccwpck_require__(8088)
+const identifiers = __nccwpck_require__(2463)
+const parse = __nccwpck_require__(5925)
+const valid = __nccwpck_require__(9601)
+const clean = __nccwpck_require__(8848)
+const inc = __nccwpck_require__(900)
+const diff = __nccwpck_require__(4297)
+const major = __nccwpck_require__(6688)
+const minor = __nccwpck_require__(8447)
+const patch = __nccwpck_require__(2866)
+const prerelease = __nccwpck_require__(4016)
+const compare = __nccwpck_require__(4309)
+const rcompare = __nccwpck_require__(6417)
+const compareLoose = __nccwpck_require__(2804)
+const compareBuild = __nccwpck_require__(2156)
+const sort = __nccwpck_require__(1426)
+const rsort = __nccwpck_require__(8701)
+const gt = __nccwpck_require__(4123)
+const lt = __nccwpck_require__(194)
+const eq = __nccwpck_require__(1898)
+const neq = __nccwpck_require__(6017)
+const gte = __nccwpck_require__(5522)
+const lte = __nccwpck_require__(7520)
+const cmp = __nccwpck_require__(5098)
+const coerce = __nccwpck_require__(3466)
+const Comparator = __nccwpck_require__(1532)
+const Range = __nccwpck_require__(9828)
+const satisfies = __nccwpck_require__(6055)
+const toComparators = __nccwpck_require__(2706)
+const maxSatisfying = __nccwpck_require__(579)
+const minSatisfying = __nccwpck_require__(832)
+const minVersion = __nccwpck_require__(4179)
+const validRange = __nccwpck_require__(2098)
+const outside = __nccwpck_require__(420)
+const gtr = __nccwpck_require__(9380)
+const ltr = __nccwpck_require__(3323)
+const intersects = __nccwpck_require__(7008)
+const simplifyRange = __nccwpck_require__(5297)
+const subset = __nccwpck_require__(7863)
+module.exports = {
+  parse,
+  valid,
+  clean,
+  inc,
+  diff,
+  major,
+  minor,
+  patch,
+  prerelease,
+  compare,
+  rcompare,
+  compareLoose,
+  compareBuild,
+  sort,
+  rsort,
+  gt,
+  lt,
+  eq,
+  neq,
+  gte,
+  lte,
+  cmp,
+  coerce,
+  Comparator,
+  Range,
+  satisfies,
+  toComparators,
+  maxSatisfying,
+  minSatisfying,
+  minVersion,
+  validRange,
+  outside,
+  gtr,
+  ltr,
+  intersects,
+  simplifyRange,
+  subset,
+  SemVer,
+  re: internalRe.re,
+  src: internalRe.src,
+  tokens: internalRe.t,
+  SEMVER_SPEC_VERSION: constants.SEMVER_SPEC_VERSION,
+  RELEASE_TYPES: constants.RELEASE_TYPES,
+  compareIdentifiers: identifiers.compareIdentifiers,
+  rcompareIdentifiers: identifiers.rcompareIdentifiers,
+}
+
+
+/***/ }),
+
+/***/ 2293:
+/***/ ((module) => {
+
+// Note: this is the semver.org version of the spec that it implements
+// Not necessarily the package version of this code.
+const SEMVER_SPEC_VERSION = '2.0.0'
+
+const MAX_LENGTH = 256
+const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER ||
+/* istanbul ignore next */ 9007199254740991
+
+// Max safe segment length for coercion.
+const MAX_SAFE_COMPONENT_LENGTH = 16
+
+// Max safe length for a build identifier. The max length minus 6 characters for
+// the shortest version with a build 0.0.0+BUILD.
+const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6
+
+const RELEASE_TYPES = [
+  'major',
+  'premajor',
+  'minor',
+  'preminor',
+  'patch',
+  'prepatch',
+  'prerelease',
+]
+
+module.exports = {
+  MAX_LENGTH,
+  MAX_SAFE_COMPONENT_LENGTH,
+  MAX_SAFE_BUILD_LENGTH,
+  MAX_SAFE_INTEGER,
+  RELEASE_TYPES,
+  SEMVER_SPEC_VERSION,
+  FLAG_INCLUDE_PRERELEASE: 0b001,
+  FLAG_LOOSE: 0b010,
+}
+
+
+/***/ }),
+
+/***/ 427:
+/***/ ((module) => {
+
+const debug = (
+  typeof process === 'object' &&
+  process.env &&
+  process.env.NODE_DEBUG &&
+  /\bsemver\b/i.test(process.env.NODE_DEBUG)
+) ? (...args) => console.error('SEMVER', ...args)
+  : () => {}
+
+module.exports = debug
+
+
+/***/ }),
+
+/***/ 2463:
+/***/ ((module) => {
+
+const numeric = /^[0-9]+$/
+const compareIdentifiers = (a, b) => {
+  const anum = numeric.test(a)
+  const bnum = numeric.test(b)
+
+  if (anum && bnum) {
+    a = +a
+    b = +b
+  }
+
+  return a === b ? 0
+    : (anum && !bnum) ? -1
+    : (bnum && !anum) ? 1
+    : a < b ? -1
+    : 1
+}
+
+const rcompareIdentifiers = (a, b) => compareIdentifiers(b, a)
+
+module.exports = {
+  compareIdentifiers,
+  rcompareIdentifiers,
+}
+
+
+/***/ }),
+
+/***/ 785:
+/***/ ((module) => {
+
+// parse out just the options we care about
+const looseOption = Object.freeze({ loose: true })
+const emptyOpts = Object.freeze({ })
+const parseOptions = options => {
+  if (!options) {
+    return emptyOpts
+  }
+
+  if (typeof options !== 'object') {
+    return looseOption
+  }
+
+  return options
+}
+module.exports = parseOptions
+
+
+/***/ }),
+
+/***/ 9523:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+const {
+  MAX_SAFE_COMPONENT_LENGTH,
+  MAX_SAFE_BUILD_LENGTH,
+  MAX_LENGTH,
+} = __nccwpck_require__(2293)
+const debug = __nccwpck_require__(427)
+exports = module.exports = {}
+
+// The actual regexps go on exports.re
+const re = exports.re = []
+const safeRe = exports.safeRe = []
+const src = exports.src = []
+const t = exports.t = {}
+let R = 0
+
+const LETTERDASHNUMBER = '[a-zA-Z0-9-]'
+
+// Replace some greedy regex tokens to prevent regex dos issues. These regex are
+// used internally via the safeRe object since all inputs in this library get
+// normalized first to trim and collapse all extra whitespace. The original
+// regexes are exported for userland consumption and lower level usage. A
+// future breaking change could export the safer regex only with a note that
+// all input should have extra whitespace removed.
+const safeRegexReplacements = [
+  ['\\s', 1],
+  ['\\d', MAX_LENGTH],
+  [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH],
+]
+
+const makeSafeRegex = (value) => {
+  for (const [token, max] of safeRegexReplacements) {
+    value = value
+      .split(`${token}*`).join(`${token}{0,${max}}`)
+      .split(`${token}+`).join(`${token}{1,${max}}`)
+  }
+  return value
+}
+
+const createToken = (name, value, isGlobal) => {
+  const safe = makeSafeRegex(value)
+  const index = R++
+  debug(name, index, value)
+  t[name] = index
+  src[index] = value
+  re[index] = new RegExp(value, isGlobal ? 'g' : undefined)
+  safeRe[index] = new RegExp(safe, isGlobal ? 'g' : undefined)
+}
+
+// The following Regular Expressions can be used for tokenizing,
+// validating, and parsing SemVer version strings.
+
+// ## Numeric Identifier
+// A single `0`, or a non-zero digit followed by zero or more digits.
+
+createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*')
+createToken('NUMERICIDENTIFIERLOOSE', '\\d+')
+
+// ## Non-numeric Identifier
+// Zero or more digits, followed by a letter or hyphen, and then zero or
+// more letters, digits, or hyphens.
+
+createToken('NONNUMERICIDENTIFIER', `\\d*[a-zA-Z-]${LETTERDASHNUMBER}*`)
+
+// ## Main Version
+// Three dot-separated numeric identifiers.
+
+createToken('MAINVERSION', `(${src[t.NUMERICIDENTIFIER]})\\.` +
+                   `(${src[t.NUMERICIDENTIFIER]})\\.` +
+                   `(${src[t.NUMERICIDENTIFIER]})`)
+
+createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+                        `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+                        `(${src[t.NUMERICIDENTIFIERLOOSE]})`)
+
+// ## Pre-release Version Identifier
+// A numeric identifier, or a non-numeric identifier.
+
+createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+}|${src[t.NONNUMERICIDENTIFIER]})`)
+
+createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+}|${src[t.NONNUMERICIDENTIFIER]})`)
+
+// ## Pre-release Version
+// Hyphen, followed by one or more dot-separated pre-release version
+// identifiers.
+
+createToken('PRERELEASE', `(?:-(${src[t.PRERELEASEIDENTIFIER]
+}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`)
+
+createToken('PRERELEASELOOSE', `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]
+}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`)
+
+// ## Build Metadata Identifier
+// Any combination of digits, letters, or hyphens.
+
+createToken('BUILDIDENTIFIER', `${LETTERDASHNUMBER}+`)
+
+// ## Build Metadata
+// Plus sign, followed by one or more period-separated build metadata
+// identifiers.
+
+createToken('BUILD', `(?:\\+(${src[t.BUILDIDENTIFIER]
+}(?:\\.${src[t.BUILDIDENTIFIER]})*))`)
+
+// ## Full Version String
+// A main version, followed optionally by a pre-release version and
+// build metadata.
+
+// Note that the only major, minor, patch, and pre-release sections of
+// the version string are capturing groups.  The build metadata is not a
+// capturing group, because it should not ever be used in version
+// comparison.
+
+createToken('FULLPLAIN', `v?${src[t.MAINVERSION]
+}${src[t.PRERELEASE]}?${
+  src[t.BUILD]}?`)
+
+createToken('FULL', `^${src[t.FULLPLAIN]}$`)
+
+// like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
+// also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
+// common in the npm registry.
+createToken('LOOSEPLAIN', `[v=\\s]*${src[t.MAINVERSIONLOOSE]
+}${src[t.PRERELEASELOOSE]}?${
+  src[t.BUILD]}?`)
+
+createToken('LOOSE', `^${src[t.LOOSEPLAIN]}$`)
+
+createToken('GTLT', '((?:<|>)?=?)')
+
+// Something like "2.*" or "1.2.x".
+// Note that "x.x" is a valid xRange identifer, meaning "any version"
+// Only the first item is strictly required.
+createToken('XRANGEIDENTIFIERLOOSE', `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`)
+createToken('XRANGEIDENTIFIER', `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`)
+
+createToken('XRANGEPLAIN', `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` +
+                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+                   `(?:${src[t.PRERELEASE]})?${
+                     src[t.BUILD]}?` +
+                   `)?)?`)
+
+createToken('XRANGEPLAINLOOSE', `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+                        `(?:${src[t.PRERELEASELOOSE]})?${
+                          src[t.BUILD]}?` +
+                        `)?)?`)
+
+createToken('XRANGE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`)
+createToken('XRANGELOOSE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`)
+
+// Coercion.
+// Extract anything that could conceivably be a part of a valid semver
+createToken('COERCEPLAIN', `${'(^|[^\\d])' +
+              '(\\d{1,'}${MAX_SAFE_COMPONENT_LENGTH}})` +
+              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`)
+createToken('COERCE', `${src[t.COERCEPLAIN]}(?:$|[^\\d])`)
+createToken('COERCEFULL', src[t.COERCEPLAIN] +
+              `(?:${src[t.PRERELEASE]})?` +
+              `(?:${src[t.BUILD]})?` +
+              `(?:$|[^\\d])`)
+createToken('COERCERTL', src[t.COERCE], true)
+createToken('COERCERTLFULL', src[t.COERCEFULL], true)
+
+// Tilde ranges.
+// Meaning is "reasonably at or greater than"
+createToken('LONETILDE', '(?:~>?)')
+
+createToken('TILDETRIM', `(\\s*)${src[t.LONETILDE]}\\s+`, true)
+exports.tildeTrimReplace = '$1~'
+
+createToken('TILDE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`)
+createToken('TILDELOOSE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`)
+
+// Caret ranges.
+// Meaning is "at least and backwards compatible with"
+createToken('LONECARET', '(?:\\^)')
+
+createToken('CARETTRIM', `(\\s*)${src[t.LONECARET]}\\s+`, true)
+exports.caretTrimReplace = '$1^'
+
+createToken('CARET', `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`)
+createToken('CARETLOOSE', `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`)
+
+// A simple gt/lt/eq thing, or just "" to indicate "any version"
+createToken('COMPARATORLOOSE', `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`)
+createToken('COMPARATOR', `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`)
+
+// An expression to strip any whitespace between the gtlt and the thing
+// it modifies, so that `> 1.2.3` ==> `>1.2.3`
+createToken('COMPARATORTRIM', `(\\s*)${src[t.GTLT]
+}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true)
+exports.comparatorTrimReplace = '$1$2$3'
+
+// Something like `1.2.3 - 1.2.4`
+// Note that these all use the loose form, because they'll be
+// checked against either the strict or loose comparator form
+// later.
+createToken('HYPHENRANGE', `^\\s*(${src[t.XRANGEPLAIN]})` +
+                   `\\s+-\\s+` +
+                   `(${src[t.XRANGEPLAIN]})` +
+                   `\\s*$`)
+
+createToken('HYPHENRANGELOOSE', `^\\s*(${src[t.XRANGEPLAINLOOSE]})` +
+                        `\\s+-\\s+` +
+                        `(${src[t.XRANGEPLAINLOOSE]})` +
+                        `\\s*$`)
+
+// Star ranges basically just allow anything at all.
+createToken('STAR', '(<|>)?=?\\s*\\*')
+// >=0.0.0 is like a star
+createToken('GTE0', '^\\s*>=\\s*0\\.0\\.0\\s*$')
+createToken('GTE0PRE', '^\\s*>=\\s*0\\.0\\.0-0\\s*$')
+
+
+/***/ }),
+
+/***/ 1196:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+// A linked list to keep track of recently-used-ness
+const Yallist = __nccwpck_require__(220)
+
+const MAX = Symbol('max')
+const LENGTH = Symbol('length')
+const LENGTH_CALCULATOR = Symbol('lengthCalculator')
+const ALLOW_STALE = Symbol('allowStale')
+const MAX_AGE = Symbol('maxAge')
+const DISPOSE = Symbol('dispose')
+const NO_DISPOSE_ON_SET = Symbol('noDisposeOnSet')
+const LRU_LIST = Symbol('lruList')
+const CACHE = Symbol('cache')
+const UPDATE_AGE_ON_GET = Symbol('updateAgeOnGet')
+
+const naiveLength = () => 1
+
+// lruList is a yallist where the head is the youngest
+// item, and the tail is the oldest.  the list contains the Hit
+// objects as the entries.
+// Each Hit object has a reference to its Yallist.Node.  This
+// never changes.
+//
+// cache is a Map (or PseudoMap) that matches the keys to
+// the Yallist.Node object.
+class LRUCache {
+  constructor (options) {
+    if (typeof options === 'number')
+      options = { max: options }
+
+    if (!options)
+      options = {}
+
+    if (options.max && (typeof options.max !== 'number' || options.max < 0))
+      throw new TypeError('max must be a non-negative number')
+    // Kind of weird to have a default max of Infinity, but oh well.
+    const max = this[MAX] = options.max || Infinity
+
+    const lc = options.length || naiveLength
+    this[LENGTH_CALCULATOR] = (typeof lc !== 'function') ? naiveLength : lc
+    this[ALLOW_STALE] = options.stale || false
+    if (options.maxAge && typeof options.maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+    this[MAX_AGE] = options.maxAge || 0
+    this[DISPOSE] = options.dispose
+    this[NO_DISPOSE_ON_SET] = options.noDisposeOnSet || false
+    this[UPDATE_AGE_ON_GET] = options.updateAgeOnGet || false
+    this.reset()
+  }
+
+  // resize the cache when the max changes.
+  set max (mL) {
+    if (typeof mL !== 'number' || mL < 0)
+      throw new TypeError('max must be a non-negative number')
+
+    this[MAX] = mL || Infinity
+    trim(this)
+  }
+  get max () {
+    return this[MAX]
+  }
+
+  set allowStale (allowStale) {
+    this[ALLOW_STALE] = !!allowStale
+  }
+  get allowStale () {
+    return this[ALLOW_STALE]
+  }
+
+  set maxAge (mA) {
+    if (typeof mA !== 'number')
+      throw new TypeError('maxAge must be a non-negative number')
+
+    this[MAX_AGE] = mA
+    trim(this)
+  }
+  get maxAge () {
+    return this[MAX_AGE]
+  }
+
+  // resize the cache when the lengthCalculator changes.
+  set lengthCalculator (lC) {
+    if (typeof lC !== 'function')
+      lC = naiveLength
+
+    if (lC !== this[LENGTH_CALCULATOR]) {
+      this[LENGTH_CALCULATOR] = lC
+      this[LENGTH] = 0
+      this[LRU_LIST].forEach(hit => {
+        hit.length = this[LENGTH_CALCULATOR](hit.value, hit.key)
+        this[LENGTH] += hit.length
+      })
+    }
+    trim(this)
+  }
+  get lengthCalculator () { return this[LENGTH_CALCULATOR] }
+
+  get length () { return this[LENGTH] }
+  get itemCount () { return this[LRU_LIST].length }
+
+  rforEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].tail; walker !== null;) {
+      const prev = walker.prev
+      forEachStep(this, fn, walker, thisp)
+      walker = prev
+    }
+  }
+
+  forEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].head; walker !== null;) {
+      const next = walker.next
+      forEachStep(this, fn, walker, thisp)
+      walker = next
+    }
+  }
+
+  keys () {
+    return this[LRU_LIST].toArray().map(k => k.key)
+  }
+
+  values () {
+    return this[LRU_LIST].toArray().map(k => k.value)
+  }
+
+  reset () {
+    if (this[DISPOSE] &&
+        this[LRU_LIST] &&
+        this[LRU_LIST].length) {
+      this[LRU_LIST].forEach(hit => this[DISPOSE](hit.key, hit.value))
+    }
+
+    this[CACHE] = new Map() // hash of items by key
+    this[LRU_LIST] = new Yallist() // list of items in order of use recency
+    this[LENGTH] = 0 // length of items in the list
+  }
+
+  dump () {
+    return this[LRU_LIST].map(hit =>
+      isStale(this, hit) ? false : {
+        k: hit.key,
+        v: hit.value,
+        e: hit.now + (hit.maxAge || 0)
+      }).toArray().filter(h => h)
+  }
+
+  dumpLru () {
+    return this[LRU_LIST]
+  }
+
+  set (key, value, maxAge) {
+    maxAge = maxAge || this[MAX_AGE]
+
+    if (maxAge && typeof maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+
+    const now = maxAge ? Date.now() : 0
+    const len = this[LENGTH_CALCULATOR](value, key)
+
+    if (this[CACHE].has(key)) {
+      if (len > this[MAX]) {
+        del(this, this[CACHE].get(key))
+        return false
+      }
+
+      const node = this[CACHE].get(key)
+      const item = node.value
+
+      // dispose of the old one before overwriting
+      // split out into 2 ifs for better coverage tracking
+      if (this[DISPOSE]) {
+        if (!this[NO_DISPOSE_ON_SET])
+          this[DISPOSE](key, item.value)
+      }
+
+      item.now = now
+      item.maxAge = maxAge
+      item.value = value
+      this[LENGTH] += len - item.length
+      item.length = len
+      this.get(key)
+      trim(this)
+      return true
+    }
+
+    const hit = new Entry(key, value, len, now, maxAge)
+
+    // oversized objects fall out of cache automatically.
+    if (hit.length > this[MAX]) {
+      if (this[DISPOSE])
+        this[DISPOSE](key, value)
+
+      return false
+    }
+
+    this[LENGTH] += hit.length
+    this[LRU_LIST].unshift(hit)
+    this[CACHE].set(key, this[LRU_LIST].head)
+    trim(this)
+    return true
+  }
+
+  has (key) {
+    if (!this[CACHE].has(key)) return false
+    const hit = this[CACHE].get(key).value
+    return !isStale(this, hit)
+  }
+
+  get (key) {
+    return get(this, key, true)
+  }
+
+  peek (key) {
+    return get(this, key, false)
+  }
+
+  pop () {
+    const node = this[LRU_LIST].tail
+    if (!node)
+      return null
+
+    del(this, node)
+    return node.value
+  }
+
+  del (key) {
+    del(this, this[CACHE].get(key))
+  }
+
+  load (arr) {
+    // reset the cache
+    this.reset()
+
+    const now = Date.now()
+    // A previous serialized cache has the most recent items first
+    for (let l = arr.length - 1; l >= 0; l--) {
+      const hit = arr[l]
+      const expiresAt = hit.e || 0
+      if (expiresAt === 0)
+        // the item was created without expiration in a non aged cache
+        this.set(hit.k, hit.v)
+      else {
+        const maxAge = expiresAt - now
+        // dont add already expired items
+        if (maxAge > 0) {
+          this.set(hit.k, hit.v, maxAge)
+        }
+      }
+    }
+  }
+
+  prune () {
+    this[CACHE].forEach((value, key) => get(this, key, false))
+  }
+}
+
+const get = (self, key, doUse) => {
+  const node = self[CACHE].get(key)
+  if (node) {
+    const hit = node.value
+    if (isStale(self, hit)) {
+      del(self, node)
+      if (!self[ALLOW_STALE])
+        return undefined
+    } else {
+      if (doUse) {
+        if (self[UPDATE_AGE_ON_GET])
+          node.value.now = Date.now()
+        self[LRU_LIST].unshiftNode(node)
+      }
+    }
+    return hit.value
+  }
+}
+
+const isStale = (self, hit) => {
+  if (!hit || (!hit.maxAge && !self[MAX_AGE]))
+    return false
+
+  const diff = Date.now() - hit.now
+  return hit.maxAge ? diff > hit.maxAge
+    : self[MAX_AGE] && (diff > self[MAX_AGE])
+}
+
+const trim = self => {
+  if (self[LENGTH] > self[MAX]) {
+    for (let walker = self[LRU_LIST].tail;
+      self[LENGTH] > self[MAX] && walker !== null;) {
+      // We know that we're about to delete this one, and also
+      // what the next least recently used key will be, so just
+      // go ahead and set it now.
+      const prev = walker.prev
+      del(self, walker)
+      walker = prev
+    }
+  }
+}
+
+const del = (self, node) => {
+  if (node) {
+    const hit = node.value
+    if (self[DISPOSE])
+      self[DISPOSE](hit.key, hit.value)
+
+    self[LENGTH] -= hit.length
+    self[CACHE].delete(hit.key)
+    self[LRU_LIST].removeNode(node)
+  }
+}
+
+class Entry {
+  constructor (key, value, length, now, maxAge) {
+    this.key = key
+    this.value = value
+    this.length = length
+    this.now = now
+    this.maxAge = maxAge || 0
+  }
+}
+
+const forEachStep = (self, fn, node, thisp) => {
+  let hit = node.value
+  if (isStale(self, hit)) {
+    del(self, node)
+    if (!self[ALLOW_STALE])
+      hit = undefined
+  }
+  if (hit)
+    fn.call(thisp, hit.value, hit.key, self)
+}
+
+module.exports = LRUCache
+
+
+/***/ }),
+
+/***/ 5327:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = function (Yallist) {
+  Yallist.prototype[Symbol.iterator] = function* () {
+    for (let walker = this.head; walker; walker = walker.next) {
+      yield walker.value
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ 220:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+module.exports = Yallist
+
+Yallist.Node = Node
+Yallist.create = Yallist
+
+function Yallist (list) {
+  var self = this
+  if (!(self instanceof Yallist)) {
+    self = new Yallist()
+  }
+
+  self.tail = null
+  self.head = null
+  self.length = 0
+
+  if (list && typeof list.forEach === 'function') {
+    list.forEach(function (item) {
+      self.push(item)
+    })
+  } else if (arguments.length > 0) {
+    for (var i = 0, l = arguments.length; i < l; i++) {
+      self.push(arguments[i])
+    }
+  }
+
+  return self
+}
+
+Yallist.prototype.removeNode = function (node) {
+  if (node.list !== this) {
+    throw new Error('removing node which does not belong to this list')
+  }
+
+  var next = node.next
+  var prev = node.prev
+
+  if (next) {
+    next.prev = prev
+  }
+
+  if (prev) {
+    prev.next = next
+  }
+
+  if (node === this.head) {
+    this.head = next
+  }
+  if (node === this.tail) {
+    this.tail = prev
+  }
+
+  node.list.length--
+  node.next = null
+  node.prev = null
+  node.list = null
+
+  return next
+}
+
+Yallist.prototype.unshiftNode = function (node) {
+  if (node === this.head) {
+    return
+  }
+
+  if (node.list) {
+    node.list.removeNode(node)
+  }
+
+  var head = this.head
+  node.list = this
+  node.next = head
+  if (head) {
+    head.prev = node
+  }
+
+  this.head = node
+  if (!this.tail) {
+    this.tail = node
+  }
+  this.length++
+}
+
+Yallist.prototype.pushNode = function (node) {
+  if (node === this.tail) {
+    return
+  }
+
+  if (node.list) {
+    node.list.removeNode(node)
+  }
+
+  var tail = this.tail
+  node.list = this
+  node.prev = tail
+  if (tail) {
+    tail.next = node
+  }
+
+  this.tail = node
+  if (!this.head) {
+    this.head = node
+  }
+  this.length++
+}
+
+Yallist.prototype.push = function () {
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    push(this, arguments[i])
+  }
+  return this.length
+}
+
+Yallist.prototype.unshift = function () {
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    unshift(this, arguments[i])
+  }
+  return this.length
+}
+
+Yallist.prototype.pop = function () {
+  if (!this.tail) {
+    return undefined
+  }
+
+  var res = this.tail.value
+  this.tail = this.tail.prev
+  if (this.tail) {
+    this.tail.next = null
+  } else {
+    this.head = null
+  }
+  this.length--
+  return res
+}
+
+Yallist.prototype.shift = function () {
+  if (!this.head) {
+    return undefined
+  }
+
+  var res = this.head.value
+  this.head = this.head.next
+  if (this.head) {
+    this.head.prev = null
+  } else {
+    this.tail = null
+  }
+  this.length--
+  return res
+}
+
+Yallist.prototype.forEach = function (fn, thisp) {
+  thisp = thisp || this
+  for (var walker = this.head, i = 0; walker !== null; i++) {
+    fn.call(thisp, walker.value, i, this)
+    walker = walker.next
+  }
+}
+
+Yallist.prototype.forEachReverse = function (fn, thisp) {
+  thisp = thisp || this
+  for (var walker = this.tail, i = this.length - 1; walker !== null; i--) {
+    fn.call(thisp, walker.value, i, this)
+    walker = walker.prev
+  }
+}
+
+Yallist.prototype.get = function (n) {
+  for (var i = 0, walker = this.head; walker !== null && i < n; i++) {
+    // abort out of the list early if we hit a cycle
+    walker = walker.next
+  }
+  if (i === n && walker !== null) {
+    return walker.value
+  }
+}
+
+Yallist.prototype.getReverse = function (n) {
+  for (var i = 0, walker = this.tail; walker !== null && i < n; i++) {
+    // abort out of the list early if we hit a cycle
+    walker = walker.prev
+  }
+  if (i === n && walker !== null) {
+    return walker.value
+  }
+}
+
+Yallist.prototype.map = function (fn, thisp) {
+  thisp = thisp || this
+  var res = new Yallist()
+  for (var walker = this.head; walker !== null;) {
+    res.push(fn.call(thisp, walker.value, this))
+    walker = walker.next
+  }
+  return res
+}
+
+Yallist.prototype.mapReverse = function (fn, thisp) {
+  thisp = thisp || this
+  var res = new Yallist()
+  for (var walker = this.tail; walker !== null;) {
+    res.push(fn.call(thisp, walker.value, this))
+    walker = walker.prev
+  }
+  return res
+}
+
+Yallist.prototype.reduce = function (fn, initial) {
+  var acc
+  var walker = this.head
+  if (arguments.length > 1) {
+    acc = initial
+  } else if (this.head) {
+    walker = this.head.next
+    acc = this.head.value
+  } else {
+    throw new TypeError('Reduce of empty list with no initial value')
+  }
+
+  for (var i = 0; walker !== null; i++) {
+    acc = fn(acc, walker.value, i)
+    walker = walker.next
+  }
+
+  return acc
+}
+
+Yallist.prototype.reduceReverse = function (fn, initial) {
+  var acc
+  var walker = this.tail
+  if (arguments.length > 1) {
+    acc = initial
+  } else if (this.tail) {
+    walker = this.tail.prev
+    acc = this.tail.value
+  } else {
+    throw new TypeError('Reduce of empty list with no initial value')
+  }
+
+  for (var i = this.length - 1; walker !== null; i--) {
+    acc = fn(acc, walker.value, i)
+    walker = walker.prev
+  }
+
+  return acc
+}
+
+Yallist.prototype.toArray = function () {
+  var arr = new Array(this.length)
+  for (var i = 0, walker = this.head; walker !== null; i++) {
+    arr[i] = walker.value
+    walker = walker.next
+  }
+  return arr
+}
+
+Yallist.prototype.toArrayReverse = function () {
+  var arr = new Array(this.length)
+  for (var i = 0, walker = this.tail; walker !== null; i++) {
+    arr[i] = walker.value
+    walker = walker.prev
+  }
+  return arr
+}
+
+Yallist.prototype.slice = function (from, to) {
+  to = to || this.length
+  if (to < 0) {
+    to += this.length
+  }
+  from = from || 0
+  if (from < 0) {
+    from += this.length
+  }
+  var ret = new Yallist()
+  if (to < from || to < 0) {
+    return ret
+  }
+  if (from < 0) {
+    from = 0
+  }
+  if (to > this.length) {
+    to = this.length
+  }
+  for (var i = 0, walker = this.head; walker !== null && i < from; i++) {
+    walker = walker.next
+  }
+  for (; walker !== null && i < to; i++, walker = walker.next) {
+    ret.push(walker.value)
+  }
+  return ret
+}
+
+Yallist.prototype.sliceReverse = function (from, to) {
+  to = to || this.length
+  if (to < 0) {
+    to += this.length
+  }
+  from = from || 0
+  if (from < 0) {
+    from += this.length
+  }
+  var ret = new Yallist()
+  if (to < from || to < 0) {
+    return ret
+  }
+  if (from < 0) {
+    from = 0
+  }
+  if (to > this.length) {
+    to = this.length
+  }
+  for (var i = this.length, walker = this.tail; walker !== null && i > to; i--) {
+    walker = walker.prev
+  }
+  for (; walker !== null && i > from; i--, walker = walker.prev) {
+    ret.push(walker.value)
+  }
+  return ret
+}
+
+Yallist.prototype.splice = function (start, deleteCount, ...nodes) {
+  if (start > this.length) {
+    start = this.length - 1
+  }
+  if (start < 0) {
+    start = this.length + start;
+  }
+
+  for (var i = 0, walker = this.head; walker !== null && i < start; i++) {
+    walker = walker.next
+  }
+
+  var ret = []
+  for (var i = 0; walker && i < deleteCount; i++) {
+    ret.push(walker.value)
+    walker = this.removeNode(walker)
+  }
+  if (walker === null) {
+    walker = this.tail
+  }
+
+  if (walker !== this.head && walker !== this.tail) {
+    walker = walker.prev
+  }
+
+  for (var i = 0; i < nodes.length; i++) {
+    walker = insert(this, walker, nodes[i])
+  }
+  return ret;
+}
+
+Yallist.prototype.reverse = function () {
+  var head = this.head
+  var tail = this.tail
+  for (var walker = head; walker !== null; walker = walker.prev) {
+    var p = walker.prev
+    walker.prev = walker.next
+    walker.next = p
+  }
+  this.head = tail
+  this.tail = head
+  return this
+}
+
+function insert (self, node, value) {
+  var inserted = node === self.head ?
+    new Node(value, null, node, self) :
+    new Node(value, node, node.next, self)
+
+  if (inserted.next === null) {
+    self.tail = inserted
+  }
+  if (inserted.prev === null) {
+    self.head = inserted
+  }
+
+  self.length++
+
+  return inserted
+}
+
+function push (self, item) {
+  self.tail = new Node(item, self.tail, null, self)
+  if (!self.head) {
+    self.head = self.tail
+  }
+  self.length++
+}
+
+function unshift (self, item) {
+  self.head = new Node(item, null, self.head, self)
+  if (!self.tail) {
+    self.tail = self.head
+  }
+  self.length++
+}
+
+function Node (value, prev, next, list) {
+  if (!(this instanceof Node)) {
+    return new Node(value, prev, next, list)
+  }
+
+  this.list = list
+  this.value = value
+
+  if (prev) {
+    prev.next = this
+    this.prev = prev
+  } else {
+    this.prev = null
+  }
+
+  if (next) {
+    next.prev = this
+    this.next = next
+  } else {
+    this.next = null
+  }
+}
+
+try {
+  // add if support for Symbol.iterator is present
+  __nccwpck_require__(5327)(Yallist)
+} catch (er) {}
+
+
+/***/ }),
+
+/***/ 9380:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// Determine if version is greater than all the versions possible in the range.
+const outside = __nccwpck_require__(420)
+const gtr = (version, range, options) => outside(version, range, '>', options)
+module.exports = gtr
+
+
+/***/ }),
+
+/***/ 7008:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const intersects = (r1, r2, options) => {
+  r1 = new Range(r1, options)
+  r2 = new Range(r2, options)
+  return r1.intersects(r2, options)
+}
+module.exports = intersects
+
+
+/***/ }),
+
+/***/ 3323:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const outside = __nccwpck_require__(420)
+// Determine if version is less than all the versions possible in the range
+const ltr = (version, range, options) => outside(version, range, '<', options)
+module.exports = ltr
+
+
+/***/ }),
+
+/***/ 579:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+
+const maxSatisfying = (versions, range, options) => {
+  let max = null
+  let maxSV = null
+  let rangeObj = null
+  try {
+    rangeObj = new Range(range, options)
+  } catch (er) {
+    return null
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!max || maxSV.compare(v) === -1) {
+        // compare(max, v, true)
+        max = v
+        maxSV = new SemVer(max, options)
+      }
+    }
+  })
+  return max
+}
+module.exports = maxSatisfying
+
+
+/***/ }),
+
+/***/ 832:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+const minSatisfying = (versions, range, options) => {
+  let min = null
+  let minSV = null
+  let rangeObj = null
+  try {
+    rangeObj = new Range(range, options)
+  } catch (er) {
+    return null
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!min || minSV.compare(v) === 1) {
+        // compare(min, v, true)
+        min = v
+        minSV = new SemVer(min, options)
+      }
+    }
+  })
+  return min
+}
+module.exports = minSatisfying
+
+
+/***/ }),
+
+/***/ 4179:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+const gt = __nccwpck_require__(4123)
+
+const minVersion = (range, loose) => {
+  range = new Range(range, loose)
+
+  let minver = new SemVer('0.0.0')
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = new SemVer('0.0.0-0')
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = null
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i]
+
+    let setMin = null
+    comparators.forEach((comparator) => {
+      // Clone to avoid manipulating the comparator's semver object.
+      const compver = new SemVer(comparator.semver.version)
+      switch (comparator.operator) {
+        case '>':
+          if (compver.prerelease.length === 0) {
+            compver.patch++
+          } else {
+            compver.prerelease.push(0)
+          }
+          compver.raw = compver.format()
+          /* fallthrough */
+        case '':
+        case '>=':
+          if (!setMin || gt(compver, setMin)) {
+            setMin = compver
+          }
+          break
+        case '<':
+        case '<=':
+          /* Ignore maximum versions */
+          break
+        /* istanbul ignore next */
+        default:
+          throw new Error(`Unexpected operation: ${comparator.operator}`)
+      }
+    })
+    if (setMin && (!minver || gt(minver, setMin))) {
+      minver = setMin
+    }
+  }
+
+  if (minver && range.test(minver)) {
+    return minver
+  }
+
+  return null
+}
+module.exports = minVersion
+
+
+/***/ }),
+
+/***/ 420:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Comparator = __nccwpck_require__(1532)
+const { ANY } = Comparator
+const Range = __nccwpck_require__(9828)
+const satisfies = __nccwpck_require__(6055)
+const gt = __nccwpck_require__(4123)
+const lt = __nccwpck_require__(194)
+const lte = __nccwpck_require__(7520)
+const gte = __nccwpck_require__(5522)
+
+const outside = (version, range, hilo, options) => {
+  version = new SemVer(version, options)
+  range = new Range(range, options)
+
+  let gtfn, ltefn, ltfn, comp, ecomp
+  switch (hilo) {
+    case '>':
+      gtfn = gt
+      ltefn = lte
+      ltfn = lt
+      comp = '>'
+      ecomp = '>='
+      break
+    case '<':
+      gtfn = lt
+      ltefn = gte
+      ltfn = gt
+      comp = '<'
+      ecomp = '<='
+      break
+    default:
+      throw new TypeError('Must provide a hilo val of "<" or ">"')
+  }
+
+  // If it satisfies the range it is not outside
+  if (satisfies(version, range, options)) {
+    return false
+  }
+
+  // From now on, variable terms are as if we're in "gtr" mode.
+  // but note that everything is flipped for the "ltr" function.
+
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i]
+
+    let high = null
+    let low = null
+
+    comparators.forEach((comparator) => {
+      if (comparator.semver === ANY) {
+        comparator = new Comparator('>=0.0.0')
+      }
+      high = high || comparator
+      low = low || comparator
+      if (gtfn(comparator.semver, high.semver, options)) {
+        high = comparator
+      } else if (ltfn(comparator.semver, low.semver, options)) {
+        low = comparator
+      }
+    })
+
+    // If the edge version comparator has a operator then our version
+    // isn't outside it
+    if (high.operator === comp || high.operator === ecomp) {
+      return false
+    }
+
+    // If the lowest version comparator has an operator and our version
+    // is less than it then it isn't higher than the range
+    if ((!low.operator || low.operator === comp) &&
+        ltefn(version, low.semver)) {
+      return false
+    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+      return false
+    }
+  }
+  return true
+}
+
+module.exports = outside
+
+
+/***/ }),
+
+/***/ 5297:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// given a set of versions and a range, create a "simplified" range
+// that includes the same versions that the original range does
+// If the original range is shorter than the simplified one, return that.
+const satisfies = __nccwpck_require__(6055)
+const compare = __nccwpck_require__(4309)
+module.exports = (versions, range, options) => {
+  const set = []
+  let first = null
+  let prev = null
+  const v = versions.sort((a, b) => compare(a, b, options))
+  for (const version of v) {
+    const included = satisfies(version, range, options)
+    if (included) {
+      prev = version
+      if (!first) {
+        first = version
+      }
+    } else {
+      if (prev) {
+        set.push([first, prev])
+      }
+      prev = null
+      first = null
+    }
+  }
+  if (first) {
+    set.push([first, null])
+  }
+
+  const ranges = []
+  for (const [min, max] of set) {
+    if (min === max) {
+      ranges.push(min)
+    } else if (!max && min === v[0]) {
+      ranges.push('*')
+    } else if (!max) {
+      ranges.push(`>=${min}`)
+    } else if (min === v[0]) {
+      ranges.push(`<=${max}`)
+    } else {
+      ranges.push(`${min} - ${max}`)
+    }
+  }
+  const simplified = ranges.join(' || ')
+  const original = typeof range.raw === 'string' ? range.raw : String(range)
+  return simplified.length < original.length ? simplified : range
+}
+
+
+/***/ }),
+
+/***/ 7863:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const Comparator = __nccwpck_require__(1532)
+const { ANY } = Comparator
+const satisfies = __nccwpck_require__(6055)
+const compare = __nccwpck_require__(4309)
+
+// Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+// - Every simple range `r1, r2, ...` is a null set, OR
+// - Every simple range `r1, r2, ...` which is not a null set is a subset of
+//   some `R1, R2, ...`
+//
+// Simple range `c1 c2 ...` is a subset of simple range `C1 C2 ...` iff:
+// - If c is only the ANY comparator
+//   - If C is only the ANY comparator, return true
+//   - Else if in prerelease mode, return false
+//   - else replace c with `[>=0.0.0]`
+// - If C is only the ANY comparator
+//   - if in prerelease mode, return true
+//   - else replace C with `[>=0.0.0]`
+// - Let EQ be the set of = comparators in c
+// - If EQ is more than one, return true (null set)
+// - Let GT be the highest > or >= comparator in c
+// - Let LT be the lowest < or <= comparator in c
+// - If GT and LT, and GT.semver > LT.semver, return true (null set)
+// - If any C is a = range, and GT or LT are set, return false
+// - If EQ
+//   - If GT, and EQ does not satisfy GT, return true (null set)
+//   - If LT, and EQ does not satisfy LT, return true (null set)
+//   - If EQ satisfies every C, return true
+//   - Else return false
+// - If GT
+//   - If GT.semver is lower than any > or >= comp in C, return false
+//   - If GT is >=, and GT.semver does not satisfy every C, return false
+//   - If GT.semver has a prerelease, and not in prerelease mode
+//     - If no C has a prerelease and the GT.semver tuple, return false
+// - If LT
+//   - If LT.semver is greater than any < or <= comp in C, return false
+//   - If LT is <=, and LT.semver does not satisfy every C, return false
+//   - If GT.semver has a prerelease, and not in prerelease mode
+//     - If no C has a prerelease and the LT.semver tuple, return false
+// - Else return true
+
+const subset = (sub, dom, options = {}) => {
+  if (sub === dom) {
+    return true
+  }
+
+  sub = new Range(sub, options)
+  dom = new Range(dom, options)
+  let sawNonNull = false
+
+  OUTER: for (const simpleSub of sub.set) {
+    for (const simpleDom of dom.set) {
+      const isSub = simpleSubset(simpleSub, simpleDom, options)
+      sawNonNull = sawNonNull || isSub !== null
+      if (isSub) {
+        continue OUTER
+      }
+    }
+    // the null set is a subset of everything, but null simple ranges in
+    // a complex range should be ignored.  so if we saw a non-null range,
+    // then we know this isn't a subset, but if EVERY simple range was null,
+    // then it is a subset.
+    if (sawNonNull) {
+      return false
+    }
+  }
+  return true
+}
+
+const minimumVersionWithPreRelease = [new Comparator('>=0.0.0-0')]
+const minimumVersion = [new Comparator('>=0.0.0')]
+
+const simpleSubset = (sub, dom, options) => {
+  if (sub === dom) {
+    return true
+  }
+
+  if (sub.length === 1 && sub[0].semver === ANY) {
+    if (dom.length === 1 && dom[0].semver === ANY) {
+      return true
+    } else if (options.includePrerelease) {
+      sub = minimumVersionWithPreRelease
+    } else {
+      sub = minimumVersion
+    }
+  }
+
+  if (dom.length === 1 && dom[0].semver === ANY) {
+    if (options.includePrerelease) {
+      return true
+    } else {
+      dom = minimumVersion
+    }
+  }
+
+  const eqSet = new Set()
+  let gt, lt
+  for (const c of sub) {
+    if (c.operator === '>' || c.operator === '>=') {
+      gt = higherGT(gt, c, options)
+    } else if (c.operator === '<' || c.operator === '<=') {
+      lt = lowerLT(lt, c, options)
+    } else {
+      eqSet.add(c.semver)
+    }
+  }
+
+  if (eqSet.size > 1) {
+    return null
+  }
+
+  let gtltComp
+  if (gt && lt) {
+    gtltComp = compare(gt.semver, lt.semver, options)
+    if (gtltComp > 0) {
+      return null
+    } else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<=')) {
+      return null
+    }
+  }
+
+  // will iterate one or zero times
+  for (const eq of eqSet) {
+    if (gt && !satisfies(eq, String(gt), options)) {
+      return null
+    }
+
+    if (lt && !satisfies(eq, String(lt), options)) {
+      return null
+    }
+
+    for (const c of dom) {
+      if (!satisfies(eq, String(c), options)) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  let higher, lower
+  let hasDomLT, hasDomGT
+  // if the subset has a prerelease, we need a comparator in the superset
+  // with the same tuple and a prerelease, or it's not a subset
+  let needDomLTPre = lt &&
+    !options.includePrerelease &&
+    lt.semver.prerelease.length ? lt.semver : false
+  let needDomGTPre = gt &&
+    !options.includePrerelease &&
+    gt.semver.prerelease.length ? gt.semver : false
+  // exception: <1.2.3-0 is the same as <1.2.3
+  if (needDomLTPre && needDomLTPre.prerelease.length === 1 &&
+      lt.operator === '<' && needDomLTPre.prerelease[0] === 0) {
+    needDomLTPre = false
+  }
+
+  for (const c of dom) {
+    hasDomGT = hasDomGT || c.operator === '>' || c.operator === '>='
+    hasDomLT = hasDomLT || c.operator === '<' || c.operator === '<='
+    if (gt) {
+      if (needDomGTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length &&
+            c.semver.major === needDomGTPre.major &&
+            c.semver.minor === needDomGTPre.minor &&
+            c.semver.patch === needDomGTPre.patch) {
+          needDomGTPre = false
+        }
+      }
+      if (c.operator === '>' || c.operator === '>=') {
+        higher = higherGT(gt, c, options)
+        if (higher === c && higher !== gt) {
+          return false
+        }
+      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
+        return false
+      }
+    }
+    if (lt) {
+      if (needDomLTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length &&
+            c.semver.major === needDomLTPre.major &&
+            c.semver.minor === needDomLTPre.minor &&
+            c.semver.patch === needDomLTPre.patch) {
+          needDomLTPre = false
+        }
+      }
+      if (c.operator === '<' || c.operator === '<=') {
+        lower = lowerLT(lt, c, options)
+        if (lower === c && lower !== lt) {
+          return false
+        }
+      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
+        return false
+      }
+    }
+    if (!c.operator && (lt || gt) && gtltComp !== 0) {
+      return false
+    }
+  }
+
+  // if there was a < or >, and nothing in the dom, then must be false
+  // UNLESS it was limited by another range in the other direction.
+  // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
+  if (gt && hasDomLT && !lt && gtltComp !== 0) {
+    return false
+  }
+
+  if (lt && hasDomGT && !gt && gtltComp !== 0) {
+    return false
+  }
+
+  // we needed a prerelease range in a specific tuple, but didn't get one
+  // then this isn't a subset.  eg >=1.2.3-pre is not a subset of >=1.0.0,
+  // because it includes prereleases in the 1.2.3 tuple
+  if (needDomGTPre || needDomLTPre) {
+    return false
+  }
+
+  return true
+}
+
+// >=1.2.3 is lower than >1.2.3
+const higherGT = (a, b, options) => {
+  if (!a) {
+    return b
+  }
+  const comp = compare(a.semver, b.semver, options)
+  return comp > 0 ? a
+    : comp < 0 ? b
+    : b.operator === '>' && a.operator === '>=' ? b
+    : a
+}
+
+// <=1.2.3 is higher than <1.2.3
+const lowerLT = (a, b, options) => {
+  if (!a) {
+    return b
+  }
+  const comp = compare(a.semver, b.semver, options)
+  return comp < 0 ? a
+    : comp > 0 ? b
+    : b.operator === '<' && a.operator === '<=' ? b
+    : a
+}
+
+module.exports = subset
+
+
+/***/ }),
+
+/***/ 2706:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+
+// Mostly just for testing and legacy API reasons
+const toComparators = (range, options) =>
+  new Range(range, options).set
+    .map(comp => comp.map(c => c.value).join(' ').trim().split(' '))
+
+module.exports = toComparators
+
+
+/***/ }),
+
+/***/ 2098:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const validRange = (range, options) => {
+  try {
+    // Return '*' instead of '' so that truthiness works.
+    // This will throw if it's invalid anyway
+    return new Range(range, options).range || '*'
+  } catch (er) {
+    return null
+  }
+}
+module.exports = validRange
+
+
+/***/ }),
+
+/***/ 4056:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var GetIntrinsic = __nccwpck_require__(4538);
+var define = __nccwpck_require__(4564);
+var hasDescriptors = __nccwpck_require__(176)();
+var gOPD = __nccwpck_require__(8501);
+
+var $TypeError = __nccwpck_require__(6361);
+var $floor = GetIntrinsic('%Math.floor%');
+
+/** @typedef {(...args: unknown[]) => unknown} Func */
+
+/** @type {<T extends Func = Func>(fn: T, length: number, loose?: boolean) => T} */
+module.exports = function setFunctionLength(fn, length) {
+	if (typeof fn !== 'function') {
+		throw new $TypeError('`fn` is not a function');
+	}
+	if (typeof length !== 'number' || length < 0 || length > 0xFFFFFFFF || $floor(length) !== length) {
+		throw new $TypeError('`length` must be a positive 32-bit integer');
+	}
+
+	var loose = arguments.length > 2 && !!arguments[2];
+
+	var functionLengthIsConfigurable = true;
+	var functionLengthIsWritable = true;
+	if ('length' in fn && gOPD) {
+		var desc = gOPD(fn, 'length');
+		if (desc && !desc.configurable) {
+			functionLengthIsConfigurable = false;
+		}
+		if (desc && !desc.writable) {
+			functionLengthIsWritable = false;
+		}
+	}
+
+	if (functionLengthIsConfigurable || functionLengthIsWritable || !loose) {
+		if (hasDescriptors) {
+			define(/** @type {Parameters<define>[0]} */ (fn), 'length', length, true, true);
+		} else {
+			define(/** @type {Parameters<define>[0]} */ (fn), 'length', length);
+		}
+	}
+	return fn;
+};
+
+
+/***/ }),
+
+/***/ 4334:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var GetIntrinsic = __nccwpck_require__(4538);
+var callBound = __nccwpck_require__(8803);
+var inspect = __nccwpck_require__(504);
+
+var $TypeError = __nccwpck_require__(6361);
+var $WeakMap = GetIntrinsic('%WeakMap%', true);
+var $Map = GetIntrinsic('%Map%', true);
+
+var $weakMapGet = callBound('WeakMap.prototype.get', true);
+var $weakMapSet = callBound('WeakMap.prototype.set', true);
+var $weakMapHas = callBound('WeakMap.prototype.has', true);
+var $mapGet = callBound('Map.prototype.get', true);
+var $mapSet = callBound('Map.prototype.set', true);
+var $mapHas = callBound('Map.prototype.has', true);
+
+/*
+* This function traverses the list returning the node corresponding to the given key.
+*
+* That node is also moved to the head of the list, so that if it's accessed again we don't need to traverse the whole list. By doing so, all the recently used nodes can be accessed relatively quickly.
+*/
+/** @type {import('.').listGetNode} */
+var listGetNode = function (list, key) { // eslint-disable-line consistent-return
+	/** @type {typeof list | NonNullable<(typeof list)['next']>} */
+	var prev = list;
+	/** @type {(typeof list)['next']} */
+	var curr;
+	for (; (curr = prev.next) !== null; prev = curr) {
+		if (curr.key === key) {
+			prev.next = curr.next;
+			// eslint-disable-next-line no-extra-parens
+			curr.next = /** @type {NonNullable<typeof list.next>} */ (list.next);
+			list.next = curr; // eslint-disable-line no-param-reassign
+			return curr;
+		}
+	}
+};
+
+/** @type {import('.').listGet} */
+var listGet = function (objects, key) {
+	var node = listGetNode(objects, key);
+	return node && node.value;
+};
+/** @type {import('.').listSet} */
+var listSet = function (objects, key, value) {
+	var node = listGetNode(objects, key);
+	if (node) {
+		node.value = value;
+	} else {
+		// Prepend the new node to the beginning of the list
+		objects.next = /** @type {import('.').ListNode<typeof value>} */ ({ // eslint-disable-line no-param-reassign, no-extra-parens
+			key: key,
+			next: objects.next,
+			value: value
+		});
+	}
+};
+/** @type {import('.').listHas} */
+var listHas = function (objects, key) {
+	return !!listGetNode(objects, key);
+};
+
+/** @type {import('.')} */
+module.exports = function getSideChannel() {
+	/** @type {WeakMap<object, unknown>} */ var $wm;
+	/** @type {Map<object, unknown>} */ var $m;
+	/** @type {import('.').RootNode<unknown>} */ var $o;
+
+	/** @type {import('.').Channel} */
+	var channel = {
+		assert: function (key) {
+			if (!channel.has(key)) {
+				throw new $TypeError('Side channel does not contain ' + inspect(key));
+			}
+		},
+		get: function (key) { // eslint-disable-line consistent-return
+			if ($WeakMap && key && (typeof key === 'object' || typeof key === 'function')) {
+				if ($wm) {
+					return $weakMapGet($wm, key);
+				}
+			} else if ($Map) {
+				if ($m) {
+					return $mapGet($m, key);
+				}
+			} else {
+				if ($o) { // eslint-disable-line no-lonely-if
+					return listGet($o, key);
+				}
+			}
+		},
+		has: function (key) {
+			if ($WeakMap && key && (typeof key === 'object' || typeof key === 'function')) {
+				if ($wm) {
+					return $weakMapHas($wm, key);
+				}
+			} else if ($Map) {
+				if ($m) {
+					return $mapHas($m, key);
+				}
+			} else {
+				if ($o) { // eslint-disable-line no-lonely-if
+					return listHas($o, key);
+				}
+			}
+			return false;
+		},
+		set: function (key, value) {
+			if ($WeakMap && key && (typeof key === 'object' || typeof key === 'function')) {
+				if (!$wm) {
+					$wm = new $WeakMap();
+				}
+				$weakMapSet($wm, key, value);
+			} else if ($Map) {
+				if (!$m) {
+					$m = new $Map();
+				}
+				$mapSet($m, key, value);
+			} else {
+				if (!$o) {
+					// Initialize the linked list as an empty node, so that we don't have to special-case handling of the first node: we can always refer to it as (previous node).next, instead of something like (list).head
+					$o = { key: {}, next: null };
+				}
+				listSet($o, key, value);
+			}
+		}
+	};
+	return channel;
+};
+
 
 /***/ }),
 
@@ -24705,6 +48023,316 @@ exports["default"] = _default;
 
 /***/ }),
 
+/***/ 7020:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
+function isLower(char) {
+  return char >= 0x61 /* 'a' */ && char <= 0x7a /* 'z' */;
+}
+
+function isUpper(char) {
+  return char >= 0x41 /* 'A' */ && char <= 0x5a /* 'Z' */;
+}
+
+function isDigit(char) {
+  return char >= 0x30 /* '0' */ && char <= 0x39 /* '9' */;
+}
+
+function toUpper(char) {
+  return char - 0x20;
+}
+
+function toUpperSafe(char) {
+  if (isLower(char)) {
+    return char - 0x20;
+  }
+  return char;
+}
+
+function toLower(char) {
+  return char + 0x20;
+}
+
+function camelize$1(str, separator) {
+  var firstChar = str.charCodeAt(0);
+  if (isDigit(firstChar) || isUpper(firstChar) || firstChar == separator) {
+    return str;
+  }
+  var out = [];
+  var changed = false;
+  if (isUpper(firstChar)) {
+    changed = true;
+    out.push(toLower(firstChar));
+  } else {
+    out.push(firstChar);
+  }
+
+  var length = str.length;
+  for (var i = 1; i < length; ++i) {
+    var c = str.charCodeAt(i);
+    if (c === separator) {
+      changed = true;
+      c = str.charCodeAt(++i);
+      if (isNaN(c)) {
+        return str;
+      }
+      out.push(toUpperSafe(c));
+    } else {
+      out.push(c);
+    }
+  }
+  return changed ? String.fromCharCode.apply(undefined, out) : str;
+}
+
+function decamelize$1(str, separator) {
+  var firstChar = str.charCodeAt(0);
+  if (!isLower(firstChar)) {
+    return str;
+  }
+  var length = str.length;
+  var changed = false;
+  var out = [];
+  for (var i = 0; i < length; ++i) {
+    var c = str.charCodeAt(i);
+    if (isUpper(c)) {
+      out.push(separator);
+      out.push(toLower(c));
+      changed = true;
+    } else {
+      out.push(c);
+    }
+  }
+  return changed ? String.fromCharCode.apply(undefined, out) : str;
+}
+
+function pascalize$1(str, separator) {
+  var firstChar = str.charCodeAt(0);
+  if (isDigit(firstChar) || firstChar == separator) {
+    return str;
+  }
+  var length = str.length;
+  var changed = false;
+  var out = [];
+  for (var i = 0; i < length; ++i) {
+    var c = str.charCodeAt(i);
+    if (c === separator) {
+      changed = true;
+      c = str.charCodeAt(++i);
+      if (isNaN(c)) {
+        return str;
+      }
+      out.push(toUpperSafe(c));
+    } else if (i === 0 && isLower(c)) {
+      changed = true;
+      out.push(toUpper(c));
+    } else {
+      out.push(c);
+    }
+  }
+  return changed ? String.fromCharCode.apply(undefined, out) : str;
+}
+
+function depascalize$1(str, separator) {
+  var firstChar = str.charCodeAt(0);
+  if (!isUpper(firstChar)) {
+    return str;
+  }
+  var length = str.length;
+  var changed = false;
+  var out = [];
+  for (var i = 0; i < length; ++i) {
+    var c = str.charCodeAt(i);
+    if (isUpper(c)) {
+      if (i > 0) {
+        out.push(separator);
+      }
+      out.push(toLower(c));
+      changed = true;
+    } else {
+      out.push(c);
+    }
+  }
+  return changed ? String.fromCharCode.apply(undefined, out) : str;
+}
+
+function shouldProcessValue(value) {
+  return value && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object' && !(value instanceof Date) && !(value instanceof Function);
+}
+
+function processKeys(obj, fun, opts) {
+  var obj2 = void 0;
+  if (obj instanceof Array) {
+    obj2 = [];
+  } else {
+    if (typeof obj.prototype !== 'undefined') {
+      // return non-plain object unchanged
+      return obj;
+    }
+    obj2 = {};
+  }
+  for (var key in obj) {
+    var value = obj[key];
+    if (typeof key === 'string') key = fun(key, opts && opts.separator);
+    if (shouldProcessValue(value)) {
+      obj2[key] = processKeys(value, fun, opts);
+    } else {
+      obj2[key] = value;
+    }
+  }
+  return obj2;
+}
+
+function processKeysInPlace(obj, fun, opts) {
+  var keys = Object.keys(obj);
+  for (var idx = 0; idx < keys.length; ++idx) {
+    var key = keys[idx];
+    var value = obj[key];
+    var newKey = fun(key, opts && opts.separator);
+    if (newKey !== key) {
+      delete obj[key];
+    }
+    if (shouldProcessValue(value)) {
+      obj[newKey] = processKeys(value, fun, opts);
+    } else {
+      obj[newKey] = value;
+    }
+  }
+  return obj;
+}
+
+function camelize$$1(str, separator) {
+  return camelize$1(str, separator && separator.charCodeAt(0) || 0x5f /* _ */);
+}
+
+function decamelize$$1(str, separator) {
+  return decamelize$1(str, separator && separator.charCodeAt(0) || 0x5f /* _ */);
+}
+
+function pascalize$$1(str, separator) {
+  return pascalize$1(str, separator && separator.charCodeAt(0) || 0x5f /* _ */);
+}
+
+function depascalize$$1(str, separator) {
+  return depascalize$1(str, separator && separator.charCodeAt(0) || 0x5f /* _ */);
+}
+
+function camelizeKeys(obj, opts) {
+  opts = opts || {};
+  if (!shouldProcessValue(obj)) return obj;
+  if (opts.inPlace) return processKeysInPlace(obj, camelize$$1, opts);
+  return processKeys(obj, camelize$$1, opts);
+}
+
+function decamelizeKeys(obj, opts) {
+  opts = opts || {};
+  if (!shouldProcessValue(obj)) return obj;
+  if (opts.inPlace) return processKeysInPlace(obj, decamelize$$1, opts);
+  return processKeys(obj, decamelize$$1, opts);
+}
+
+function pascalizeKeys(obj, opts) {
+  opts = opts || {};
+  if (!shouldProcessValue(obj)) return obj;
+  if (opts.inPlace) return processKeysInPlace(obj, pascalize$$1, opts);
+  return processKeys(obj, pascalize$$1, opts);
+}
+
+function depascalizeKeys(obj, opts) {
+  opts = opts || {};
+  if (!shouldProcessValue(obj)) return obj;
+  if (opts.inPlace) return processKeysInPlace(obj, depascalize$$1, opts);
+  return processKeys(obj, depascalize$$1, opts);
+}
+
+exports.camelize = camelize$$1;
+exports.decamelize = decamelize$$1;
+exports.pascalize = pascalize$$1;
+exports.depascalize = depascalize$$1;
+exports.camelizeKeys = camelizeKeys;
+exports.decamelizeKeys = decamelizeKeys;
+exports.pascalizeKeys = pascalizeKeys;
+exports.depascalizeKeys = depascalizeKeys;
+
+
+/***/ }),
+
+/***/ 2574:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.installLilyPond = void 0;
+const os_1 = __importDefault(__nccwpck_require__(2037));
+const core = __importStar(__nccwpck_require__(2186));
+const tc = __importStar(__nccwpck_require__(7784));
+async function installLilyPond(version) {
+    const toolPath = tc.find('lilypond', version.version);
+    if (toolPath) {
+        core.info(`Found LilyPond ${version} in cache @ ${toolPath}`);
+        return toolPath;
+    }
+    const url = downloadUrl(version);
+    core.info(`Downloading LilyPond from ${url}`);
+    const downloadPath = await tc.downloadTool(url);
+    core.info('Extracting LilyPond...');
+    const extPath = await tc.extractTar(downloadPath);
+    core.info('Adding LilyPond to tools cache...');
+    const toolCacheDir = await tc.cacheDir(extPath, 'lilypond', version.version);
+    core.info(`Successfully cached LilyPond to ${toolCacheDir}`);
+    return toolCacheDir;
+}
+exports.installLilyPond = installLilyPond;
+function downloadUrl(version) {
+    let arch = os_1.default.arch();
+    if (arch === 'x64') {
+        arch = 'x86_64';
+    }
+    let platform = os_1.default.platform().toString();
+    if (platform === 'win32') {
+        platform = 'mingw';
+    }
+    return `https://gitlab.com/lilypond/lilypond/-/releases/v${version}/downloads/lilypond-${version}-${platform}-${arch}.tar.gz`;
+}
+
+
+/***/ }),
+
 /***/ 399:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -24733,58 +48361,73 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
+const path = __importStar(__nccwpck_require__(1017));
+const child_process_1 = __importDefault(__nccwpck_require__(2081));
+const semver = __importStar(__nccwpck_require__(1383));
+// eslint-disable-next-line import/no-unresolved
+const rest_1 = __nccwpck_require__(5767);
 const core = __importStar(__nccwpck_require__(2186));
-const wait_1 = __nccwpck_require__(5259);
+const io = __importStar(__nccwpck_require__(7436));
+const installer = __importStar(__nccwpck_require__(2574));
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
     try {
-        const ms = core.getInput('milliseconds');
-        // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        core.debug(`Waiting ${ms} milliseconds ...`);
-        // Log the current timestamp, wait, then log the new timestamp
-        core.debug(new Date().toTimeString());
-        await (0, wait_1.wait)(parseInt(ms, 10));
-        core.debug(new Date().toTimeString());
+        const version = await resolveLilyPondVersion();
+        if (!version) {
+            core.setFailed('Could not resolve LilyPond version.');
+            return;
+        }
+        core.info(`Setup LilyPond version ${version}`);
+        const installDir = await installer.installLilyPond(version);
+        core.addPath(path.join(installDir, 'bin'));
+        core.info('Added LilyPond to the path');
+        const lilyPondPath = await io.which('lilypond');
+        const lilyPondVersion = (child_process_1.default.execSync(`${lilyPondPath} --version`) || '').toString();
+        core.info(lilyPondVersion);
+        // TODO: Setup Problem Matcher
         // Set outputs for other workflow steps to use
-        core.setOutput('time', new Date().toTimeString());
+        core.setOutput('lilypond-version', version);
     }
     catch (error) {
-        // Fail the workflow run if an error occurs
-        if (error instanceof Error)
+        if (error instanceof Error) {
             core.setFailed(error.message);
+        }
+        else {
+            core.setFailed('unknown error');
+        }
     }
 }
 exports.run = run;
-
-
-/***/ }),
-
-/***/ 5259:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.wait = void 0;
-/**
- * Wait for a number of milliseconds.
- * @param milliseconds The number of milliseconds to wait.
- * @returns {Promise<string>} Resolves with 'done!' after the wait is over.
- */
-async function wait(milliseconds) {
-    return new Promise(resolve => {
-        if (isNaN(milliseconds)) {
-            throw new Error('milliseconds not a number');
-        }
-        setTimeout(() => resolve('done!'), milliseconds);
+async function resolveLilyPondVersion() {
+    const versionSpec = core.getInput('lilypond-version', { required: true }) || 'stable';
+    const version = semver.parse(versionSpec);
+    if (version) {
+        return version;
+    }
+    const gitlab = new rest_1.Gitlab({ token: '' });
+    const releases = await gitlab.ProjectReleases.all('lilypond/lilypond', {
+        includeHtmlDescription: false,
+        perPage: 100
     });
+    const releaseVersions = releases
+        .map(r => semver.parse(r.tag_name))
+        .flatMap(r => (r ? [r] : []));
+    if (versionSpec === 'stable' || versionSpec === 'latest') {
+        return releaseVersions.find(r => r.minor % 2 === 0) || null;
+    }
+    if (['unstable', 'dev', 'devel', 'development'].includes(versionSpec)) {
+        return releaseVersions.find(r => r.minor % 2 === 1) || null;
+    }
+    return semver.maxSatisfying(releaseVersions, versionSpec);
 }
-exports.wait = wait;
 
 
 /***/ }),
@@ -24810,6 +48453,22 @@ module.exports = require("async_hooks");
 
 "use strict";
 module.exports = require("buffer");
+
+/***/ }),
+
+/***/ 2081:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");
+
+/***/ }),
+
+/***/ 5001:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("cluster");
 
 /***/ }),
 
@@ -24962,6 +48621,14 @@ module.exports = require("stream/web");
 
 "use strict";
 module.exports = require("string_decoder");
+
+/***/ }),
+
+/***/ 9512:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("timers");
 
 /***/ }),
 
