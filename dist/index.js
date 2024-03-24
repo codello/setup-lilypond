@@ -48584,6 +48584,10 @@ const core = __importStar(__nccwpck_require__(2186));
 const tc = __importStar(__nccwpck_require__(7784));
 const glob_1 = __nccwpck_require__(8211);
 const path = __importStar(__nccwpck_require__(1017));
+/**
+ * Installs the specified version of LilyPond and returns the path of the installation.
+ * @param version The version of LilyPond to be installed.
+ */
 async function installLilyPond(version) {
     const toolPath = tc.find('lilypond', version.version);
     if (toolPath) {
@@ -48610,6 +48614,10 @@ async function installLilyPond(version) {
     return toolCacheDir;
 }
 exports.installLilyPond = installLilyPond;
+/**
+ * Generate a download URL for the specified version of LilyPond.
+ * @param version The LilyPond version to be downloaded.
+ */
 function downloadUrl(version) {
     let arch = os_1.default.arch();
     if (arch === 'x64') {
@@ -48661,7 +48669,6 @@ exports.run = void 0;
 const path = __importStar(__nccwpck_require__(1017));
 const child_process_1 = __importDefault(__nccwpck_require__(2081));
 const semver = __importStar(__nccwpck_require__(1383));
-// eslint-disable-next-line import/no-unresolved
 const rest_1 = __nccwpck_require__(5767);
 const core = __importStar(__nccwpck_require__(2186));
 const io = __importStar(__nccwpck_require__(7436));
@@ -48705,6 +48712,12 @@ async function run() {
     }
 }
 exports.run = run;
+/**
+ * Resolves the concrete LilyPond version to be used based on the constraints
+ * given as input.
+ *
+ * @return {Promise<semver.SemVer | null>} The version or null if no version could be determined.
+ */
 async function resolveLilyPondVersion() {
     const versionSpec = core.getInput('lilypond-version', { required: true }) || 'stable';
     const version = semver.parse(versionSpec);

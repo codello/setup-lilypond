@@ -6,6 +6,10 @@ import { glob } from 'glob'
 import semver from 'semver'
 import * as path from 'path'
 
+/**
+ * Installs the specified version of LilyPond and returns the path of the installation.
+ * @param version The version of LilyPond to be installed.
+ */
 export async function installLilyPond(version: semver.SemVer): Promise<string> {
   const toolPath = tc.find('lilypond', version.version)
   if (toolPath) {
@@ -32,6 +36,10 @@ export async function installLilyPond(version: semver.SemVer): Promise<string> {
   return toolCacheDir
 }
 
+/**
+ * Generate a download URL for the specified version of LilyPond.
+ * @param version The LilyPond version to be downloaded.
+ */
 function downloadUrl(version: semver.SemVer): string {
   let arch = os.arch()
   if (arch === 'x64') {

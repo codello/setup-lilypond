@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Run Tests
 
 on:
   pull_request:
@@ -12,49 +12,82 @@ permissions:
   contents: read
 
 jobs:
-  test-typescript:
-    name: TypeScript Tests
+  test-latest:
+    name: Test Special Version (${{ matrix.version.spec }})
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        version:
+          - { spec: 'stable', result: 0 }
+          - { spec: 'latest', result: 0 }
+          - { spec: 'development', result: 1 }
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: action/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Test Setup LilyPond
+        id: test
+        uses: ./
         with:
-          node-version-file: package.json
-          cache: npm
+          lilypond-version: ${{ matrix.version.spec }}
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Test Version
+        run:
+          test $(( $(echo "$VERSION" | cut -d. -f 2) % 2)) -eq ${{
+          matrix.version.result }}
+        env:
+          VERSION: ${{ steps.test.outputs.lilypond-version }}
 
-      - name: Check Format
-        run: npm run format:check
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm run ci-test
-
-
-  test-action:
-    name: GitHub Actions Test
+  test-version-select:
+    name: Test Explicit Version (${{ matrix.version.spec }})
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        version:
+          - { spec: '2.23', expected: '2.23.82' }
+          - { spec: '2.24.2', expected: '2.24.2' }
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Test Setup LilyPond
         id: test
         uses: ./
         with:
-          lilypond-version: stable
+          lilypond-version: ${{ matrix.version.spec }}
 
-      - name: Print LilyPond Version
-        run: echo "${{ steps.test.outputs.lilypond-version }}"
+      - name: Assert selected version
+        uses: nick-fields/assert-action@v2
+        with:
+          expected: ${{ matrix.version.expected }}
+          actual: ${{ steps.test.outputs.lilypond-version }}
+
+  test-action:
+    name: Compile Test Files (${{ matrix.version }}, ${{ matrix.runs-on }})
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      matrix:
+        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+        version: [2.23, 2.24, 2.25]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test Setup LilyPond
+        id: setup
+        uses: ./
+        with:
+          lilypond-version: ${{ matrix.version }}
+
+      - name: Create Test File
+        run: echo "$CONTENTS" > test.ly
+        env:
+          CONTENTS: |
+            \version "${{ steps.setup.outputs.lilypond-version }}"
+            \relative c {
+              c d e f g a b c
+            }
 
       - name: Compile Test File
-        run: lilypond testdata/lilypond-2.24.ly
+        run: lilypond test.ly

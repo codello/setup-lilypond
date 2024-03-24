@@ -51,6 +51,12 @@ export async function run(): Promise<void> {
   }
 }
 
+/**
+ * Resolves the concrete LilyPond version to be used based on the constraints
+ * given as input.
+ *
+ * @return {Promise<semver.SemVer | null>} The version or null if no version could be determined.
+ */
 async function resolveLilyPondVersion(): Promise<semver.SemVer | null> {
   const versionSpec =
     core.getInput('lilypond-version', { required: true }) || 'stable'
