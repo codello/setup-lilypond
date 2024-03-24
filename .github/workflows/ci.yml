@@ -52,6 +52,10 @@ jobs:
         with:
           lilypond-version: stable
 
+      - name: Setup tmate session
+        if: always()
+        uses: mxschmitt/action-tmate@v3
+
       - name: Print LilyPond Version
         run: echo "${{ steps.test-action.outputs.lilypond-version }}"
 

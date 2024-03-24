@@ -48310,8 +48310,12 @@ async function installLilyPond(version) {
     const url = downloadUrl(version);
     core.info(`Downloading LilyPond from ${url}`);
     const downloadPath = await tc.downloadTool(url);
-    core.info('Extracting LilyPond...');
-    const extPath = await tc.extractTar(downloadPath);
+    core.info(`Extracting LilyPond...`);
+    const extPath = await tc.extractTar(downloadPath, undefined, [
+        '--extract',
+        '--gzip',
+        '--strip-components=1'
+    ]);
     core.info('Adding LilyPond to tools cache...');
     const toolCacheDir = await tc.cacheDir(extPath, 'lilypond', version.version);
     core.info(`Successfully cached LilyPond to ${toolCacheDir}`);
@@ -48385,16 +48389,23 @@ async function run() {
             core.setFailed('Could not resolve LilyPond version.');
             return;
         }
-        core.info(`Setup LilyPond version ${version}`);
+        core.startGroup('Setup LilyPond version ${version}');
         const installDir = await installer.installLilyPond(version);
+        core.endGroup();
         core.addPath(path.join(installDir, 'bin'));
         core.info('Added LilyPond to the path');
         const lilyPondPath = await io.which('lilypond');
+        if (!lilyPondPath.trim()) {
+            core.setFailed('lilypond binary not found after installation');
+            return;
+        }
         const lilyPondVersion = (child_process_1.default.execSync(`${lilyPondPath} --version`) || '').toString();
-        core.info(lilyPondVersion);
+        await core.group('lilypond --version', async () => {
+            core.info(lilyPondVersion);
+        });
         // TODO: Setup Problem Matcher
         // Set outputs for other workflow steps to use
-        core.setOutput('lilypond-version', version);
+        core.setOutput('lilypond-version', version.version);
     }
     catch (error) {
         if (error instanceof Error) {

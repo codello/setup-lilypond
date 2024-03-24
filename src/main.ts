@@ -21,8 +21,9 @@ export async function run(): Promise<void> {
       return
     }
 
-    core.info(`Setup LilyPond version ${version}`)
+    core.startGroup('Setup LilyPond version ${version}')
     const installDir = await installer.installLilyPond(version)
+    core.endGroup()
     core.addPath(path.join(installDir, 'bin'))
     core.info('Added LilyPond to the path')
 
@@ -34,12 +35,14 @@ export async function run(): Promise<void> {
     const lilyPondVersion = (
       cp.execSync(`${lilyPondPath} --version`) || ''
     ).toString()
-    core.info(lilyPondVersion)
+    await core.group('lilypond --version', async () => {
+      core.info(lilyPondVersion)
+    })
 
     // TODO: Setup Problem Matcher
 
     // Set outputs for other workflow steps to use
-    core.setOutput('lilypond-version', version)
+    core.setOutput('lilypond-version', version.version)
   } catch (error: unknown) {
     if (error instanceof Error) {
       core.setFailed(error.message)
