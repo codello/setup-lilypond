@@ -38,6 +38,7 @@ jobs:
       - name: Test
         run: npm run ci-test
 
+
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
@@ -46,18 +47,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Action
-        id: test-action
+      - name: Test Setup LilyPond
+        id: test
         uses: ./
         with:
           lilypond-version: stable
 
-      - name: Setup tmate session
-        if: always()
-        uses: mxschmitt/action-tmate@v3
-
       - name: Print LilyPond Version
-        run: echo "${{ steps.test-action.outputs.lilypond-version }}"
+        run: echo "${{ steps.test.outputs.lilypond-version }}"
 
       - name: Compile Test File
         run: lilypond testdata/lilypond-2.24.ly

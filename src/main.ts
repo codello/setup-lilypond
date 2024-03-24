@@ -2,7 +2,6 @@ import * as path from 'path'
 import cp from 'child_process'
 
 import * as semver from 'semver'
-// eslint-disable-next-line import/no-unresolved
 import { Gitlab } from '@gitbeaker/rest'
 import * as core from '@actions/core'
 import * as io from '@actions/io'
@@ -21,7 +20,7 @@ export async function run(): Promise<void> {
       return
     }
 
-    core.startGroup('Setup LilyPond version ${version}')
+    core.startGroup(`Setup LilyPond version ${version}`)
     const installDir = await installer.installLilyPond(version)
     core.endGroup()
     core.addPath(path.join(installDir, 'bin'))

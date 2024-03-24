@@ -1,7 +1,10 @@
+import fs from 'fs'
 import os from 'os'
 import * as core from '@actions/core'
 import * as tc from '@actions/tool-cache'
+import { glob } from 'glob'
 import semver from 'semver'
+import * as path from 'path'
 
 export async function installLilyPond(version: semver.SemVer): Promise<string> {
   const toolPath = tc.find('lilypond', version.version)
@@ -20,7 +23,12 @@ export async function installLilyPond(version: semver.SemVer): Promise<string> {
   ])
   core.info('Adding LilyPond to tools cache...')
   const toolCacheDir = await tc.cacheDir(extPath, 'lilypond', version.version)
-  core.info(`Successfully cached LilyPond to ${toolCacheDir}`)
+  core.info('Fixing File Modification Dates')
+  const now = new Date()
+  for (const file of await glob(path.join(toolCacheDir, '**', '*.go'))) {
+    fs.utimes(file, now, now, () => {})
+  }
+  core.info(`Successfully installed LilyPond to ${toolCacheDir}`)
   return toolCacheDir
 }
 
