@@ -16,6 +16,7 @@ jobs:
     name: Test Special Version (${{ matrix.version.spec }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         version:
           - { spec: 'stable', result: 0 }
@@ -42,6 +43,7 @@ jobs:
     name: Test Explicit Version (${{ matrix.version.spec }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         version:
           - { spec: '2.23', expected: '2.23.82' }
@@ -62,10 +64,11 @@ jobs:
           expected: ${{ matrix.version.expected }}
           actual: ${{ steps.test.outputs.lilypond-version }}
 
-  test-action:
-    name: Compile Test Files (${{ matrix.version }}, ${{ matrix.runs-on }})
+  test-file:
+    name: Compile Test File (${{ matrix.version }}, ${{ matrix.runs-on }})
     runs-on: ${{ matrix.runs-on }}
     strategy:
+      fail-fast: false
       matrix:
         runs-on: [ubuntu-latest, macos-latest, windows-latest]
         version: [2.23, 2.24, 2.25]
@@ -82,3 +85,26 @@ jobs:
 
       - name: Compile Test File
         run: lilypond testfiles/test.ly
+
+  test-fonts:
+    name: Test Notation Fonts (${{ matrix.version }}, ${{ matrix.runs-on }})
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+        version: [2.23, 2.24, 2.25]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test Setup LilyPond
+        id: setup
+        uses: ./
+        with:
+          lilypond-version: ${{ matrix.version }}
+          ol-fonts: beethoven,haydn
+
+      - name: Compile Test File
+        run: lilypond testfiles/test-font.ly

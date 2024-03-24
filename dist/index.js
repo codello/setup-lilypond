@@ -48545,6 +48545,61 @@ exports.depascalizeKeys = depascalizeKeys;
 
 /***/ }),
 
+/***/ 517:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.addNotationFont = void 0;
+const tc = __importStar(__nccwpck_require__(7784));
+const io = __importStar(__nccwpck_require__(7436));
+const path = __importStar(__nccwpck_require__(1017));
+const glob_1 = __nccwpck_require__(8211);
+/**
+ * Installs a notation font from OpenLilyPondFonts: https://github.com/OpenLilyPondFonts
+ * @param name {string} The name of the font repo.
+ * @param installDir {string} The directory where LilyPond is installed.
+ * @param version {semver.SemVer} The version of LilyPond.
+ */
+async function addNotationFont(name, installDir, version) {
+    const downloadPath = await tc.downloadTool(`https://github.com/OpenLilyPondFonts/${name}/archive/refs/heads/master.zip`);
+    const extPath = await tc.extractZip(downloadPath);
+    for (const file of await (0, glob_1.glob)(path.join(extPath, '*/otf/*.otf'))) {
+        await io.cp(file, path.join(installDir, 'share/lilypond', version.version, 'fonts/otf'));
+    }
+    for (const file of await (0, glob_1.glob)(path.join(extPath, '*/svg/*.{svg,woff}'))) {
+        await io.cp(file, path.join(installDir, 'share/lilypond', version.version, 'fonts/svg'));
+    }
+}
+exports.addNotationFont = addNotationFont;
+
+
+/***/ }),
+
 /***/ 2574:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -48681,6 +48736,7 @@ const rest_1 = __nccwpck_require__(5767);
 const core = __importStar(__nccwpck_require__(2186));
 const io = __importStar(__nccwpck_require__(7436));
 const installer = __importStar(__nccwpck_require__(2574));
+const fonts = __importStar(__nccwpck_require__(517));
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -48706,7 +48762,22 @@ async function run() {
         await core.group('lilypond --version', async () => {
             core.info(lilyPondVersion);
         });
-        // TODO: Setup Problem Matcher
+        const fontList = core
+            .getInput('ol-fonts')
+            .split(',')
+            .map(f => f.trim())
+            .filter(Boolean);
+        if (fontList.length > 0) {
+            await core.group('Installing additional fonts', async () => {
+                for (const font of fontList) {
+                    core.info(`Installing OpenLilyPondFont ${font}`);
+                    await fonts.addNotationFont(font, installDir, version);
+                }
+            });
+        }
+        // add problem matchers
+        const matchersPath = path.join(__dirname, '..', 'problem-matcher.json');
+        core.info(`::[add-matcher]::${matchersPath}`);
         // Set outputs for other workflow steps to use
         core.setOutput('lilypond-version', version.version);
     }

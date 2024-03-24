@@ -8,6 +8,8 @@ inputs:
     description:
       'The LilyPond version to download and use. Supports semver spec and
       ranges.'
+  ol-fonts:
+    description: 'A comma separated list of OpenLilyPondFonts to install.'
 
 outputs:
   lilypond-version:

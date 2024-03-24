@@ -7,6 +7,7 @@ import * as core from '@actions/core'
 import * as io from '@actions/io'
 
 import * as installer from './installer'
+import * as fonts from './fonts'
 
 /**
  * The main function for the action.
@@ -38,7 +39,23 @@ export async function run(): Promise<void> {
       core.info(lilyPondVersion)
     })
 
-    // TODO: Setup Problem Matcher
+    const fontList = core
+      .getInput('ol-fonts')
+      .split(',')
+      .map(f => f.trim())
+      .filter(Boolean)
+    if (fontList.length > 0) {
+      await core.group('Installing additional fonts', async () => {
+        for (const font of fontList) {
+          core.info(`Installing OpenLilyPondFont ${font}`)
+          await fonts.addNotationFont(font, installDir, version)
+        }
+      })
+    }
+
+    // add problem matchers
+    const matchersPath = path.join(__dirname, '..', 'problem-matcher.json')
+    core.info(`::[add-matcher]::${matchersPath}`)
 
     // Set outputs for other workflow steps to use
     core.setOutput('lilypond-version', version.version)
