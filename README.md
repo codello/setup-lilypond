@@ -38,7 +38,7 @@ You can select the version using the (required) `lilypond-version` argument. The
 value can take several forms:
 
 - A specific version (e.g. `2.24.4`)
-- A semver range of supported versions. The highes available version matching
+- A SemVer range of supported versions. The highes available version matching
   the range will be selected (e.g. `^2.24.0`)
 - A major-minor version pair. The highes patch version available will be
   selected (e.g. `2.24`).
