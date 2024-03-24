@@ -80,14 +80,5 @@ jobs:
         with:
           lilypond-version: ${{ matrix.version }}
 
-      - name: Create Test File
-        run: echo "$CONTENTS" > test.ly
-        env:
-          CONTENTS: |
-            \version "${{ steps.setup.outputs.lilypond-version }}"
-            \relative c {
-              c d e f g a b c
-            }
-
       - name: Compile Test File
-        run: lilypond test.ly
+        run: lilypond testfiles/test.ly

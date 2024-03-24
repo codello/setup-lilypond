@@ -1,0 +1,29 @@
+name: Debug
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  debug:
+    name: Run Debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Test Setup LilyPond
+        id: test
+        uses: ./
+        with:
+          lilypond-version: stable
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
