@@ -37,12 +37,12 @@ available.
 You can select the version using the (required) `lilypond-version` argument. The
 value can take several forms:
 
-- A specific version (e.g. `2.24.4`)
-- A SemVer range of supported versions. The highes available version matching
+- A major-minor version pair. The highest patch version available will be
+  selected (e.g. `2.24`). This is the recommended usage.
+- A SemVer range of supported versions. The highest available version matching
   the range will be selected (e.g. `^2.24.0`)
-- A major-minor version pair. The highes patch version available will be
-  selected (e.g. `2.24`).
-- The special values `stable` or `development`. The highes available
+- A specific version (e.g. `2.24.4`)
+- The special values `stable` or `development`. The highest available
   stable/development version will be selected.
 
 > [!WARNING]
