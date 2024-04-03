@@ -2,6 +2,7 @@ name: 'Setup LilyPond'
 description: 'Setup a LilyPond environemnt and add it to the PATH'
 author: 'Codello'
 
+# TODO: Maybe support setting the language, default log level
 inputs:
   lilypond-version:
     required: true
