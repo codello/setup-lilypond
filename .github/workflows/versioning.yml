@@ -1,14 +1,14 @@
-name: "Versioning"
+name: 'Versioning'
 on:
   push:
-    tags: [ "v*.**" ]
+    tags: ['v*.**']
 
 permissions:
   contents: write
 
 jobs:
   major-version:
-    name: "Move Major Version"
+    name: 'Move Major Version'
     runs-on: ubuntu-latest
     steps:
       - name: Get Tag Name

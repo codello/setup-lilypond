@@ -55675,8 +55675,8 @@ async function run() {
         core.startGroup(`Setup LilyPond version ${version}`);
         const installDir = await installer.installLilyPond(version);
         core.endGroup();
+        core.exportVariable('LILYPOND_DATADIR', path.join(installDir, 'share', 'lilypond', version.version));
         core.addPath(path.join(installDir, 'bin'));
-        core.info('Added LilyPond to the path');
         const lilyPondPath = await io.which('lilypond');
         if (!lilyPondPath.trim()) {
             core.setFailed('lilypond binary not found after installation');

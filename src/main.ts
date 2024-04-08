@@ -24,7 +24,10 @@ export async function run(): Promise<void> {
     core.startGroup(`Setup LilyPond version ${version}`)
     const installDir = await installer.installLilyPond(version)
     core.endGroup()
-    core.exportVariable('LILYPOND_DATADIR', path.join(installDir, 'share', 'lilypond', version.version))
+    core.exportVariable(
+      'LILYPOND_DATADIR',
+      path.join(installDir, 'share', 'lilypond', version.version)
+    )
     core.addPath(path.join(installDir, 'bin'))
 
     const lilyPondPath = await io.which('lilypond')
