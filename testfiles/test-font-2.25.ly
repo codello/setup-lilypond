@@ -1,3 +1,5 @@
+\version "2.25.0"
+
 \paper {
   property-defaults.fonts.music = "beethoven"
 }

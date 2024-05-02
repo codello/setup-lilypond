@@ -1,3 +1,5 @@
+\version "2.23.3"
+
 \paper {
   fonts = #(set-global-fonts
     #:music "beethoven"
