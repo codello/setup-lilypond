@@ -5714,12 +5714,9 @@ var QS__default = /*#__PURE__*/_interopDefault(QS);
 function appendFormFromObject(object) {
   const form = new FormData();
   Object.entries(object).forEach(([k, v]) => {
-    if (!v)
-      return;
-    if (Array.isArray(v))
-      form.append(k, v[0], v[1]);
-    else
-      form.append(k, v);
+    if (!v) return;
+    if (Array.isArray(v)) form.append(k, v[0], v[1]);
+    else form.append(k, v);
   });
   return form;
 }
@@ -5742,7 +5739,7 @@ function parseLinkHeader(linkString) {
 function reformatObjectOptions(obj, prefixKey, decamelizeValues = false) {
   const formatted = decamelizeValues ? xcase.decamelizeKeys(obj) : obj;
   return QS__default.default.stringify({ [prefixKey]: formatted }, { encode: false }).split("&").reduce((acc, cur) => {
-    const [key, val] = cur.split("=");
+    const [key, val] = cur.split(/=(.*)/);
     acc[key] = val;
     return acc;
   }, {});
@@ -5760,14 +5757,12 @@ function getStream(response, showExpanded) {
 function getSingle(camelize, response, showExpanded) {
   const { status, headers } = response;
   let { body } = response;
-  if (camelize)
-    body = xcase.camelizeKeys(body);
+  if (camelize) body = xcase.camelizeKeys(body);
   return packageResponse({ body, status, headers }, showExpanded);
 }
 async function getManyMore(camelize, getFn, endpoint2, response, requestOptions, acc) {
   const { sudo, showExpanded, maxPages, pagination, page, perPage, idAfter, orderBy, sort } = requestOptions;
-  if (camelize)
-    response.body = xcase.camelizeKeys(response?.body);
+  if (camelize) response.body = xcase.camelizeKeys(response?.body);
   const newAcc = [...acc || [], ...response.body];
   const withinBounds = maxPages && perPage ? newAcc.length / +perPage < maxPages : true;
   const { next = "" } = parseLinkHeader(response.headers.link);
@@ -5786,8 +5781,7 @@ async function getManyMore(camelize, getFn, endpoint2, response, requestOptions,
     });
     return getManyMore(camelize, getFn, endpoint2, nextResponse, newOpts, newAcc);
   }
-  if (!showExpanded)
-    return newAcc;
+  if (!showExpanded) return newAcc;
   const paginationInfo = pagination === "keyset" ? {
     idAfter: idAfter ? +idAfter : null,
     perPage: perPage ? +perPage : null,
@@ -5817,8 +5811,7 @@ function get() {
       signal
     });
     const camelizeResponseBody = service.camelize || false;
-    if (asStream)
-      return getStream(response, showExpanded);
+    if (asStream) return getStream(response, showExpanded);
     if (!Array.isArray(response.body))
       return getSingle(
         camelizeResponseBody,
@@ -5849,8 +5842,7 @@ function post() {
       sudo,
       signal: service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0
     });
-    if (service.camelize)
-      response.body = xcase.camelizeKeys(response.body);
+    if (service.camelize) response.body = xcase.camelizeKeys(response.body);
     return packageResponse(response, showExpanded);
   };
 }
@@ -5863,8 +5855,7 @@ function put() {
       sudo,
       signal: service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0
     });
-    if (service.camelize)
-      response.body = xcase.camelizeKeys(response.body);
+    if (service.camelize) response.body = xcase.camelizeKeys(response.body);
     return packageResponse(response, showExpanded);
   };
 }
@@ -5877,8 +5868,7 @@ function patch() {
       sudo,
       signal: service.queryTimeout ? AbortSignal.timeout(service.queryTimeout) : void 0
     });
-    if (service.camelize)
-      response.body = xcase.camelizeKeys(response.body);
+    if (service.camelize) response.body = xcase.camelizeKeys(response.body);
     return packageResponse(response, showExpanded);
   };
 }
@@ -6018,10 +6008,8 @@ var ApplicationAppearance = class extends requesterUtils.BaseResource {
         ...options,
         isForm: true
       };
-      if (logo)
-        opts.logo = [logo.content, logo.filename];
-      if (pwaIcon)
-        opts.pwaIcon = [pwaIcon.content, pwaIcon.filename];
+      if (logo) opts.logo = [logo.content, logo.filename];
+      if (pwaIcon) opts.pwaIcon = [pwaIcon.content, pwaIcon.filename];
       return RequestHelper.put()(this, "application/appearence", opts);
     }
     return RequestHelper.put()(
@@ -6119,10 +6107,8 @@ function url({
   groupId
 } = {}) {
   let prefix = "";
-  if (projectId)
-    prefix = endpoint`projects/${projectId}/`;
-  else if (groupId)
-    prefix = endpoint`groups/${groupId}/`;
+  if (projectId) prefix = endpoint`projects/${projectId}/`;
+  else if (groupId) prefix = endpoint`groups/${groupId}/`;
   return `${prefix}audit_events`;
 }
 var AuditEvents = class extends requesterUtils.BaseResource {
@@ -6385,10 +6371,8 @@ var DashboardAnnotations = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (environmentId)
-      url12 = endpoint`environments/${environmentId}/metrics_dashboard/annotations`;
-    else if (clusterId)
-      url12 = endpoint`clusters/${clusterId}/metrics_dashboard/annotations`;
+    if (environmentId) url12 = endpoint`environments/${environmentId}/metrics_dashboard/annotations`;
+    else if (clusterId) url12 = endpoint`clusters/${clusterId}/metrics_dashboard/annotations`;
     else
       throw new Error(
         "Missing required argument. Please supply a environmentId or a cluserId in the options parameter."
@@ -6405,10 +6389,8 @@ function url3({
   projectId,
   groupId
 } = {}) {
-  if (projectId)
-    return endpoint`/projects/${projectId}/packages/debian`;
-  if (groupId)
-    return endpoint`/groups/${groupId}/-/packages/debian`;
+  if (projectId) return endpoint`/projects/${projectId}/packages/debian`;
+  if (groupId) return endpoint`/groups/${groupId}/-/packages/debian`;
   throw new Error(
     "Missing required argument. Please supply a projectId or a groupId in the options parameter"
   );
@@ -6557,12 +6539,9 @@ var DeployTokens = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/deploy_tokens`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/deploy_tokens`;
-    else
-      url12 = "deploy_tokens";
+    if (projectId) url12 = endpoint`projects/${projectId}/deploy_tokens`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/deploy_tokens`;
+    else url12 = "deploy_tokens";
     return RequestHelper.get()(this, url12, options);
   }
   create(name, scopes, {
@@ -6571,10 +6550,8 @@ var DeployTokens = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/deploy_tokens`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/deploy_tokens`;
+    if (projectId) url12 = endpoint`projects/${projectId}/deploy_tokens`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/deploy_tokens`;
     else {
       throw new Error(
         "Missing required argument. Please supply a projectId or a groupId in the options parameter."
@@ -6592,10 +6569,8 @@ var DeployTokens = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/deploy_tokens/${tokenId}`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/deploy_tokens/${tokenId}`;
+    if (projectId) url12 = endpoint`projects/${projectId}/deploy_tokens/${tokenId}`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/deploy_tokens/${tokenId}`;
     else {
       throw new Error(
         "Missing required argument. Please supply a projectId or a groupId in the options parameter."
@@ -6609,10 +6584,8 @@ var DeployTokens = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/deploy_tokens/${tokenId}`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/deploy_tokens/${tokenId}`;
+    if (projectId) url12 = endpoint`projects/${projectId}/deploy_tokens/${tokenId}`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/deploy_tokens/${tokenId}`;
     else {
       throw new Error(
         "Missing required argument. Please supply a projectId or a groupId in the options parameter."
@@ -6699,8 +6672,7 @@ function url4(resourceId, resourceType2, resourceId2, awardId) {
   const [rId, rId2] = [resourceId, resourceId2].map(encodeURIComponent);
   const output = [rId, resourceType2, rId2];
   output.push("award_emoji");
-  if (awardId)
-    output.push(awardId);
+  if (awardId) output.push(awardId);
   return output.join("/");
 }
 var ResourceAwardEmojis = class extends requesterUtils.BaseResource {
@@ -6747,8 +6719,7 @@ function url5(resourceId, resourceType2, resourceId2, noteId, awardId) {
   output.push("notes");
   output.push(noteId);
   output.push("award_emoji");
-  if (awardId)
-    output.push(awardId);
+  if (awardId) output.push(awardId);
   return output.join("/");
 }
 var ResourceNoteAwardEmojis = class extends requesterUtils.BaseResource {
@@ -7074,8 +7045,7 @@ var ResourceMembers = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12 = endpoint`${resourceId}/members`;
-    if (includeInherited)
-      url12 += "/all";
+    if (includeInherited) url12 += "/all";
     return RequestHelper.get()(this, url12, options);
   }
   edit(resourceId, userId, accessLevel, options) {
@@ -7087,8 +7057,7 @@ var ResourceMembers = class extends requesterUtils.BaseResource {
   show(resourceId, userId, { includeInherited, ...options } = {}) {
     const [rId, uId] = [resourceId, userId].map(encodeURIComponent);
     const url12 = [rId, "members"];
-    if (includeInherited)
-      url12.push("all");
+    if (includeInherited) url12.push("all");
     url12.push(uId);
     return RequestHelper.get()(this, url12.join("/"), options);
   }
@@ -7546,12 +7515,9 @@ var Events = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/events`;
-    else if (userId)
-      url12 = endpoint`users/${userId}/events`;
-    else
-      url12 = "events";
+    if (projectId) url12 = endpoint`projects/${projectId}/events`;
+    else if (userId) url12 = endpoint`users/${userId}/events`;
+    else url12 = "events";
     return RequestHelper.get()(this, url12, options);
   }
 };
@@ -7699,10 +7665,8 @@ var Keys = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (keyId)
-      url12 = `keys/${keyId}`;
-    else if (fingerprint)
-      url12 = `keys?fingerprint=${fingerprint}`;
+    if (keyId) url12 = `keys/${keyId}`;
+    else if (fingerprint) url12 = `keys?fingerprint=${fingerprint}`;
     else {
       throw new Error(
         "Missing required argument. Please supply a fingerprint or a keyId in the options parameter"
@@ -7765,10 +7729,8 @@ var Maven = class extends requesterUtils.BaseResource {
     ...options
   }) {
     let url12 = endpoint`packages/maven/${path}/${filename}`;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/${url12}`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/-/${url12}`;
+    if (projectId) url12 = endpoint`projects/${projectId}/${url12}`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/-/${url12}`;
     return RequestHelper.get()(this, url12, options);
   }
   uploadPackageFile(projectId, path, packageFile, options) {
@@ -7892,10 +7854,8 @@ function url7({
   groupId
 } = {}) {
   let prefix = "";
-  if (projectId)
-    prefix = endpoint`projects/${projectId}/`;
-  if (groupId)
-    prefix = endpoint`groups/${groupId}/`;
+  if (projectId) prefix = endpoint`projects/${projectId}/`;
+  if (groupId) prefix = endpoint`groups/${groupId}/`;
   return `${prefix}notification_settings`;
 }
 var NotificationSettings = class extends requesterUtils.BaseResource {
@@ -7920,10 +7880,8 @@ function url8({
   projectId,
   groupId
 } = {}) {
-  if (projectId)
-    return endpoint`/projects/${projectId}/packages/nuget`;
-  if (groupId)
-    return endpoint`/groups/${groupId}/-/packages/nuget`;
+  if (projectId) return endpoint`/projects/${projectId}/packages/nuget`;
+  if (groupId) return endpoint`/groups/${groupId}/-/packages/nuget`;
   throw new Error(
     "Missing required argument. Please supply a projectId or a groupId in the options parameter"
   );
@@ -8122,12 +8080,9 @@ var Search = class extends requesterUtils.BaseResource {
   all(scope, search, options) {
     const { projectId, groupId, ...opts } = options || {};
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/`;
-    else
-      url12 = "";
+    if (projectId) url12 = endpoint`projects/${projectId}/`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/`;
+    else url12 = "";
     return RequestHelper.get()(this, `${url12}search`, {
       scope,
       search,
@@ -8286,8 +8241,7 @@ var TodoLists = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let prefix = "todos";
-    if (todoId)
-      prefix += `/${todoId}`;
+    if (todoId) prefix += `/${todoId}`;
     return RequestHelper.post()(
       this,
       `${prefix}/mark_as_done`,
@@ -8510,10 +8464,8 @@ var ContainerRegistry = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (groupId)
-      url12 = endpoint`groups/${groupId}/registry/repositories`;
-    else if (projectId)
-      url12 = endpoint`projects/${projectId}/registry/repositories`;
+    if (groupId) url12 = endpoint`groups/${groupId}/registry/repositories`;
+    else if (projectId) url12 = endpoint`projects/${projectId}/registry/repositories`;
     else
       throw new Error(
         "Missing required argument. Please supply a groupId or a projectId in the options parameter."
@@ -9141,12 +9093,9 @@ var Issues = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/issues`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/issues`;
-    else
-      url12 = "issues";
+    if (projectId) url12 = endpoint`projects/${projectId}/issues`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/issues`;
+    else url12 = "issues";
     return RequestHelper.get()(this, url12, options);
   }
   allMetricImages(projectId, issueIId, options) {
@@ -9320,19 +9269,15 @@ var IssuesStatistics = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/issues_statistics`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/issues_statistics`;
-    else
-      url12 = "issues_statistics";
+    if (projectId) url12 = endpoint`projects/${projectId}/issues_statistics`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/issues_statistics`;
+    else url12 = "issues_statistics";
     return RequestHelper.get()(this, url12, options);
   }
 };
 function generateDownloadPathForJob(projectId, jobId, artifactPath) {
   let url12 = endpoint`projects/${projectId}/jobs/${jobId}/artifacts`;
-  if (artifactPath)
-    url12 += `/${artifactPath}`;
+  if (artifactPath) url12 += `/${artifactPath}`;
   return url12;
 }
 function generateDownloadPath(projectId, ref, artifactPath) {
@@ -9352,10 +9297,8 @@ var JobArtifacts = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (jobId)
-      url12 = generateDownloadPathForJob(projectId, jobId, artifactPath);
-    else if (options?.job && ref)
-      url12 = generateDownloadPath(projectId, ref, artifactPath);
+    if (jobId) url12 = generateDownloadPathForJob(projectId, jobId, artifactPath);
+    else if (options?.job && ref) url12 = generateDownloadPath(projectId, ref, artifactPath);
     else
       throw new Error(
         "Missing one of the required parameters. See typing documentation for available arguments."
@@ -9430,19 +9373,54 @@ var Jobs = class extends requesterUtils.BaseResource {
     );
   }
   showConnectedJob(options) {
-    if (!this.headers["job-token"])
-      throw new Error('Missing required header "job-token"');
+    if (!this.headers["job-token"]) throw new Error('Missing required header "job-token"');
     return RequestHelper.get()(this, "job", options);
   }
   showConnectedJobK8Agents(options) {
-    if (!this.headers["job-token"])
-      throw new Error('Missing required header "job-token"');
+    if (!this.headers["job-token"]) throw new Error('Missing required header "job-token"');
     return RequestHelper.get()(this, "job/allowed_agents", options);
   }
   showLog(projectId, jobId, options) {
     return RequestHelper.get()(
       this,
       endpoint`projects/${projectId}/jobs/${jobId}/trace`,
+      options
+    );
+  }
+};
+var JobTokenScopes = class extends requesterUtils.BaseResource {
+  show(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/job_token_scope`,
+      options
+    );
+  }
+  edit(projectId, enabled, options) {
+    return RequestHelper.patch()(
+      this,
+      endpoint`projects/${projectId}/job_token_scope`,
+      { ...options, enabled }
+    );
+  }
+  showInboundAllowList(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/job_token_scope/allowlist`,
+      options
+    );
+  }
+  addToInboundAllowList(projectId, targetProjectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/job_token_scope/allowlist/${targetProjectId}`,
+      options
+    );
+  }
+  removeFromInboundAllowList(projectId, targetProjectId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/job_token_scope/allowlist/${targetProjectId}`,
       options
     );
   }
@@ -9933,10 +9911,8 @@ var Packages = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/packages`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/packages`;
+    if (projectId) url12 = endpoint`projects/${projectId}/packages`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/packages`;
     else {
       throw new Error(
         "Missing required argument. Please supply a projectId or a groupId in the options parameter."
@@ -10749,12 +10725,9 @@ var Projects = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let uri;
-    if (userId && starredOnly)
-      uri = endpoint`users/${userId}/starred_projects`;
-    else if (userId)
-      uri = endpoint`users/${userId}/projects`;
-    else
-      uri = "projects";
+    if (userId && starredOnly) uri = endpoint`users/${userId}/starred_projects`;
+    else if (userId) uri = endpoint`users/${userId}/projects`;
+    else uri = "projects";
     return RequestHelper.get()(this, uri, options);
   }
   allTransferLocations(projectId, options) {
@@ -11296,14 +11269,10 @@ var Runners = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (projectId)
-      url12 = endpoint`projects/${projectId}/runners`;
-    else if (groupId)
-      url12 = endpoint`groups/${groupId}/runners`;
-    else if (owned)
-      url12 = "runners";
-    else
-      url12 = "runners/all";
+    if (projectId) url12 = endpoint`projects/${projectId}/runners`;
+    else if (groupId) url12 = endpoint`groups/${groupId}/runners`;
+    else if (owned) url12 = "runners";
+    else url12 = "runners/all";
     return RequestHelper.get()(this, url12, options);
   }
   allJobs(runnerId, options) {
@@ -11338,8 +11307,7 @@ var Runners = class extends requesterUtils.BaseResource {
     ...options
   }) {
     let url12;
-    if (runnerId)
-      url12 = `runners/${runnerId}`;
+    if (runnerId) url12 = `runners/${runnerId}`;
     else if (token) {
       url12 = "runners";
     } else
@@ -11357,10 +11325,8 @@ var Runners = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (runnerId)
-      url12 = endpoint`runners/${runnerId}/reset_registration_token`;
-    else if (token)
-      url12 = "runners/reset_registration_token";
+    if (runnerId) url12 = endpoint`runners/${runnerId}/reset_registration_token`;
+    else if (token) url12 = "runners/reset_registration_token";
     else {
       throw new Error("Missing either runnerId or token parameters");
     }
@@ -11520,7 +11486,7 @@ var EpicIssues = class extends requesterUtils.BaseResource {
 // src/resources/EpicLabelEvents.ts
 var EpicLabelEvents = class extends ResourceLabelEvents {
   constructor(options) {
-    super("groups", "epic", options);
+    super("groups", "epics", options);
   }
 };
 var EpicLinks = class extends requesterUtils.BaseResource {
@@ -12006,7 +11972,11 @@ var GroupServiceAccounts = class extends requesterUtils.BaseResource {
       options
     );
   }
+  // @deprecated In favor of `createPersonalAccessToken`
   addPersonalAccessToken(groupId, serviceAccountId, options) {
+    return this.createPersonalAccessToken(groupId, serviceAccountId, options);
+  }
+  createPersonalAccessToken(groupId, serviceAccountId, options) {
     return RequestHelper.post()(
       this,
       endpoint`groups/${groupId}/service_accounts/${serviceAccountId}`,
@@ -12324,7 +12294,11 @@ var Users = class extends requesterUtils.BaseResource {
     return RequestHelper.post()(this, endpoint`users/${userId}/activate`, options);
   }
   all(options) {
-    return RequestHelper.get()(this, "users", options);
+    return RequestHelper.get()(
+      this,
+      "users",
+      options
+    );
   }
   allActivities(options) {
     return RequestHelper.get()(this, "user/activities", options);
@@ -12333,10 +12307,18 @@ var Users = class extends requesterUtils.BaseResource {
     return RequestHelper.get()(this, endpoint`users/${userId}/events`, options);
   }
   allFollowers(userId, options) {
-    return RequestHelper.get()(this, endpoint`users/${userId}/followers`, options);
+    return RequestHelper.get()(
+      this,
+      endpoint`users/${userId}/followers`,
+      options
+    );
   }
   allFollowing(userId, options) {
-    return RequestHelper.get()(this, endpoint`users/${userId}/following`, options);
+    return RequestHelper.get()(
+      this,
+      endpoint`users/${userId}/following`,
+      options
+    );
   }
   allMemberships(userId, options) {
     return RequestHelper.get()(
@@ -12442,7 +12424,11 @@ var Users = class extends requesterUtils.BaseResource {
     );
   }
   showCurrentUser(options) {
-    return RequestHelper.get()(this, "user", options);
+    return RequestHelper.get()(
+      this,
+      "user",
+      options
+    );
   }
   showCurrentUserPreferences(options) {
     return RequestHelper.get()(this, "user/preferences", options);
@@ -12452,10 +12438,8 @@ var Users = class extends requesterUtils.BaseResource {
     ...options
   } = {}) {
     let url12;
-    if (iDOrUsername)
-      url12 = `users/${iDOrUsername}/status`;
-    else
-      url12 = "user/status";
+    if (iDOrUsername) url12 = `users/${iDOrUsername}/status`;
+    else url12 = "user/status";
     return RequestHelper.get()(this, url12, options);
   }
   remove(userId, options) {
@@ -12559,6 +12543,7 @@ var resources = {
   IssueWeightEvents,
   JobArtifacts,
   Jobs,
+  JobTokenScopes,
   MergeRequestApprovals,
   MergeRequestAwardEmojis,
   MergeRequestContextCommits,
@@ -12779,6 +12764,7 @@ exports.IssueWeightEvents = IssueWeightEvents;
 exports.Issues = Issues;
 exports.IssuesStatistics = IssuesStatistics;
 exports.JobArtifacts = JobArtifacts;
+exports.JobTokenScopes = JobTokenScopes;
 exports.Jobs = Jobs;
 exports.Keys = Keys;
 exports.License = License;
@@ -12921,8 +12907,7 @@ async function defaultOptionsHandler(resourceOptions, {
     prefixUrl: url
   };
   defaultOptions.headers = { ...preconfiguredHeaders };
-  if (sudo)
-    defaultOptions.headers.sudo = `${sudo}`;
+  if (sudo) defaultOptions.headers.sudo = `${sudo}`;
   if (body) {
     if (body instanceof FormData) {
       defaultOptions.body = body;
@@ -12931,18 +12916,18 @@ async function defaultOptionsHandler(resourceOptions, {
       defaultOptions.headers["content-type"] = "application/json";
     }
   }
-  const [authHeaderKey, authHeaderFn] = Object.entries(authHeaders)[0];
-  defaultOptions.headers[authHeaderKey] = await authHeaderFn();
+  if (Object.keys(authHeaders).length > 0) {
+    const [authHeaderKey, authHeaderFn] = Object.entries(authHeaders)[0];
+    defaultOptions.headers[authHeaderKey] = await authHeaderFn();
+  }
   const q = formatQuery(searchParams);
-  if (q)
-    defaultOptions.searchParams = q;
+  if (q) defaultOptions.searchParams = q;
   return Promise.resolve(defaultOptions);
 }
 function createRateLimiters(rateLimitOptions = {}) {
   const rateLimiters = {};
   Object.entries(rateLimitOptions).forEach(([key, config]) => {
-    if (typeof config === "number")
-      rateLimiters[key] = generateRateLimiterFn(config, 60);
+    if (typeof config === "number") rateLimiters[key] = generateRateLimiterFn(config, 60);
     else
       rateLimiters[key] = {
         method: config.method.toUpperCase(),
@@ -12988,8 +12973,7 @@ function getMatchingRateLimiter(endpoint, rateLimiters = {}, method = "GET") {
   const sortedEndpoints = Object.keys(rateLimiters).sort().reverse();
   const match = sortedEndpoints.find((ep) => isGlobMatch(endpoint, ep));
   const rateLimitConfig = match && rateLimiters[match];
-  if (typeof rateLimitConfig === "function")
-    return rateLimitConfig;
+  if (typeof rateLimitConfig === "function") return rateLimitConfig;
   if (rateLimitConfig && rateLimitConfig?.method?.toUpperCase() === method.toUpperCase()) {
     return rateLimitConfig.limit;
   }
@@ -13056,8 +13040,7 @@ var BaseResource = class {
     rateLimits = DEFAULT_RATE_LIMITS,
     ...tokens
   }) {
-    if (!requesterFn)
-      throw new ReferenceError("requesterFn must be passed");
+    if (!requesterFn) throw new ReferenceError("requesterFn must be passed");
     this.url = [host, "api", "v4", prefixUrl].join("/");
     this.headers = {};
     this.authHeaders = {};
@@ -13073,15 +13056,11 @@ var BaseResource = class {
       this.authHeaders["job-token"] = async () => getDynamicToken(tokens.jobToken);
     else if ("token" in tokens)
       this.authHeaders["private-token"] = async () => getDynamicToken(tokens.token);
-    else {
-      throw new ReferenceError("A token, oauthToken or jobToken must be passed");
-    }
     if (profileToken) {
       this.headers["X-Profile-Token"] = profileToken;
       this.headers["X-Profile-Mode"] = profileMode;
     }
-    if (sudo)
-      this.headers.Sudo = `${sudo}`;
+    if (sudo) this.headers.Sudo = `${sudo}`;
     this.requester = requesterFn({ ...this, rateLimits });
   }
 };
@@ -13198,8 +13177,7 @@ async function throwFailedRequestError(request, response) {
   });
 }
 function getConditionalMode(endpoint) {
-  if (endpoint.includes("repository/archive"))
-    return "same-origin";
+  if (endpoint.includes("repository/archive")) return "same-origin";
   return void 0;
 }
 async function defaultRequestHandler(endpoint, options) {
@@ -13208,8 +13186,7 @@ async function defaultRequestHandler(endpoint, options) {
   const { prefixUrl, asStream, searchParams, rateLimiters, method, ...opts } = options || {};
   const rateLimit = requesterUtils.getMatchingRateLimiter(endpoint, rateLimiters, method);
   let baseUrl;
-  if (prefixUrl)
-    baseUrl = prefixUrl.endsWith("/") ? prefixUrl : `${prefixUrl}/`;
+  if (prefixUrl) baseUrl = prefixUrl.endsWith("/") ? prefixUrl : `${prefixUrl}/`;
   const url = new URL(endpoint, baseUrl);
   url.search = searchParams || "";
   const mode = getConditionalMode(endpoint);
@@ -13222,10 +13199,8 @@ async function defaultRequestHandler(endpoint, options) {
       }
       throw e;
     });
-    if (response.ok)
-      return parseResponse(response, asStream);
-    if (!retryCodes.includes(response.status))
-      await throwFailedRequestError(request, response);
+    if (response.ok) return parseResponse(response, asStream);
+    if (!retryCodes.includes(response.status)) await throwFailedRequestError(request, response);
     await delay(2 ** i * 0.25);
     continue;
   }
@@ -13327,6 +13302,7 @@ var {
   IssueWeightEvents,
   JobArtifacts,
   Jobs,
+  JobTokenScopes,
   MergeRequestApprovals,
   MergeRequestAwardEmojis,
   MergeRequestContextCommits,
@@ -13527,6 +13503,7 @@ exports.IssueWeightEvents = IssueWeightEvents;
 exports.Issues = Issues;
 exports.IssuesStatistics = IssuesStatistics;
 exports.JobArtifacts = JobArtifacts;
+exports.JobTokenScopes = JobTokenScopes;
 exports.Jobs = Jobs;
 exports.Keys = Keys;
 exports.License = License;
@@ -24040,6 +24017,7 @@ var parseValues = function parseQueryStringValues(str, options) {
     var obj = { __proto__: null };
 
     var cleanStr = options.ignoreQueryPrefix ? str.replace(/^\?/, '') : str;
+    cleanStr = cleanStr.replace(/%5B/gi, '[').replace(/%5D/gi, ']');
     var limit = options.parameterLimit === Infinity ? undefined : options.parameterLimit;
     var parts = cleanStr.split(options.delimiter, limit);
     var skipIndex = -1; // Keep track of where the utf8 sentinel was found
