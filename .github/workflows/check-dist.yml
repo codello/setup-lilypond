@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -41,7 +43,8 @@ jobs:
       - name: Build dist/ Directory
         run: npm run bundle
 
-      # This will fail the workflow if the PR wasn't created by Dependabot.
+      # This will fail the workflow if the `dist/` directory is different than
+      # expected.
       - name: Compare Directories
         id: diff
         run: |
@@ -51,9 +54,20 @@ jobs:
             exit 1
           fi
 
-      # If `dist/` was different than expected, and this was not a Dependabot
-      # PR, upload the expected version as a workflow artifact.
-      - if: ${{ failure() && steps.diff.outcome == 'failure' }}
+      # If `dist` was different and this is a renovate commit, push the changes.
+      - if: ${{ failure() && steps.diff.outcome == 'failure' && github.actor == 'renovate[bot]' }}
+        name: Commit /dist Directory
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: dist
+          default_author: github_actions
+          fetch: false
+          message: "Rebuild Action"
+          pathspec_error_handling: exitImmediately
+
+      # If `dist/` was different than expected, upload the expected version as a
+      # workflow artifact.
+      - if: ${{ failure() && steps.diff.outcome == 'failure' && github.actor != 'renovate[bot]' }}
         name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
