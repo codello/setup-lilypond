@@ -47,6 +47,7 @@ jobs:
       # expected.
       - name: Compare Directories
         id: diff
+        continue-on-error: true
         run: |
           if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after build. See status below:"
@@ -55,7 +56,7 @@ jobs:
           fi
 
       # If `dist` was different and this is a renovate commit, push the changes.
-      - if: ${{ failure() && steps.diff.outcome == 'failure' && github.actor == 'renovate[bot]' }}
+      - if: ${{ steps.diff.outcome == 'failure' && github.actor == 'renovate[bot]' }}
         name: Commit /dist Directory
         uses: EndBug/add-and-commit@v9
         with:
@@ -67,7 +68,7 @@ jobs:
 
       # If `dist/` was different than expected, upload the expected version as a
       # workflow artifact.
-      - if: ${{ failure() && steps.diff.outcome == 'failure' && github.actor != 'renovate[bot]' }}
+      - if: ${{ steps.diff.outcome == 'failure' && github.actor != 'renovate[bot]' }}
         name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
