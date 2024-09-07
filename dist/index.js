@@ -10564,6 +10564,13 @@ var ProjectRemoteMirrors = class extends requesterUtils.BaseResource {
       options
     );
   }
+  sync(projectId, mirrorId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/remote_mirrors/${mirrorId}/sync`,
+      options
+    );
+  }
 };
 
 // src/resources/ProjectRepositoryStorageMoves.ts
