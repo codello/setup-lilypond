@@ -11256,10 +11256,10 @@ var ResourceGroups = class extends requesterUtils.BaseResource {
       options
     );
   }
-  allUpcomingJobs(projectId, options) {
+  allUpcomingJobs(projectId, key, options) {
     return RequestHelper.get()(
       this,
-      endpoint`projects/${projectId}/resource_groups/upcoming_jobs`,
+      endpoint`projects/${projectId}/resource_groups/${key}/upcoming_jobs`,
       options
     );
   }
