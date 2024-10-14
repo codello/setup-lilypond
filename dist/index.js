@@ -7475,7 +7475,7 @@ var ResourceInvitations = class extends requesterUtils.BaseResource {
     );
   }
   remove(resourceId, email, options) {
-    return RequestHelper.put()(
+    return RequestHelper.del()(
       this,
       endpoint`${resourceId}/invitations/${email}`,
       options
@@ -7955,10 +7955,10 @@ var Namespaces = class extends requesterUtils.BaseResource {
   all(options) {
     return RequestHelper.get()(this, "namespaces", options);
   }
-  exists(namespaceId, options) {
+  exists(namespace, options) {
     return RequestHelper.get()(
       this,
-      endpoint`namespaces/${namespaceId}/exists`,
+      endpoint`namespaces/${namespace}/exists`,
       options
     );
   }
@@ -11377,10 +11377,10 @@ var ResourceGroups = class extends requesterUtils.BaseResource {
       options
     );
   }
-  allUpcomingJobs(projectId, options) {
+  allUpcomingJobs(projectId, key, options) {
     return RequestHelper.get()(
       this,
-      endpoint`projects/${projectId}/resource_groups/upcoming_jobs`,
+      endpoint`projects/${projectId}/resource_groups/${key}/upcoming_jobs`,
       options
     );
   }
