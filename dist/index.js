@@ -7475,7 +7475,7 @@ var ResourceInvitations = class extends requesterUtils.BaseResource {
     );
   }
   remove(resourceId, email, options) {
-    return RequestHelper.put()(
+    return RequestHelper.del()(
       this,
       endpoint`${resourceId}/invitations/${email}`,
       options
@@ -7614,6 +7614,46 @@ var ResourceStateEvents = class extends requesterUtils.BaseResource {
     return RequestHelper.get()(
       this,
       endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_state_events/${stateEventId}`,
+      options
+    );
+  }
+};
+var ResourceJobTokenScopes = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  show(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/job_token_scope`,
+      options
+    );
+  }
+  edit(resourceId, enabled, options) {
+    return RequestHelper.patch()(
+      this,
+      endpoint`${resourceId}/job_token_scope`,
+      { ...options, enabled }
+    );
+  }
+  showInboundAllowList(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/job_token_scope/allowlist`,
+      options
+    );
+  }
+  addToInboundAllowList(resourceId, targetResourceId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${resourceId}/job_token_scope/allowlist/${targetResourceId}`,
+      options
+    );
+  }
+  removeFromInboundAllowList(resourceId, targetResourceId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${resourceId}/job_token_scope/allowlist/${targetResourceId}`,
       options
     );
   }
@@ -7955,10 +7995,10 @@ var Namespaces = class extends requesterUtils.BaseResource {
   all(options) {
     return RequestHelper.get()(this, "namespaces", options);
   }
-  exists(namespaceId, options) {
+  exists(namespace, options) {
     return RequestHelper.get()(
       this,
-      endpoint`namespaces/${namespaceId}/exists`,
+      endpoint`namespaces/${namespace}/exists`,
       options
     );
   }
@@ -9505,43 +9545,6 @@ var Jobs = class extends requesterUtils.BaseResource {
     );
   }
 };
-var JobTokenScopes = class extends requesterUtils.BaseResource {
-  show(projectId, options) {
-    return RequestHelper.get()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope`,
-      options
-    );
-  }
-  edit(projectId, enabled, options) {
-    return RequestHelper.patch()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope`,
-      { ...options, enabled }
-    );
-  }
-  showInboundAllowList(projectId, options) {
-    return RequestHelper.get()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope/allowlist`,
-      options
-    );
-  }
-  addToInboundAllowList(projectId, targetProjectId, options) {
-    return RequestHelper.post()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope/allowlist/${targetProjectId}`,
-      options
-    );
-  }
-  removeFromInboundAllowList(projectId, targetProjectId, options) {
-    return RequestHelper.del()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope/allowlist/${targetProjectId}`,
-      options
-    );
-  }
-};
 var MergeRequestApprovals = class extends requesterUtils.BaseResource {
   allApprovalRules(projectId, { mergerequestIId, ...options } = {}) {
     let url12;
@@ -9816,6 +9819,13 @@ var MergeRequests = class extends requesterUtils.BaseResource {
     return RequestHelper.get()(
       this,
       endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/closes_issues`,
+      options
+    );
+  }
+  allIssuesRelated(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/related_issues`,
       options
     );
   }
@@ -10496,6 +10506,13 @@ var ProjectIssueBoards = class extends ResourceIssueBoards {
 var ProjectIterations = class extends ResourceIterations {
   constructor(options) {
     super("project", options);
+  }
+};
+
+// src/resources/ProjectJobTokenScopes.ts
+var ProjectJobTokenScopes = class extends ResourceJobTokenScopes {
+  constructor(options) {
+    super("projects", options);
   }
 };
 
@@ -11377,10 +11394,10 @@ var ResourceGroups = class extends requesterUtils.BaseResource {
       options
     );
   }
-  allUpcomingJobs(projectId, options) {
+  allUpcomingJobs(projectId, key, options) {
     return RequestHelper.get()(
       this,
-      endpoint`projects/${projectId}/resource_groups/upcoming_jobs`,
+      endpoint`projects/${projectId}/resource_groups/${key}/upcoming_jobs`,
       options
     );
   }
@@ -11850,6 +11867,13 @@ var GroupIssueBoards = class extends ResourceIssueBoards {
 
 // src/resources/GroupIterations.ts
 var GroupIterations = class extends ResourceIterations {
+  constructor(options) {
+    super("groups", options);
+  }
+};
+
+// src/resources/GroupJobTokenScopes.ts
+var GroupJobTokenScopes = class extends ResourceJobTokenScopes {
   constructor(options) {
     super("groups", options);
   }
@@ -12667,7 +12691,6 @@ var resources = {
   IssueWeightEvents,
   JobArtifacts,
   Jobs,
-  JobTokenScopes,
   MergeRequestApprovals,
   MergeRequestAwardEmojis,
   MergeRequestContextCommits,
@@ -12698,6 +12721,7 @@ var resources = {
   ProjectInvitations,
   ProjectIssueBoards,
   ProjectIterations,
+  ProjectJobTokenScopes,
   ProjectLabels,
   ProjectMembers,
   ProjectMilestones,
@@ -12747,6 +12771,7 @@ var resources = {
   GroupInvitations,
   GroupIssueBoards,
   GroupIterations,
+  GroupJobTokenScopes,
   GroupLabels,
   GroupLDAPLinks,
   GroupMembers,
@@ -12854,6 +12879,7 @@ exports.GroupImportExports = GroupImportExports;
 exports.GroupInvitations = GroupInvitations;
 exports.GroupIssueBoards = GroupIssueBoards;
 exports.GroupIterations = GroupIterations;
+exports.GroupJobTokenScopes = GroupJobTokenScopes;
 exports.GroupLDAPLinks = GroupLDAPLinks;
 exports.GroupLabels = GroupLabels;
 exports.GroupMemberRoles = GroupMemberRoles;
@@ -12888,7 +12914,6 @@ exports.IssueWeightEvents = IssueWeightEvents;
 exports.Issues = Issues;
 exports.IssuesStatistics = IssuesStatistics;
 exports.JobArtifacts = JobArtifacts;
-exports.JobTokenScopes = JobTokenScopes;
 exports.Jobs = Jobs;
 exports.Keys = Keys;
 exports.License = License;
@@ -12934,6 +12959,7 @@ exports.ProjectImportExports = ProjectImportExports;
 exports.ProjectInvitations = ProjectInvitations;
 exports.ProjectIssueBoards = ProjectIssueBoards;
 exports.ProjectIterations = ProjectIterations;
+exports.ProjectJobTokenScopes = ProjectJobTokenScopes;
 exports.ProjectLabels = ProjectLabels;
 exports.ProjectMembers = ProjectMembers;
 exports.ProjectMilestones = ProjectMilestones;
@@ -13309,6 +13335,7 @@ async function defaultRequestHandler(endpoint, options) {
   const maxRetries = 10;
   const { prefixUrl, asStream, searchParams, rateLimiters, method, ...opts } = options || {};
   const rateLimit = requesterUtils.getMatchingRateLimiter(endpoint, rateLimiters, method);
+  let lastStatus;
   let baseUrl;
   if (prefixUrl) baseUrl = prefixUrl.endsWith("/") ? prefixUrl : `${prefixUrl}/`;
   const url = new URL(endpoint, baseUrl);
@@ -13325,11 +13352,12 @@ async function defaultRequestHandler(endpoint, options) {
     });
     if (response.ok) return parseResponse(response, asStream);
     if (!retryCodes.includes(response.status)) await throwFailedRequestError(request, response);
+    lastStatus = response.status;
     await delay(2 ** i * 0.25);
     continue;
   }
   throw new requesterUtils.GitbeakerRetryError(
-    `Could not successfully complete this request due to Error 429. Check the applicable rate limits for this endpoint.`
+    `Could not successfully complete this request after ${maxRetries} retries, last status code: ${lastStatus}. ${lastStatus === 429 ? "Check the applicable rate limits for this endpoint" : "Verify the status of the endpoint"}.`
   );
 }
 var requesterFn = requesterUtils.createRequesterFn(
@@ -13426,7 +13454,6 @@ var {
   IssueWeightEvents,
   JobArtifacts,
   Jobs,
-  JobTokenScopes,
   MergeRequestApprovals,
   MergeRequestAwardEmojis,
   MergeRequestContextCommits,
@@ -13457,6 +13484,7 @@ var {
   ProjectInvitations,
   ProjectIssueBoards,
   ProjectIterations,
+  ProjectJobTokenScopes,
   ProjectLabels,
   ProjectMembers,
   ProjectMilestones,
@@ -13506,6 +13534,7 @@ var {
   GroupInvitations,
   GroupIssueBoards,
   GroupIterations,
+  GroupJobTokenScopes,
   GroupLabels,
   GroupLDAPLinks,
   GroupMembers,
@@ -13593,6 +13622,7 @@ exports.GroupImportExports = GroupImportExports;
 exports.GroupInvitations = GroupInvitations;
 exports.GroupIssueBoards = GroupIssueBoards;
 exports.GroupIterations = GroupIterations;
+exports.GroupJobTokenScopes = GroupJobTokenScopes;
 exports.GroupLDAPLinks = GroupLDAPLinks;
 exports.GroupLabels = GroupLabels;
 exports.GroupMemberRoles = GroupMemberRoles;
@@ -13627,7 +13657,6 @@ exports.IssueWeightEvents = IssueWeightEvents;
 exports.Issues = Issues;
 exports.IssuesStatistics = IssuesStatistics;
 exports.JobArtifacts = JobArtifacts;
-exports.JobTokenScopes = JobTokenScopes;
 exports.Jobs = Jobs;
 exports.Keys = Keys;
 exports.License = License;
@@ -13673,6 +13702,7 @@ exports.ProjectImportExports = ProjectImportExports;
 exports.ProjectInvitations = ProjectInvitations;
 exports.ProjectIssueBoards = ProjectIssueBoards;
 exports.ProjectIterations = ProjectIterations;
+exports.ProjectJobTokenScopes = ProjectJobTokenScopes;
 exports.ProjectLabels = ProjectLabels;
 exports.ProjectMembers = ProjectMembers;
 exports.ProjectMilestones = ProjectMilestones;
