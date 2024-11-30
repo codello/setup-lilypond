@@ -6734,7 +6734,7 @@ var ResourceAccessRequests = class extends requesterUtils.BaseResource {
     );
   }
   approve(resourceId, userId, options) {
-    return RequestHelper.post()(
+    return RequestHelper.put()(
       this,
       endpoint`${resourceId}/access_requests/${userId}/approve`,
       options
@@ -7475,7 +7475,7 @@ var ResourceInvitations = class extends requesterUtils.BaseResource {
     );
   }
   remove(resourceId, email, options) {
-    return RequestHelper.put()(
+    return RequestHelper.del()(
       this,
       endpoint`${resourceId}/invitations/${email}`,
       options
@@ -7955,10 +7955,10 @@ var Namespaces = class extends requesterUtils.BaseResource {
   all(options) {
     return RequestHelper.get()(this, "namespaces", options);
   }
-  exists(namespaceId, options) {
+  exists(namespace, options) {
     return RequestHelper.get()(
       this,
-      endpoint`namespaces/${namespaceId}/exists`,
+      endpoint`namespaces/${namespace}/exists`,
       options
     );
   }
@@ -9505,43 +9505,6 @@ var Jobs = class extends requesterUtils.BaseResource {
     );
   }
 };
-var JobTokenScopes = class extends requesterUtils.BaseResource {
-  show(projectId, options) {
-    return RequestHelper.get()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope`,
-      options
-    );
-  }
-  edit(projectId, enabled, options) {
-    return RequestHelper.patch()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope`,
-      { ...options, enabled }
-    );
-  }
-  showInboundAllowList(projectId, options) {
-    return RequestHelper.get()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope/allowlist`,
-      options
-    );
-  }
-  addToInboundAllowList(projectId, targetProjectId, options) {
-    return RequestHelper.post()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope/allowlist/${targetProjectId}`,
-      options
-    );
-  }
-  removeFromInboundAllowList(projectId, targetProjectId, options) {
-    return RequestHelper.del()(
-      this,
-      endpoint`projects/${projectId}/job_token_scope/allowlist/${targetProjectId}`,
-      options
-    );
-  }
-};
 var MergeRequestApprovals = class extends requesterUtils.BaseResource {
   allApprovalRules(projectId, { mergerequestIId, ...options } = {}) {
     let url12;
@@ -9816,6 +9779,13 @@ var MergeRequests = class extends requesterUtils.BaseResource {
     return RequestHelper.get()(
       this,
       endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/closes_issues`,
+      options
+    );
+  }
+  allIssuesRelated(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/related_issues`,
       options
     );
   }
@@ -10496,6 +10466,64 @@ var ProjectIssueBoards = class extends ResourceIssueBoards {
 var ProjectIterations = class extends ResourceIterations {
   constructor(options) {
     super("project", options);
+  }
+};
+var ProjectJobTokenScopes = class extends requesterUtils.BaseResource {
+  show(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${projectId}/job_token_scope`,
+      options
+    );
+  }
+  edit(projectId, enabled, options) {
+    return RequestHelper.patch()(
+      this,
+      endpoint`${projectId}/job_token_scope`,
+      { ...options, enabled }
+    );
+  }
+  showInboundAllowList(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${projectId}/job_token_scope/allowlist`,
+      options
+    );
+  }
+  addToInboundAllowList(projectId, targetProjectId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${projectId}/job_token_scope/allowlist`,
+      { ...options, targetProjectId }
+    );
+  }
+  removeFromInboundAllowList(projectId, targetProjectId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${projectId}/job_token_scope/allowlist/${targetProjectId}`,
+      options
+    );
+  }
+  showGroupsAllowList(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${projectId}/job_token_scope/groups_allowlist`,
+      options
+    );
+  }
+  addToGroupsAllowList(projectId, targetGroupId, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`${projectId}/job_token_scope/groups_allowlist`,
+      { ...options, targetGroupId }
+    );
+  }
+  removeFromGroupsAllowList(projectId, targetGroupId, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`${projectId}/job_token_scope/groups_allowlist/${targetGroupId}`,
+      options
+    );
   }
 };
 
@@ -11377,10 +11405,10 @@ var ResourceGroups = class extends requesterUtils.BaseResource {
       options
     );
   }
-  allUpcomingJobs(projectId, options) {
+  allUpcomingJobs(projectId, key, options) {
     return RequestHelper.get()(
       this,
-      endpoint`projects/${projectId}/resource_groups/upcoming_jobs`,
+      endpoint`projects/${projectId}/resource_groups/${key}/upcoming_jobs`,
       options
     );
   }
@@ -12507,8 +12535,13 @@ var Users = class extends requesterUtils.BaseResource {
   disableTwoFactor(userId, options) {
     return RequestHelper.patch()(this, endpoint`users/${userId}/disable_two_factor`, options);
   }
-  edit(userId, options) {
-    return RequestHelper.put()(this, endpoint`users/${userId}`, options);
+  edit(userId, { avatar, ...options } = {}) {
+    const opts = {
+      ...options,
+      isForm: true
+    };
+    if (avatar) opts.avatar = [avatar.content, avatar.filename];
+    return RequestHelper.put()(this, endpoint`users/${userId}`, opts);
   }
   editStatus(options) {
     return RequestHelper.put()(this, "user/status", options);
@@ -12667,7 +12700,6 @@ var resources = {
   IssueWeightEvents,
   JobArtifacts,
   Jobs,
-  JobTokenScopes,
   MergeRequestApprovals,
   MergeRequestAwardEmojis,
   MergeRequestContextCommits,
@@ -12698,6 +12730,7 @@ var resources = {
   ProjectInvitations,
   ProjectIssueBoards,
   ProjectIterations,
+  ProjectJobTokenScopes,
   ProjectLabels,
   ProjectMembers,
   ProjectMilestones,
@@ -12888,7 +12921,6 @@ exports.IssueWeightEvents = IssueWeightEvents;
 exports.Issues = Issues;
 exports.IssuesStatistics = IssuesStatistics;
 exports.JobArtifacts = JobArtifacts;
-exports.JobTokenScopes = JobTokenScopes;
 exports.Jobs = Jobs;
 exports.Keys = Keys;
 exports.License = License;
@@ -12934,6 +12966,7 @@ exports.ProjectImportExports = ProjectImportExports;
 exports.ProjectInvitations = ProjectInvitations;
 exports.ProjectIssueBoards = ProjectIssueBoards;
 exports.ProjectIterations = ProjectIterations;
+exports.ProjectJobTokenScopes = ProjectJobTokenScopes;
 exports.ProjectLabels = ProjectLabels;
 exports.ProjectMembers = ProjectMembers;
 exports.ProjectMilestones = ProjectMilestones;
@@ -13309,6 +13342,7 @@ async function defaultRequestHandler(endpoint, options) {
   const maxRetries = 10;
   const { prefixUrl, asStream, searchParams, rateLimiters, method, ...opts } = options || {};
   const rateLimit = requesterUtils.getMatchingRateLimiter(endpoint, rateLimiters, method);
+  let lastStatus;
   let baseUrl;
   if (prefixUrl) baseUrl = prefixUrl.endsWith("/") ? prefixUrl : `${prefixUrl}/`;
   const url = new URL(endpoint, baseUrl);
@@ -13325,11 +13359,12 @@ async function defaultRequestHandler(endpoint, options) {
     });
     if (response.ok) return parseResponse(response, asStream);
     if (!retryCodes.includes(response.status)) await throwFailedRequestError(request, response);
+    lastStatus = response.status;
     await delay(2 ** i * 0.25);
     continue;
   }
   throw new requesterUtils.GitbeakerRetryError(
-    `Could not successfully complete this request due to Error 429. Check the applicable rate limits for this endpoint.`
+    `Could not successfully complete this request after ${maxRetries} retries, last status code: ${lastStatus}. ${lastStatus === 429 ? "Check the applicable rate limits for this endpoint" : "Verify the status of the endpoint"}.`
   );
 }
 var requesterFn = requesterUtils.createRequesterFn(
@@ -13426,7 +13461,6 @@ var {
   IssueWeightEvents,
   JobArtifacts,
   Jobs,
-  JobTokenScopes,
   MergeRequestApprovals,
   MergeRequestAwardEmojis,
   MergeRequestContextCommits,
@@ -13457,6 +13491,7 @@ var {
   ProjectInvitations,
   ProjectIssueBoards,
   ProjectIterations,
+  ProjectJobTokenScopes,
   ProjectLabels,
   ProjectMembers,
   ProjectMilestones,
@@ -13627,7 +13662,6 @@ exports.IssueWeightEvents = IssueWeightEvents;
 exports.Issues = Issues;
 exports.IssuesStatistics = IssuesStatistics;
 exports.JobArtifacts = JobArtifacts;
-exports.JobTokenScopes = JobTokenScopes;
 exports.Jobs = Jobs;
 exports.Keys = Keys;
 exports.License = License;
@@ -13673,6 +13707,7 @@ exports.ProjectImportExports = ProjectImportExports;
 exports.ProjectInvitations = ProjectInvitations;
 exports.ProjectIssueBoards = ProjectIssueBoards;
 exports.ProjectIterations = ProjectIterations;
+exports.ProjectJobTokenScopes = ProjectJobTokenScopes;
 exports.ProjectLabels = ProjectLabels;
 exports.ProjectMembers = ProjectMembers;
 exports.ProjectMilestones = ProjectMilestones;
@@ -24175,7 +24210,8 @@ var parseValues = function parseQueryStringValues(str, options) {
         var bracketEqualsPos = part.indexOf(']=');
         var pos = bracketEqualsPos === -1 ? part.indexOf('=') : bracketEqualsPos + 1;
 
-        var key, val;
+        var key;
+        var val;
         if (pos === -1) {
             key = options.decoder(part, defaults.decoder, charset, 'key');
             val = options.strictNullHandling ? null : '';
@@ -24190,7 +24226,7 @@ var parseValues = function parseQueryStringValues(str, options) {
         }
 
         if (val && options.interpretNumericEntities && charset === 'iso-8859-1') {
-            val = interpretNumericEntities(val);
+            val = interpretNumericEntities(String(val));
         }
 
         if (part.indexOf('[]=') > -1) {
@@ -24220,7 +24256,7 @@ var parseObject = function (chain, val, options, valuesParsed) {
                 ? []
                 : [].concat(leaf);
         } else {
-            obj = options.plainObjects ? Object.create(null) : {};
+            obj = options.plainObjects ? { __proto__: null } : {};
             var cleanRoot = root.charAt(0) === '[' && root.charAt(root.length - 1) === ']' ? root.slice(1, -1) : root;
             var decodedRoot = options.decodeDotInKeys ? cleanRoot.replace(/%2E/g, '.') : cleanRoot;
             var index = parseInt(decodedRoot, 10);
@@ -24362,11 +24398,11 @@ module.exports = function (str, opts) {
     var options = normalizeParseOptions(opts);
 
     if (str === '' || str === null || typeof str === 'undefined') {
-        return options.plainObjects ? Object.create(null) : {};
+        return options.plainObjects ? { __proto__: null } : {};
     }
 
     var tempObj = typeof str === 'string' ? parseValues(str, options) : str;
-    var obj = options.plainObjects ? Object.create(null) : {};
+    var obj = options.plainObjects ? { __proto__: null } : {};
 
     // Iterate over the keys and setup the new object
 
@@ -24427,11 +24463,13 @@ var defaults = {
     arrayFormat: 'indices',
     charset: 'utf-8',
     charsetSentinel: false,
+    commaRoundTrip: false,
     delimiter: '&',
     encode: true,
     encodeDotInKeys: false,
     encoder: utils.encode,
     encodeValuesOnly: false,
+    filter: void undefined,
     format: defaultFormat,
     formatter: formats.formatters[defaultFormat],
     // deprecated
@@ -24543,7 +24581,7 @@ var stringify = function stringify(
         objKeys = sort ? keys.sort(sort) : keys;
     }
 
-    var encodedPrefix = encodeDotInKeys ? prefix.replace(/\./g, '%2E') : prefix;
+    var encodedPrefix = encodeDotInKeys ? String(prefix).replace(/\./g, '%2E') : String(prefix);
 
     var adjustedPrefix = commaRoundTrip && isArray(obj) && obj.length === 1 ? encodedPrefix + '[]' : encodedPrefix;
 
@@ -24553,13 +24591,15 @@ var stringify = function stringify(
 
     for (var j = 0; j < objKeys.length; ++j) {
         var key = objKeys[j];
-        var value = typeof key === 'object' && typeof key.value !== 'undefined' ? key.value : obj[key];
+        var value = typeof key === 'object' && key && typeof key.value !== 'undefined'
+            ? key.value
+            : obj[key];
 
         if (skipNulls && value === null) {
             continue;
         }
 
-        var encodedKey = allowDots && encodeDotInKeys ? key.replace(/\./g, '%2E') : key;
+        var encodedKey = allowDots && encodeDotInKeys ? String(key).replace(/\./g, '%2E') : String(key);
         var keyPrefix = isArray(obj)
             ? typeof generateArrayPrefix === 'function' ? generateArrayPrefix(adjustedPrefix, encodedKey) : adjustedPrefix
             : adjustedPrefix + (allowDots ? '.' + encodedKey : '[' + encodedKey + ']');
@@ -24650,7 +24690,7 @@ var normalizeStringifyOptions = function normalizeStringifyOptions(opts) {
         arrayFormat: arrayFormat,
         charset: charset,
         charsetSentinel: typeof opts.charsetSentinel === 'boolean' ? opts.charsetSentinel : defaults.charsetSentinel,
-        commaRoundTrip: opts.commaRoundTrip,
+        commaRoundTrip: !!opts.commaRoundTrip,
         delimiter: typeof opts.delimiter === 'undefined' ? defaults.delimiter : opts.delimiter,
         encode: typeof opts.encode === 'boolean' ? opts.encode : defaults.encode,
         encodeDotInKeys: typeof opts.encodeDotInKeys === 'boolean' ? opts.encodeDotInKeys : defaults.encodeDotInKeys,
@@ -24701,12 +24741,13 @@ module.exports = function (object, opts) {
     var sideChannel = getSideChannel();
     for (var i = 0; i < objKeys.length; ++i) {
         var key = objKeys[i];
+        var value = obj[key];
 
-        if (options.skipNulls && obj[key] === null) {
+        if (options.skipNulls && value === null) {
             continue;
         }
         pushToArray(keys, stringify(
-            obj[key],
+            value,
             key,
             generateArrayPrefix,
             commaRoundTrip,
@@ -24786,7 +24827,7 @@ var compactQueue = function compactQueue(queue) {
 };
 
 var arrayToObject = function arrayToObject(source, options) {
-    var obj = options && options.plainObjects ? Object.create(null) : {};
+    var obj = options && options.plainObjects ? { __proto__: null } : {};
     for (var i = 0; i < source.length; ++i) {
         if (typeof source[i] !== 'undefined') {
             obj[i] = source[i];
@@ -24802,11 +24843,14 @@ var merge = function merge(target, source, options) {
         return target;
     }
 
-    if (typeof source !== 'object') {
+    if (typeof source !== 'object' && typeof source !== 'function') {
         if (isArray(target)) {
             target.push(source);
         } else if (target && typeof target === 'object') {
-            if ((options && (options.plainObjects || options.allowPrototypes)) || !has.call(Object.prototype, source)) {
+            if (
+                (options && (options.plainObjects || options.allowPrototypes))
+                || !has.call(Object.prototype, source)
+            ) {
                 target[source] = true;
             }
         } else {
@@ -24860,7 +24904,7 @@ var assign = function assignSingleSource(target, source) {
     }, target);
 };
 
-var decode = function (str, decoder, charset) {
+var decode = function (str, defaultDecoder, charset) {
     var strWithoutPlus = str.replace(/\+/g, ' ');
     if (charset === 'iso-8859-1') {
         // unescape never throws, no try...catch needed:
