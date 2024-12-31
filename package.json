@@ -39,7 +39,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/tool-cache": "^2.0.1",
-    "@gitbeaker/rest": "^41.3.0",
+    "@gitbeaker/rest": "^42.0.0",
     "fast-glob": "^3.3.2",
     "semver": "^7.6.3"
   },
