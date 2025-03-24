@@ -5766,7 +5766,7 @@ var QS__default = /*#__PURE__*/_interopDefault(QS);
 function appendFormFromObject(object) {
   const form = new FormData();
   Object.entries(object).forEach(([k, v]) => {
-    if (!v) return;
+    if (v == null) return;
     if (Array.isArray(v)) form.append(k, v[0], v[1]);
     else form.append(k, v);
   });
@@ -13252,10 +13252,11 @@ async function parseResponse(response, asStream = false) {
 async function throwFailedRequestError(request, response) {
   const content = await response.text();
   const contentType = response.headers.get("Content-Type");
-  let description = "API Request Error";
+  let description;
   if (contentType?.includes("application/json")) {
     const output = JSON.parse(content);
-    description = output.message;
+    const contentProperty = output?.error || output?.message || "";
+    description = typeof contentProperty === "string" ? contentProperty : JSON.stringify(contentProperty);
   } else {
     description = content;
   }
@@ -13305,8 +13306,6 @@ var requesterFn = requesterUtils.createRequesterFn(
   (_, reqo) => Promise.resolve(reqo),
   defaultRequestHandler
 );
-
-// src/index.ts
 var { AccessLevel: AL, ...Resources } = CORE__namespace;
 var API = requesterUtils.presetResourceArguments(Resources, { requesterFn });
 var AccessLevel = AL;
@@ -13502,6 +13501,18 @@ var {
   Gitlab
 } = API;
 
+Object.defineProperty(exports, "GitbeakerRequestError", ({
+  enumerable: true,
+  get: function () { return requesterUtils.GitbeakerRequestError; }
+}));
+Object.defineProperty(exports, "GitbeakerRetryError", ({
+  enumerable: true,
+  get: function () { return requesterUtils.GitbeakerRetryError; }
+}));
+Object.defineProperty(exports, "GitbeakerTimeoutError", ({
+  enumerable: true,
+  get: function () { return requesterUtils.GitbeakerTimeoutError; }
+}));
 exports.AccessLevel = AccessLevel;
 exports.Agents = Agents;
 exports.AlertManagement = AlertManagement;
@@ -15610,7 +15621,7 @@ var $TypeError = __nccwpck_require__(3314);
 var $call = __nccwpck_require__(8093);
 var $actualApply = __nccwpck_require__(2639);
 
-/** @type {import('.')} */
+/** @type {(args: [Function, thisArg?: unknown, ...args: unknown[]]) => Function} TODO FIXME, find a way to use import('.') */
 module.exports = function callBindBasic(args) {
 	if (args.length < 1 || typeof args[0] !== 'function') {
 		throw new $TypeError('a function is required');
@@ -15648,10 +15659,11 @@ var $indexOf = callBindBasic([GetIntrinsic('%String.prototype.indexOf%')]);
 
 /** @type {import('.')} */
 module.exports = function callBoundIntrinsic(name, allowMissing) {
-	// eslint-disable-next-line no-extra-parens
-	var intrinsic = /** @type {Parameters<typeof callBindBasic>[0][0]} */ (GetIntrinsic(name, !!allowMissing));
+	/* eslint no-extra-parens: 0 */
+
+	var intrinsic = /** @type {(this: unknown, ...args: unknown[]) => unknown} */ (GetIntrinsic(name, !!allowMissing));
 	if (typeof intrinsic === 'function' && $indexOf(name, '.prototype.') > -1) {
-		return callBindBasic([intrinsic]);
+		return callBindBasic(/** @type {const} */ ([intrinsic]));
 	}
 	return intrinsic;
 };
@@ -17991,6 +18003,7 @@ var INTRINSICS = {
 	'%Error%': $Error,
 	'%eval%': eval, // eslint-disable-line no-eval
 	'%EvalError%': $EvalError,
+	'%Float16Array%': typeof Float16Array === 'undefined' ? undefined : Float16Array,
 	'%Float32Array%': typeof Float32Array === 'undefined' ? undefined : Float32Array,
 	'%Float64Array%': typeof Float64Array === 'undefined' ? undefined : Float64Array,
 	'%FinalizationRegistry%': typeof FinalizationRegistry === 'undefined' ? undefined : FinalizationRegistry,
@@ -19758,13 +19771,16 @@ function quote(s) {
     return $replace.call(String(s), /"/g, '&quot;');
 }
 
-function isArray(obj) { return toStr(obj) === '[object Array]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
-function isDate(obj) { return toStr(obj) === '[object Date]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
-function isRegExp(obj) { return toStr(obj) === '[object RegExp]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
-function isError(obj) { return toStr(obj) === '[object Error]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
-function isString(obj) { return toStr(obj) === '[object String]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
-function isNumber(obj) { return toStr(obj) === '[object Number]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
-function isBoolean(obj) { return toStr(obj) === '[object Boolean]' && (!toStringTag || !(typeof obj === 'object' && toStringTag in obj)); }
+function canTrustToString(obj) {
+    return !toStringTag || !(typeof obj === 'object' && (toStringTag in obj || typeof obj[toStringTag] !== 'undefined'));
+}
+function isArray(obj) { return toStr(obj) === '[object Array]' && canTrustToString(obj); }
+function isDate(obj) { return toStr(obj) === '[object Date]' && canTrustToString(obj); }
+function isRegExp(obj) { return toStr(obj) === '[object RegExp]' && canTrustToString(obj); }
+function isError(obj) { return toStr(obj) === '[object Error]' && canTrustToString(obj); }
+function isString(obj) { return toStr(obj) === '[object String]' && canTrustToString(obj); }
+function isNumber(obj) { return toStr(obj) === '[object Number]' && canTrustToString(obj); }
+function isBoolean(obj) { return toStr(obj) === '[object Boolean]' && canTrustToString(obj); }
 
 // Symbol and BigInt do have Symbol.toStringTag by spec, so that can't be used to eliminate false positives
 function isSymbol(obj) {
