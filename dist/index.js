@@ -5772,11 +5772,20 @@ function appendFormFromObject(object) {
   });
   return form;
 }
+var RawPathSegment = class {
+  value;
+  constructor(value) {
+    this.value = value;
+  }
+  toString() {
+    return this.value;
+  }
+};
 function endpoint(strings, ...values) {
-  return values.reduce(
-    (string, value, index) => string + encodeURIComponent(value) + strings[index + 1],
-    strings[0]
-  );
+  return values.reduce((result, value, index) => {
+    const encodedValue = value instanceof RawPathSegment ? value.value : encodeURIComponent(String(value));
+    return result + encodedValue + strings[index + 1];
+  }, strings[0]);
 }
 function parseLinkHeader(linkString) {
   const output = {};
@@ -8388,7 +8397,7 @@ var Branches = class extends requesterUtils.BaseResource {
 // src/resources/CommitDiscussions.ts
 var CommitDiscussions = class extends ResourceDiscussions {
   constructor(options) {
-    super("projects", "repository/commits", options);
+    super("projects", new RawPathSegment("repository/commits"), options);
   }
 };
 var Commits = class extends requesterUtils.BaseResource {
@@ -10834,6 +10843,13 @@ var Projects = class extends requesterUtils.BaseResource {
     return RequestHelper.get()(
       this,
       endpoint`projects/${projectId}/groups`,
+      options
+    );
+  }
+  allInvitedGroups(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/invited_groups`,
       options
     );
   }
