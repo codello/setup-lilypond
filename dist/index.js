@@ -10778,6 +10778,50 @@ var ProjectTemplates = class extends requesterUtils.BaseResource {
     );
   }
 };
+var ProjectTerraformState = class extends requesterUtils.BaseResource {
+  show(projectId, name, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/terraform/state/${name}`,
+      options
+    );
+  }
+  showVersion(projectId, name, serial, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/terraform/state/${name}/versions/${serial}`,
+      options
+    );
+  }
+  removeVersion(projectId, name, serial, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/terraform/state/${name}/versions/${serial}`,
+      options
+    );
+  }
+  remove(projectId, name, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/terraform/state/${name}`,
+      options
+    );
+  }
+  removeTerraformStateLock(projectId, name, options) {
+    return RequestHelper.del()(
+      this,
+      endpoint`projects/${projectId}/terraform/state/${name}/lock`,
+      options
+    );
+  }
+  createVersion(projectId, name, options) {
+    return RequestHelper.post()(
+      this,
+      endpoint`projects/${projectId}/terraform/state/${name}`,
+      options
+    );
+  }
+};
 
 // src/resources/ProjectVariables.ts
 var ProjectVariables = class extends ResourceVariables {
@@ -12697,6 +12741,7 @@ var resources = {
   ProjectSnippets,
   ProjectStatistics,
   ProjectTemplates,
+  ProjectTerraformState,
   ProjectVariables,
   ProjectVulnerabilities,
   ProjectWikis,
@@ -12932,6 +12977,7 @@ exports.ProjectSnippetNotes = ProjectSnippetNotes;
 exports.ProjectSnippets = ProjectSnippets;
 exports.ProjectStatistics = ProjectStatistics;
 exports.ProjectTemplates = ProjectTemplates;
+exports.ProjectTerraformState = ProjectTerraformState;
 exports.ProjectVariables = ProjectVariables;
 exports.ProjectVulnerabilities = ProjectVulnerabilities;
 exports.ProjectWikis = ProjectWikis;
@@ -13457,6 +13503,7 @@ var {
   ProjectSnippets,
   ProjectStatistics,
   ProjectTemplates,
+  ProjectTerraformState,
   ProjectVariables,
   ProjectVulnerabilities,
   ProjectWikis,
@@ -13684,6 +13731,7 @@ exports.ProjectSnippetNotes = ProjectSnippetNotes;
 exports.ProjectSnippets = ProjectSnippets;
 exports.ProjectStatistics = ProjectStatistics;
 exports.ProjectTemplates = ProjectTemplates;
+exports.ProjectTerraformState = ProjectTerraformState;
 exports.ProjectVariables = ProjectVariables;
 exports.ProjectVulnerabilities = ProjectVulnerabilities;
 exports.ProjectWikis = ProjectWikis;
