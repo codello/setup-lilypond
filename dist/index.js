@@ -7090,6 +7090,24 @@ var ResourceLabels = class extends requesterUtils.BaseResource {
     );
   }
 };
+var ResourceMarkdownUploads = class extends requesterUtils.BaseResource {
+  constructor(resourceType, options) {
+    super({ prefixUrl: resourceType, ...options });
+  }
+  all(resourceId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/uploads`,
+      options
+    );
+  }
+  download(resourceId, uploadId, options) {
+    return RequestHelper.get()(this, endpoint`${resourceId}/uploads/${uploadId}`, options);
+  }
+  remove(resourceId, uploadId, options) {
+    return RequestHelper.del()(this, endpoint`${resourceId}/uploads/${uploadId}`, options);
+  }
+};
 var ResourceMembers = class extends requesterUtils.BaseResource {
   constructor(resourceType, options) {
     super({ prefixUrl: resourceType, ...options });
@@ -7448,13 +7466,13 @@ var ResourceProtectedEnvironments = class extends requesterUtils.BaseResource {
       options
     );
   }
-  create(resourceId, name, deployAccessLevel, options) {
+  create(resourceId, name, deployAccessLevels, options) {
     return RequestHelper.post()(
       this,
       `${resourceId}/protected_environments`,
       {
         name,
-        deployAccessLevel,
+        deployAccessLevels,
         ...options
       }
     );
@@ -10230,6 +10248,13 @@ var Pipelines = class extends requesterUtils.BaseResource {
       options
     );
   }
+  showLatest(projectId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/pipelines/latest`,
+      options
+    );
+  }
   showTestReport(projectId, pipelineId, options) {
     return RequestHelper.get()(
       this,
@@ -10474,6 +10499,20 @@ var ProjectJobTokenScopes = class extends requesterUtils.BaseResource {
 var ProjectLabels = class extends ResourceLabels {
   constructor(options) {
     super("projects", options);
+  }
+};
+
+// src/resources/ProjectMarkdownUploads.ts
+var ProjectMarkdownUploads = class extends ResourceMarkdownUploads {
+  constructor(options) {
+    super("projects", options);
+  }
+  create(projectId, file, options) {
+    return RequestHelper.post()(this, endpoint`${projectId}/uploads`, {
+      isForm: true,
+      ...options,
+      file: [file.content, file.filename]
+    });
   }
 };
 
@@ -11908,6 +11947,13 @@ var GroupLabels = class extends ResourceLabels {
     super("groups", options);
   }
 };
+
+// src/resources/GroupMarkdownUploads.ts
+var GroupMarkdownUploads = class extends ResourceMarkdownUploads {
+  constructor(options) {
+    super("groups", options);
+  }
+};
 var GroupMemberRoles = class extends requesterUtils.BaseResource {
   add(groupId, baseAccessLevel, options) {
     return RequestHelper.post()(this, endpoint`groups/${groupId}/members`, {
@@ -12726,6 +12772,7 @@ var resources = {
   ProjectIterations,
   ProjectJobTokenScopes,
   ProjectLabels,
+  ProjectMarkdownUploads,
   ProjectMembers,
   ProjectMilestones,
   ProjectProtectedEnvironments,
@@ -12777,6 +12824,7 @@ var resources = {
   GroupIterations,
   GroupLabels,
   GroupLDAPLinks,
+  GroupMarkdownUploads,
   GroupMembers,
   GroupMemberRoles,
   GroupMilestones,
@@ -12884,6 +12932,7 @@ exports.GroupIssueBoards = GroupIssueBoards;
 exports.GroupIterations = GroupIterations;
 exports.GroupLDAPLinks = GroupLDAPLinks;
 exports.GroupLabels = GroupLabels;
+exports.GroupMarkdownUploads = GroupMarkdownUploads;
 exports.GroupMemberRoles = GroupMemberRoles;
 exports.GroupMembers = GroupMembers;
 exports.GroupMilestones = GroupMilestones;
@@ -12963,6 +13012,7 @@ exports.ProjectIssueBoards = ProjectIssueBoards;
 exports.ProjectIterations = ProjectIterations;
 exports.ProjectJobTokenScopes = ProjectJobTokenScopes;
 exports.ProjectLabels = ProjectLabels;
+exports.ProjectMarkdownUploads = ProjectMarkdownUploads;
 exports.ProjectMembers = ProjectMembers;
 exports.ProjectMilestones = ProjectMilestones;
 exports.ProjectProtectedEnvironments = ProjectProtectedEnvironments;
@@ -13322,7 +13372,7 @@ async function throwFailedRequestError(request, response) {
   } else {
     description = content;
   }
-  throw new requesterUtils.GitbeakerRequestError(response.statusText, {
+  throw new requesterUtils.GitbeakerRequestError(description, {
     cause: {
       description,
       request,
@@ -13488,6 +13538,7 @@ var {
   ProjectIterations,
   ProjectJobTokenScopes,
   ProjectLabels,
+  ProjectMarkdownUploads,
   ProjectMembers,
   ProjectMilestones,
   ProjectProtectedEnvironments,
@@ -13539,6 +13590,7 @@ var {
   GroupIterations,
   GroupLabels,
   GroupLDAPLinks,
+  GroupMarkdownUploads,
   GroupMembers,
   GroupMemberRoles,
   GroupMilestones,
@@ -13638,6 +13690,7 @@ exports.GroupIssueBoards = GroupIssueBoards;
 exports.GroupIterations = GroupIterations;
 exports.GroupLDAPLinks = GroupLDAPLinks;
 exports.GroupLabels = GroupLabels;
+exports.GroupMarkdownUploads = GroupMarkdownUploads;
 exports.GroupMemberRoles = GroupMemberRoles;
 exports.GroupMembers = GroupMembers;
 exports.GroupMilestones = GroupMilestones;
@@ -13717,6 +13770,7 @@ exports.ProjectIssueBoards = ProjectIssueBoards;
 exports.ProjectIterations = ProjectIterations;
 exports.ProjectJobTokenScopes = ProjectJobTokenScopes;
 exports.ProjectLabels = ProjectLabels;
+exports.ProjectMarkdownUploads = ProjectMarkdownUploads;
 exports.ProjectMembers = ProjectMembers;
 exports.ProjectMilestones = ProjectMilestones;
 exports.ProjectProtectedEnvironments = ProjectProtectedEnvironments;
