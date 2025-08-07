@@ -7101,11 +7101,29 @@ var ResourceMarkdownUploads = class extends requesterUtils.BaseResource {
       options
     );
   }
-  download(resourceId, uploadId, options) {
-    return RequestHelper.get()(this, endpoint`${resourceId}/uploads/${uploadId}`, options);
+  download(resourceId, uploadIdOrSecret, filename, options) {
+    if (filename && typeof filename === "string") {
+      return RequestHelper.get()(
+        this,
+        endpoint`${resourceId}/uploads/${uploadIdOrSecret}/${filename}`,
+        options
+      );
+    }
+    return RequestHelper.get()(
+      this,
+      endpoint`${resourceId}/uploads/${uploadIdOrSecret}`,
+      options
+    );
   }
-  remove(resourceId, uploadId, options) {
-    return RequestHelper.del()(this, endpoint`${resourceId}/uploads/${uploadId}`, options);
+  remove(resourceId, uploadIdOrSecret, filename, options) {
+    if (filename && typeof filename === "string") {
+      return RequestHelper.del()(
+        this,
+        endpoint`${resourceId}/uploads/${uploadIdOrSecret}/${filename}`,
+        options
+      );
+    }
+    return RequestHelper.del()(this, endpoint`${resourceId}/uploads/${uploadIdOrSecret}`, options);
   }
 };
 var ResourceMembers = class extends requesterUtils.BaseResource {
@@ -8534,6 +8552,13 @@ var Commits = class extends requesterUtils.BaseResource {
       options
     );
   }
+  showSequence(projectId, sha, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/repository/commits/${sha}/sequence`,
+      options
+    );
+  }
 };
 var ContainerRegistry = class extends requesterUtils.BaseResource {
   allRepositories({
@@ -9868,7 +9893,7 @@ var MergeRequests = class extends requesterUtils.BaseResource {
   }
   showChanges(projectId, mergerequestIId, options) {
     process.emitWarning(
-      'This endpoint was deprecated in Gitlab API 15.7 and will be removed in API v5. Please use the "allDiffs" function instead.',
+      'This endpoint was deprecated in GitLab API 15.7 and will be removed in API v5. Please use the "allDiffs" function instead.',
       "DeprecationWarning"
     );
     return RequestHelper.get()(
@@ -12655,6 +12680,15 @@ var Users = class extends requesterUtils.BaseResource {
     return RequestHelper.post()(this, endpoint`users/${userId}/unfollow`, options);
   }
 };
+
+// src/resources/MergeRequestStateEvents.ts
+var MergeRequestStateEvents = class extends ResourceStateEvents {
+  constructor(options) {
+    super("projects", "merge_requests", options);
+  }
+};
+
+// src/resources/Gitlab.ts
 var resources = {
   Agents,
   AlertManagement,
@@ -12746,6 +12780,7 @@ var resources = {
   MergeRequestDiscussions,
   MergeRequestLabelEvents,
   MergeRequestMilestoneEvents,
+  MergeRequestStateEvents,
   MergeRequestDraftNotes,
   MergeRequestNotes,
   MergeRequestNoteAwardEmojis,
@@ -13127,14 +13162,15 @@ async function defaultOptionsHandler(resourceOptions, {
   if (q) defaultOptions.searchParams = q;
   return Promise.resolve(defaultOptions);
 }
-function createRateLimiters(rateLimitOptions = {}) {
+function createRateLimiters(rateLimitOptions = {}, rateLimitDuration = 60) {
   const rateLimiters = {};
   Object.entries(rateLimitOptions).forEach(([key, config]) => {
-    if (typeof config === "number") rateLimiters[key] = generateRateLimiterFn(config, 60);
+    if (typeof config === "number")
+      rateLimiters[key] = generateRateLimiterFn(config, rateLimitDuration);
     else
       rateLimiters[key] = {
         method: config.method.toUpperCase(),
-        limit: generateRateLimiterFn(config.limit, 60)
+        limit: generateRateLimiterFn(config.limit, rateLimitDuration)
       };
   });
   return rateLimiters;
@@ -13143,7 +13179,10 @@ function createRequesterFn(optionsHandler, requestHandler) {
   const methods = ["get", "post", "put", "patch", "delete"];
   return (serviceOptions) => {
     const requester = {};
-    const rateLimiters = createRateLimiters(serviceOptions.rateLimits);
+    const rateLimiters = createRateLimiters(
+      serviceOptions.rateLimits,
+      serviceOptions.rateLimitDuration
+    );
     methods.forEach((m) => {
       requester[m] = async (endpoint, options) => {
         const defaultRequestOptions = await defaultOptionsHandler(serviceOptions, {
@@ -13240,6 +13279,7 @@ var BaseResource = class {
     prefixUrl = "",
     rejectUnauthorized = true,
     queryTimeout = 3e5,
+    rateLimitDuration = 60,
     rateLimits = DEFAULT_RATE_LIMITS,
     ...tokens
   }) {
@@ -13264,7 +13304,7 @@ var BaseResource = class {
       this.headers["X-Profile-Mode"] = profileMode;
     }
     if (sudo) this.headers.Sudo = `${sudo}`;
-    this.requester = requesterFn({ ...this, rateLimits });
+    this.requester = requesterFn({ ...this, rateLimits, rateLimitDuration });
   }
 };
 
