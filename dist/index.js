@@ -12688,6 +12688,13 @@ var MergeRequestStateEvents = class extends ResourceStateEvents {
   }
 };
 
+// src/resources/EpicStateEvents.ts
+var EpicStateEvents = class extends ResourceStateEvents {
+  constructor(options) {
+    super("groups", "epics", options);
+  }
+};
+
 // src/resources/Gitlab.ts
 var resources = {
   Agents,
@@ -12845,6 +12852,7 @@ var resources = {
   EpicLinks,
   EpicNotes,
   Epics,
+  EpicStateEvents,
   GroupAccessRequests,
   GroupAccessTokens,
   GroupActivityAnalytics,
@@ -25453,7 +25461,7 @@ const RateLimiterRedis = __nccwpck_require__(4336);
 const RateLimiterMongo = __nccwpck_require__(8439);
 const RateLimiterMySQL = __nccwpck_require__(7793);
 const RateLimiterPostgres = __nccwpck_require__(3740);
-const {RateLimiterClusterMaster, RateLimiterClusterMasterPM2, RateLimiterCluster} = __nccwpck_require__(565);
+const { RateLimiterClusterMaster, RateLimiterClusterMasterPM2, RateLimiterCluster } = __nccwpck_require__(565);
 const RateLimiterMemory = __nccwpck_require__(4544);
 const RateLimiterMemcache = __nccwpck_require__(3250);
 const RLWrapperBlackAndWhite = __nccwpck_require__(7383);
@@ -25462,6 +25470,13 @@ const RateLimiterQueue = __nccwpck_require__(2860);
 const BurstyRateLimiter = __nccwpck_require__(5860);
 const RateLimiterRes = __nccwpck_require__(449);
 const RateLimiterDynamo = __nccwpck_require__(2309);
+const RateLimiterPrisma = __nccwpck_require__(6323);
+const RateLimiterDrizzle = __nccwpck_require__(673);
+const RateLimiterValkey = __nccwpck_require__(2193);
+const RateLimiterValkeyGlide = __nccwpck_require__(3756);
+const RateLimiterSQLite = __nccwpck_require__(3283);
+const RateLimiterEtcd = __nccwpck_require__(6481);
+const RateLimiterEtcdNonAtomic = __nccwpck_require__(5299);
 
 module.exports = {
   RateLimiterRedis,
@@ -25478,7 +25493,14 @@ module.exports = {
   RateLimiterQueue,
   BurstyRateLimiter,
   RateLimiterRes,
-  RateLimiterDynamo
+  RateLimiterDynamo,
+  RateLimiterPrisma,
+  RateLimiterValkey,
+  RateLimiterValkeyGlide,
+  RateLimiterSQLite,
+  RateLimiterEtcd,
+  RateLimiterDrizzle,
+  RateLimiterEtcdNonAtomic,
 };
 
 
@@ -26277,6 +26299,183 @@ module.exports = {
 
 /***/ }),
 
+/***/ 673:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+let drizzleOperators = null;
+const CLEANUP_INTERVAL_MS = 300000; // 5 minutes
+const EXPIRED_THRESHOLD_MS = 3600000; // 1 hour
+
+class RateLimiterDrizzleError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'RateLimiterDrizzleError';
+  }
+}
+
+function getDrizzleOperators() {
+  if (drizzleOperators) return drizzleOperators;
+
+  try {
+    const { and, or, gt, lt, eq, isNull , sql } = __nccwpck_require__(9874);
+    drizzleOperators = { and, or, gt, lt, eq, isNull , sql };
+    return drizzleOperators;
+  } catch (error) {
+    throw new RateLimiterDrizzleError(
+      'drizzle-orm is not installed. Please install drizzle-orm to use RateLimiterDrizzle.'
+    );
+  }
+}
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5140);
+const RateLimiterRes = __nccwpck_require__(449);
+
+class RateLimiterDrizzle extends RateLimiterStoreAbstract {
+  constructor(opts) {
+    super(opts);
+
+    if (!opts?.schema) {
+      throw new RateLimiterDrizzleError('Drizzle schema is required');
+    }
+
+    if (!opts?.storeClient) {
+      throw new RateLimiterDrizzleError('Drizzle client is required');
+    }
+
+    this.schema = opts.schema;
+    this.drizzleClient = opts.storeClient;
+    this.clearExpiredByTimeout = opts.clearExpiredByTimeout ?? true;
+
+    if (this.clearExpiredByTimeout) {
+      this._clearExpiredHourAgo();
+    }
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+
+    let doc = result;
+    res.isFirstInDuration = doc.points === changedPoints;
+    res.consumedPoints = doc.points;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = doc.expire !== null
+      ? Math.max(new Date(doc.expire).getTime() - Date.now(), 0)
+      : -1;
+
+    return res;
+  }
+
+  async _upsert(key, points, msDuration, forceExpire = false) {
+    if (!this.drizzleClient) {
+      return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'))
+    }
+
+    const { eq , sql } = getDrizzleOperators();
+    const now = new Date();
+    const newExpire = msDuration > 0 ? new Date(now.getTime() + msDuration) : null;
+
+    const query = await this.drizzleClient.transaction(async (tx) => {
+      const [existingRecord] = await tx
+        .select()
+        .from(this.schema)
+        .where(eq(this.schema.key, key))
+        .limit(1);
+
+      const shouldUpdateExpire =
+        forceExpire ||
+        !existingRecord?.expire ||
+        existingRecord?.expire <= now ||
+        newExpire === null;
+
+      const [data] = await tx
+        .insert(this.schema)
+        .values({
+          key,
+          points,
+          expire: newExpire,
+        })
+        .onConflictDoUpdate({
+          target: this.schema.key,
+          set: {
+            points: !shouldUpdateExpire
+              ? sql`${this.schema.points} + ${points}`
+              : points,
+            ...(shouldUpdateExpire && { expire: newExpire }),
+          },
+        })
+        .returning();
+
+      return data;
+    })
+
+    return query
+  }
+
+  async _get(rlKey) {
+    if (!this.drizzleClient) {
+      return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'))
+    }
+
+    const { and, or, gt, eq, isNull } = getDrizzleOperators();
+
+    const [response] = await this.drizzleClient
+      .select()
+      .from(this.schema)
+      .where(
+        and(
+          eq(this.schema.key, rlKey),
+          or(gt(this.schema.expire, new Date()), isNull(this.schema.expire))
+        )
+      )
+      .limit(1);
+
+    return response || null;
+
+  }
+
+  async _delete(rlKey) {
+    if (!this.drizzleClient) {
+      return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'))
+    }
+
+    const { eq } = getDrizzleOperators();
+
+    const [result] = await this.drizzleClient
+      .delete(this.schema)
+      .where(eq(this.schema.key, rlKey))
+      .returning({ key: this.schema.key });
+
+    return !!result?.key
+  }
+
+  _clearExpiredHourAgo() {
+    if (this._clearExpiredTimeoutId) {
+      clearTimeout(this._clearExpiredTimeoutId);
+    }
+
+    const { lt } = getDrizzleOperators();
+
+    this._clearExpiredTimeoutId = setTimeout(async () => {
+      try {
+        await this.drizzleClient
+          .delete(this.schema)
+          .where(lt(this.schema.expire, new Date(Date.now() - EXPIRED_THRESHOLD_MS)));
+      } catch (error) {
+        console.warn('Failed to clear expired records:', error);
+      }
+
+      this._clearExpiredHourAgo();
+    }, CLEANUP_INTERVAL_MS);
+
+    this._clearExpiredTimeoutId.unref();
+  }
+}
+
+module.exports = RateLimiterDrizzle;
+
+
+/***/ }),
+
 /***/ 2309:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -26322,6 +26521,7 @@ class RateLimiterDynamo extends RateLimiterStoreAbstract {
         this.client = opts.storeClient;
         this.tableName = opts.tableName;
         this.tableCreated = opts.tableCreated;
+        this.ttlManuallySet = opts.ttlSet;
         
         if (!this.tableCreated) {
           this._createTable(opts.dynamoTableOpts)
@@ -26631,6 +26831,10 @@ class RateLimiterDynamo extends RateLimiterStoreAbstract {
         throw new Error('Table is not created yet');
       }
 
+      if (this.ttlManuallySet) {
+        return true;
+      }
+
       try {
 
         const res = await this.client.describeTimeToLive({TableName: this.tableName});
@@ -26668,6 +26872,163 @@ class RateLimiterDynamo extends RateLimiterStoreAbstract {
 }
 
 module.exports = RateLimiterDynamo;
+
+/***/ }),
+
+/***/ 6481:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterEtcdTransactionFailedError = __nccwpck_require__(3184);
+const RateLimiterEtcdNonAtomic = __nccwpck_require__(5299);
+
+const MAX_TRANSACTION_TRIES = 5;
+
+class RateLimiterEtcd extends RateLimiterEtcdNonAtomic {
+  /**
+   * Resolve with object used for {@link _getRateLimiterRes} to generate {@link RateLimiterRes}.
+   */
+  async _upsert(rlKey, points, msDuration, forceExpire = false) {
+    const expire = msDuration > 0 ? Date.now() + msDuration : null;
+
+    let newValue = { points, expire };
+    let oldValue;
+
+    // If we need to force the expiration, just set the key.
+    if (forceExpire) {
+      await this.client
+        .put(rlKey)
+        .value(JSON.stringify(newValue));
+    } else {
+      // First try to add a new key
+      const added = await this.client
+        .if(rlKey, 'Version', '===', '0')
+        .then(this.client
+          .put(rlKey)
+          .value(JSON.stringify(newValue)))
+        .commit()
+        .then(result => !!result.succeeded);
+
+      // If the key already existed, try to update it in a transaction
+      if (!added) {
+        let success = false;
+
+        for (let i = 0; i < MAX_TRANSACTION_TRIES; i++) {
+          // eslint-disable-next-line no-await-in-loop
+          oldValue = await this._get(rlKey);
+          newValue = { points: oldValue.points + points, expire };
+
+          // eslint-disable-next-line no-await-in-loop
+          success = await this.client
+            .if(rlKey, 'Value', '===', JSON.stringify(oldValue))
+            .then(this.client
+              .put(rlKey)
+              .value(JSON.stringify(newValue)))
+            .commit()
+            .then(result => !!result.succeeded);
+          if (success) {
+            break;
+          }
+        }
+
+        if (!success) {
+          throw new RateLimiterEtcdTransactionFailedError('Could not set new value in a transaction.');
+        }
+      }
+    }
+
+    return newValue;
+  }
+}
+
+module.exports = RateLimiterEtcd;
+
+
+/***/ }),
+
+/***/ 5299:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5140);
+const RateLimiterRes = __nccwpck_require__(449);
+const RateLimiterSetupError = __nccwpck_require__(2922);
+
+class RateLimiterEtcdNonAtomic extends RateLimiterStoreAbstract {
+  /**
+   * @param {Object} opts
+   */
+  constructor(opts) {
+    super(opts);
+
+    if (!opts.storeClient) {
+      throw new RateLimiterSetupError('You need to set the option "storeClient" to an instance of class "Etcd3".');
+    }
+
+    this.client = opts.storeClient;
+  }
+
+  /**
+   * Get RateLimiterRes object filled depending on storeResult, which specific for exact store.
+   */
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+
+    res.isFirstInDuration = changedPoints === result.points;
+    res.consumedPoints = res.isFirstInDuration ? changedPoints : result.points;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = result.expire ? Math.max(result.expire - Date.now(), 0) : -1;
+
+    return res;
+  }
+
+  /**
+   * Resolve with object used for {@link _getRateLimiterRes} to generate {@link RateLimiterRes}.
+   */
+  async _upsert(rlKey, points, msDuration, forceExpire = false) {
+    const expire = msDuration > 0 ? Date.now() + msDuration : null;
+
+    let newValue = { points, expire };
+
+    // If we need to force the expiration, just set the key.
+    if (forceExpire) {
+      await this.client
+        .put(rlKey)
+        .value(JSON.stringify(newValue));
+    } else {
+      const oldValue = await this._get(rlKey);
+      newValue = { points: (oldValue !== null ? oldValue.points : 0) + points, expire };
+      await this.client
+        .put(rlKey)
+        .value(JSON.stringify(newValue));
+    }
+
+    return newValue;
+  }
+
+  /**
+   * Resolve with raw result from Store OR null if rlKey is not set
+   * or Reject with error
+   */
+  async _get(rlKey) {
+    return this.client
+      .get(rlKey)
+      .string()
+      .then(result => (result !== null ? JSON.parse(result) : null));
+  }
+
+  /**
+   * Resolve with true OR false if rlKey doesn't exist.
+   * or Reject with error.
+   */
+  async _delete(rlKey) {
+    return this.client
+      .delete()
+      .key(rlKey)
+      .then(result => result.deleted === '1');
+  }
+}
+
+module.exports = RateLimiterEtcdNonAtomic;
+
 
 /***/ }),
 
@@ -27949,6 +28310,140 @@ module.exports = RateLimiterPostgres;
 
 /***/ }),
 
+/***/ 6323:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5140);
+const RateLimiterRes = __nccwpck_require__(449);
+
+class RateLimiterPrisma extends RateLimiterStoreAbstract {
+  /**
+   * Constructor for the rate limiter
+   * @param {Object} opts - Options for the rate limiter
+   */
+  constructor(opts) {
+    super(opts);
+
+    this.modelName = opts.tableName || 'RateLimiterFlexible';
+    this.prismaClient = opts.storeClient;
+    this.clearExpiredByTimeout = opts.clearExpiredByTimeout || true;
+
+    if (!this.prismaClient) {
+      throw new Error('Prisma client is not provided');
+    }
+
+    if (this.clearExpiredByTimeout) {
+      this._clearExpiredHourAgo();
+    }
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+
+    let doc = result;
+
+    res.isFirstInDuration = doc.points === changedPoints;
+    res.consumedPoints = doc.points;
+
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = doc.expire !== null
+      ? Math.max(new Date(doc.expire).getTime() - Date.now(), 0)
+      : -1;
+
+    return res;
+  }
+
+  _upsert(key, points, msDuration, forceExpire = false) {
+    if (!this.prismaClient) {
+      return Promise.reject(new Error('Prisma client is not established'));
+    }
+
+    const now = new Date();
+    const newExpire = msDuration > 0 ? new Date(now.getTime() + msDuration) : null;
+
+    return this.prismaClient.$transaction(async (prisma) => {
+      const existingRecord = await prisma[this.modelName].findFirst({
+        where: { key: key },
+      });
+
+      if (existingRecord) {
+        // Determine if we should update the expire field
+        const shouldUpdateExpire = forceExpire || !existingRecord.expire || existingRecord.expire <= now || newExpire === null;
+
+        return prisma[this.modelName].update({
+          where: { key: key },
+          data: {
+            points: !shouldUpdateExpire ? existingRecord.points + points : points,
+            ...(shouldUpdateExpire && { expire: newExpire }),
+          },
+        });
+      } else {
+        return prisma[this.modelName].create({
+          data: {
+            key: key,
+            points: points,
+            expire: newExpire,
+          },
+        });
+      }
+    });
+  }
+
+  _get(rlKey) {
+    if (!this.prismaClient) {
+      return Promise.reject(new Error('Prisma client is not established'));
+    }
+
+    return this.prismaClient[this.modelName].findFirst({
+      where: {
+        AND: [
+          { key: rlKey },
+          {
+            OR: [
+              { expire: { gt: new Date() } },
+              { expire: null },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
+  _delete(rlKey) {
+    if (!this.prismaClient) {
+      return Promise.reject(new Error('Prisma client is not established'));
+    }
+
+    return this.prismaClient[this.modelName].deleteMany({
+      where: {
+        key: rlKey,
+      },
+    }).then(res => res.count > 0);
+  }
+
+  _clearExpiredHourAgo() {
+    if (this._clearExpiredTimeoutId) {
+      clearTimeout(this._clearExpiredTimeoutId);
+    }
+    this._clearExpiredTimeoutId = setTimeout(async () => {
+      await this.prismaClient[this.modelName].deleteMany({
+        where: {
+          expire: {
+            lt: new Date(Date.now() - 3600000),
+          },
+        },
+      });
+      this._clearExpiredHourAgo();
+    }, 300000); // Clear every 5 minutes
+    this._clearExpiredTimeoutId.unref();
+  }
+}
+
+module.exports = RateLimiterPrisma;
+
+
+/***/ }),
+
 /***/ 2860:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -28115,13 +28610,14 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
     this.client = opts.storeClient;
 
     this._rejectIfRedisNotReady = !!opts.rejectIfRedisNotReady;
+    this._incrTtlLuaScript = opts.customIncrTtlLuaScript || incrTtlLuaScript;
 
     this.useRedisPackage = opts.useRedisPackage || this.client.constructor.name === 'Commander' || false;
     this.useRedis3AndLowerPackage = opts.useRedis3AndLowerPackage;
     if (typeof this.client.defineCommand === 'function') {
       this.client.defineCommand("rlflxIncr", {
         numberOfKeys: 1,
-        lua: incrTtlLuaScript,
+        lua: this._incrTtlLuaScript,
       });
     }
   }
@@ -28166,6 +28662,16 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
   }
 
   async _upsert(rlKey, points, msDuration, forceExpire = false) {
+    if(
+      typeof points == 'string'
+    ){
+      if(!RegExp("^[1-9][0-9]*$").test(points)){
+        throw new Error("Consuming string different than integer values is not supported by this package");
+      }
+    } else if (!Number.isInteger(points)){
+      throw new Error("Consuming decimal number of points is not supported by this package");
+    }
+
     if (!this._isRedisReady()) {
       throw new Error('Redis connection is not ready');
     }
@@ -28193,7 +28699,7 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
     if (secDuration > 0) {
       if(!this.useRedisPackage && !this.useRedis3AndLowerPackage){
         return this.client.rlflxIncr(
-          [rlKey].concat([String(points), String(secDuration)]));
+          [rlKey].concat([String(points), String(secDuration), String(this.points), String(this.duration)]));
       }
       if (this.useRedis3AndLowerPackage) {
         return new Promise((resolve, reject) => {
@@ -28206,15 +28712,15 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
           };
 
           if (typeof this.client.rlflxIncr === 'function') {
-            this.client.rlflxIncr(rlKey, points, secDuration, incrCallback);
+            this.client.rlflxIncr(rlKey, points, secDuration, this.points, this.duration, incrCallback);
           } else {
-            this.client.eval(incrTtlLuaScript, 1, rlKey, points, secDuration, incrCallback);
+            this.client.eval(this._incrTtlLuaScript, 1, rlKey, points, secDuration, this.points, this.duration, incrCallback);
           }
         });
       } else {
-        return this.client.eval(incrTtlLuaScript, {
+        return this.client.eval(this._incrTtlLuaScript, {
           keys: [rlKey],
-          arguments: [String(points), String(secDuration)],
+          arguments: [String(points), String(secDuration), String(this.points), String(this.duration)],
         });
       }
     } else {
@@ -28334,6 +28840,351 @@ module.exports = class RateLimiterRes {
     return this._getDecoratedProperties();
   }
 };
+
+
+/***/ }),
+
+/***/ 3283:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5140);
+const RateLimiterRes = __nccwpck_require__(449);
+
+class RateLimiterSQLite extends RateLimiterStoreAbstract {
+  /**
+   * Internal store type used to determine the SQLite client in use.
+   * It can be one of the following:
+   * - `"sqlite3".
+   * - `"better-sqlite3".
+   *
+   * @type {("sqlite3" | "better-sqlite3" | null)}
+   * @private
+   */
+  _internalStoreType = null;
+
+  /**
+   * @callback callback
+   * @param {Object} err
+   *
+   * @param {Object} opts
+   * @param {callback} cb
+   * Defaults {
+   *   ... see other in RateLimiterStoreAbstract
+   *   storeClient: sqliteClient, // SQLite database instance (sqlite3, better-sqlite3, or knex instance)
+   *   storeType: 'sqlite3' | 'better-sqlite3' | 'knex', // Optional, defaults to 'sqlite3'
+   *   tableName: 'string',
+   *   tableCreated: boolean,
+   *   clearExpiredByTimeout: boolean,
+   * }
+   */
+  constructor(opts, cb = null) {
+    super(opts);
+
+    this.client = opts.storeClient;
+    this.storeType = opts.storeType || "sqlite3";
+    this.tableName = opts.tableName;
+    this.tableCreated = opts.tableCreated || false;
+    this.clearExpiredByTimeout = opts.clearExpiredByTimeout;
+
+    this._validateStoreTypes(cb);
+    this._validateStoreClient(cb);
+    this._setInternalStoreType(cb);
+    this._validateTableName(cb);
+
+    if (!this.tableCreated) {
+      this._createDbAndTable()
+        .then(() => {
+          this.tableCreated = true;
+          if (this.clearExpiredByTimeout) this._clearExpiredHourAgo();
+          if (typeof cb === "function") cb();
+        })
+        .catch((err) => {
+          if (typeof cb === "function") cb(err);
+          else throw err;
+        });
+    } else {
+      if (this.clearExpiredByTimeout) this._clearExpiredHourAgo();
+      if (typeof cb === "function") cb();
+    }
+  }
+  _validateStoreTypes(cb) {
+    const validStoreTypes = ["sqlite3", "better-sqlite3", "knex"];
+    if (!validStoreTypes.includes(this.storeType)) {
+      const err = new Error(
+        `storeType must be one of: ${validStoreTypes.join(", ")}`
+      );
+      if (typeof cb === "function") return cb(err);
+      throw err;
+    }
+  }
+  _validateStoreClient(cb) {
+    if (this.storeType === "sqlite3") {
+      if (typeof this.client.run !== "function") {
+        const err = new Error(
+          "storeClient must be an instance of sqlite3.Database when storeType is 'sqlite3' or no storeType was provided"
+        );
+        if (typeof cb === "function") return cb(err);
+        throw err;
+      }
+    } else if (this.storeType === "better-sqlite3") {
+      if (
+        typeof this.client.prepare !== "function" ||
+        typeof this.client.run !== "undefined"
+      ) {
+        const err = new Error(
+          "storeClient must be an instance of better-sqlite3.Database when storeType is 'better-sqlite3'"
+        );
+        if (typeof cb === "function") return cb(err);
+        throw err;
+      }
+    } else if (this.storeType === "knex") {
+      if (typeof this.client.raw !== "function") {
+        const err = new Error(
+          "storeClient must be an instance of Knex when storeType is 'knex'"
+        );
+        if (typeof cb === "function") return cb(err);
+        throw err;
+      }
+    }
+  }
+  _setInternalStoreType(cb) {
+    if (this.storeType === "knex") {
+      const knexClientType = this.client.client.config.client;
+      if (knexClientType === "sqlite3") {
+        this._internalStoreType = "sqlite3";
+      } else if (knexClientType === "better-sqlite3") {
+        this._internalStoreType = "better-sqlite3";
+      } else {
+        const err = new Error(
+          "Knex must be configured with 'sqlite3' or 'better-sqlite3' for RateLimiterSQLite"
+        );
+        if (typeof cb === "function") return cb(err);
+        throw err;
+      }
+    } else {
+      this._internalStoreType = this.storeType;
+    }
+  }
+  _validateTableName(cb) {
+    if (!/^[A-Za-z0-9_]*$/.test(this.tableName)) {
+      const err = new Error("Table name must contain only letters and numbers");
+      if (typeof cb === "function") return cb(err);
+      throw err;
+    }
+  }
+
+  /**
+   * Acquires the database connection based on the storeType.
+   * @returns {Promise<Object>} The database client or connection
+   */
+  async _getConnection() {
+    if (this.storeType === "knex") {
+      return this.client.client.acquireConnection(); // Acquire raw connection from knex pool
+    }
+    return this.client; // For sqlite3 and better-sqlite3, return the client directly
+  }
+
+  /**
+   * Releases the database connection if necessary.
+   * @param {Object} conn The database client or connection
+   */
+  _releaseConnection(conn) {
+    if (this.storeType === "knex") {
+      this.client.client.releaseConnection(conn);
+    }
+    // No release needed for direct sqlite3 or better-sqlite3 clients
+  }
+
+  async _createDbAndTable() {
+    const conn = await this._getConnection();
+    try {
+      switch (this._internalStoreType) {
+        case "sqlite3":
+          await new Promise((resolve, reject) => {
+            conn.run(this._getCreateTableSQL(), (err) =>
+              err ? reject(err) : resolve()
+            );
+          });
+          break;
+        case "better-sqlite3":
+          conn.prepare(this._getCreateTableSQL()).run();
+          break;
+        default:
+          throw new Error("Unsupported internalStoreType");
+      }
+    } finally {
+      this._releaseConnection(conn);
+    }
+  }
+
+  _getCreateTableSQL() {
+    return `CREATE TABLE IF NOT EXISTS ${this.tableName} (
+      key TEXT PRIMARY KEY,
+      points INTEGER NOT NULL DEFAULT 0,
+      expire INTEGER
+    )`;
+  }
+
+  _clearExpiredHourAgo() {
+    if (this._clearExpiredTimeoutId) clearTimeout(this._clearExpiredTimeoutId);
+    this._clearExpiredTimeoutId = setTimeout(() => {
+      this.clearExpired(Date.now() - 3600000) // 1 hour ago
+        .then(() => this._clearExpiredHourAgo());
+    }, 300000); // Every 5 minutes
+    this._clearExpiredTimeoutId.unref();
+  }
+
+  async clearExpired(nowMs) {
+    const sql = `DELETE FROM ${this.tableName} WHERE expire < ?`;
+    const conn = await this._getConnection();
+    try {
+      switch (this._internalStoreType) {
+        case "sqlite3":
+          await new Promise((resolve, reject) => {
+            conn.run(sql, [nowMs], (err) => (err ? reject(err) : resolve()));
+          });
+          break;
+        case "better-sqlite3":
+          conn.prepare(sql).run(nowMs);
+          break;
+        default:
+          throw new Error("Unsupported internalStoreType");
+      }
+    } finally {
+      this._releaseConnection(conn);
+    }
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+    res.isFirstInDuration = changedPoints === result.points;
+    res.consumedPoints = res.isFirstInDuration ? changedPoints : result.points;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = result.expire
+      ? Math.max(result.expire - Date.now(), 0)
+      : -1;
+    return res;
+  }
+
+  async _upsertTransactionSQLite3(conn, upsertQuery, upsertParams) {
+    return await new Promise((resolve, reject) => {
+      conn.serialize(() => {
+        conn.run("SAVEPOINT rate_limiter_trx;", (err) => {
+          if (err) return reject(err);
+          conn.get(upsertQuery, upsertParams, (err, row) => {
+            if (err) {
+              conn.run("ROLLBACK TO SAVEPOINT rate_limiter_trx;", () =>
+                reject(err)
+              );
+              return;
+            }
+            conn.run("RELEASE SAVEPOINT rate_limiter_trx;", () => resolve(row));
+          });
+        });
+      });
+    });
+  }
+
+  async _upsertTransactionBetterSQLite3(conn, upsertQuery, upsertParams) {
+    return conn.transaction(() =>
+      conn.prepare(upsertQuery).get(...upsertParams)
+    )();
+  }
+  async _upsertTransaction(rlKey, points, msDuration, forceExpire) {
+    const dateNow = Date.now();
+    const newExpire = msDuration > 0 ? dateNow + msDuration : null;
+    const upsertQuery = forceExpire
+      ? `INSERT OR REPLACE INTO ${this.tableName} (key, points, expire) VALUES (?, ?, ?) RETURNING points, expire`
+      : `INSERT INTO ${this.tableName} (key, points, expire)
+         VALUES (?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET
+           points = CASE WHEN expire IS NULL OR expire > ? THEN points + excluded.points ELSE excluded.points END,
+           expire = CASE WHEN expire IS NULL OR expire > ? THEN expire ELSE excluded.expire END
+         RETURNING points, expire`;
+    const upsertParams = forceExpire
+      ? [rlKey, points, newExpire]
+      : [rlKey, points, newExpire, dateNow, dateNow];
+
+    const conn = await this._getConnection();
+    try {
+      switch (this._internalStoreType) {
+        case "sqlite3":
+          return this._upsertTransactionSQLite3(
+            conn,
+            upsertQuery,
+            upsertParams
+          );
+        case "better-sqlite3":
+          return this._upsertTransactionBetterSQLite3(
+            conn,
+            upsertQuery,
+            upsertParams
+          );
+        default:
+          throw new Error("Unsupported internalStoreType");
+      }
+    } finally {
+      this._releaseConnection(conn);
+    }
+  }
+
+  _upsert(rlKey, points, msDuration, forceExpire = false) {
+    if (!this.tableCreated) {
+      return Promise.reject(new Error("Table is not created yet"));
+    }
+    return this._upsertTransaction(rlKey, points, msDuration, forceExpire);
+  }
+
+  async _get(rlKey) {
+    const sql = `SELECT points, expire FROM ${this.tableName} WHERE key = ? AND (expire > ? OR expire IS NULL)`;
+    const now = Date.now();
+    const conn = await this._getConnection();
+    try {
+      switch (this._internalStoreType) {
+        case "sqlite3":
+          return await new Promise((resolve, reject) => {
+            conn.get(sql, [rlKey, now], (err, row) =>
+              err ? reject(err) : resolve(row || null)
+            );
+          });
+        case "better-sqlite3":
+          return conn.prepare(sql).get(rlKey, now) || null;
+        default:
+          throw new Error("Unsupported internalStoreType");
+      }
+    } finally {
+      this._releaseConnection(conn);
+    }
+  }
+
+  async _delete(rlKey) {
+    if (!this.tableCreated) {
+      return Promise.reject(new Error("Table is not created yet"));
+    }
+    const sql = `DELETE FROM ${this.tableName} WHERE key = ?`;
+    const conn = await this._getConnection();
+    try {
+      switch (this._internalStoreType) {
+        case "sqlite3":
+          return await new Promise((resolve, reject) => {
+            conn.run(sql, [rlKey], function (err) {
+              if (err) reject(err);
+              else resolve(this.changes > 0);
+            });
+          });
+        case "better-sqlite3":
+          const result = conn.prepare(sql).run(rlKey);
+          return result.changes > 0;
+        default:
+          throw new Error("Unsupported internalStoreType");
+      }
+    } finally {
+      this._releaseConnection(conn);
+    }
+  }
+}
+
+module.exports = RateLimiterSQLite;
 
 
 /***/ }),
@@ -28787,6 +29638,410 @@ module.exports = class RateLimiterUnion {
 
 /***/ }),
 
+/***/ 2193:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5140);
+const RateLimiterRes = __nccwpck_require__(449);
+
+const incrTtlLuaScript = `
+server.call('set', KEYS[1], 0, 'EX', ARGV[2], 'NX')
+local consumed = server.call('incrby', KEYS[1], ARGV[1])
+local ttl = server.call('pttl', KEYS[1])
+return {consumed, ttl}
+`;
+
+class RateLimiterValkey extends RateLimiterStoreAbstract {
+  /**
+   *
+   * @param {Object} opts
+   * Defaults {
+   *   ... see other in RateLimiterStoreAbstract
+   *
+   *   storeClient: ValkeyClient
+   *   rejectIfValkeyNotReady: boolean = false - reject / invoke insuranceLimiter immediately when valkey connection is not "ready"
+   * }
+   */
+  constructor(opts) {
+    super(opts);
+    this.client = opts.storeClient;
+
+    this._rejectIfValkeyNotReady = !!opts.rejectIfValkeyNotReady;
+    this._incrTtlLuaScript = opts.customIncrTtlLuaScript || incrTtlLuaScript;
+
+    this.client.defineCommand('rlflxIncr', {
+      numberOfKeys: 1,
+      lua: this._incrTtlLuaScript,
+    });
+  }
+
+  /**
+   * Prevent actual valkey call if valkey connection is not ready
+   * @return {boolean}
+   * @private
+   */
+  _isValkeyReady() {
+    if (!this._rejectIfValkeyNotReady) {
+      return true;
+    }
+
+    return this.client.status === 'ready';
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    let consumed;
+    let resTtlMs;
+
+    if (Array.isArray(result[0])) {
+      [[, consumed], [, resTtlMs]] = result;
+    } else {
+      [consumed, resTtlMs] = result;
+    }
+
+    const res = new RateLimiterRes();
+    res.consumedPoints = +consumed;
+    res.isFirstInDuration = res.consumedPoints === changedPoints;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = resTtlMs;
+
+    return res;
+  }
+
+  _upsert(rlKey, points, msDuration, forceExpire = false) {
+    if (!this._isValkeyReady()) {
+      throw new Error('Valkey connection is not ready');
+    }
+
+    const secDuration = Math.floor(msDuration / 1000);
+
+    if (forceExpire) {
+      const multi = this.client.multi();
+
+      if (secDuration > 0) {
+        multi.set(rlKey, points, 'EX', secDuration);
+      } else {
+        multi.set(rlKey, points);
+      }
+
+      return multi.pttl(rlKey).exec();
+    }
+
+    if (secDuration > 0) {
+      return this.client.rlflxIncr([rlKey, String(points), String(secDuration), String(this.points), String(this.duration)]);
+    }
+
+    return this.client.multi().incrby(rlKey, points).pttl(rlKey).exec();
+  }
+
+  _get(rlKey) {
+    if (!this._isValkeyReady()) {
+      throw new Error('Valkey connection is not ready');
+    }
+
+    return this.client
+      .multi()
+      .get(rlKey)
+      .pttl(rlKey)
+      .exec()
+      .then((result) => {
+        const [[, points]] = result;
+        if (points === null) return null;
+        return result;
+      });
+  }
+
+  _delete(rlKey) {
+    return this.client
+      .del(rlKey)
+      .then(result => result > 0);
+  }
+}
+
+module.exports = RateLimiterValkey;
+
+
+/***/ }),
+
+/***/ 3756:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+/* eslint-disable no-unused-vars */
+const RateLimiterStoreAbstract = __nccwpck_require__(5140);
+const RateLimiterRes = __nccwpck_require__(449);
+
+/**
+ * @typedef {import('@valkey/valkey-glide').GlideClient} GlideClient
+ * @typedef {import('@valkey/valkey-glide').GlideClusterClient} GlideClusterClient
+ */
+
+const DEFAULT_LIBRARY_NAME = 'ratelimiterflexible';
+
+const DEFAULT_VALKEY_SCRIPT = `local key = KEYS[1]
+local pointsToConsume = tonumber(ARGV[1])
+if tonumber(ARGV[2]) > 0 then
+  server.call('set', key, "0", 'EX', ARGV[2], 'NX')
+  local consumed = server.call('incrby', key, pointsToConsume)
+  local pttl = server.call('pttl', key)
+  return {consumed, pttl}
+end
+local consumed = server.call('incrby', key, pointsToConsume)
+local pttl = server.call('pttl', key)
+return {consumed, pttl}`;
+
+const GET_VALKEY_SCRIPT = `local key = KEYS[1]
+local value = server.call('get', key)
+if value == nil then
+  return value
+end
+local pttl = server.call('pttl', key)
+return {tonumber(value), pttl}`;
+
+class RateLimiterValkeyGlide extends RateLimiterStoreAbstract {
+  /**
+   * Constructor for RateLimiterValkeyGlide
+   *
+   * @param {Object} opts - Configuration options
+   * @param {GlideClient|GlideClusterClient} opts.storeClient - Valkey Glide client instance (required)
+   * @param {number} [opts.points=4] - Maximum number of points that can be consumed over duration
+   * @param {number} [opts.duration=1] - Duration in seconds before points are reset
+   * @param {number} [opts.blockDuration=0] - Duration in seconds that a key will be blocked for if consumed more than points
+   * @param {boolean} [opts.rejectIfValkeyNotReady=false] - Whether to reject requests if Valkey is not ready
+   * @param {boolean} [opts.execEvenly=false] - Delay actions to distribute them evenly over duration
+   * @param {number} [opts.execEvenlyMinDelayMs] - Minimum delay between actions when execEvenly is true
+   * @param {string} [opts.customFunction] - Custom Lua script for rate limiting logic
+   * @param {number} [opts.inMemoryBlockOnConsumed] - Points threshold for in-memory blocking
+   * @param {number} [opts.inMemoryBlockDuration] - Duration in seconds for in-memory blocking
+   * @param {string} [opts.customFunctionLibName] - Custom name for the function library, defaults to 'ratelimiter'.
+   * The name is used to identify the library of the lua function. An custom name should be used only if you
+   * you want to use different libraries for different rate limiters, otherwise it is not needed.
+   * @param {RateLimiterAbstract} [opts.insuranceLimiter] - Backup limiter to use when the primary client fails
+   *
+   * @example
+   * const rateLimiter = new RateLimiterValkeyGlide({
+   *   storeClient: glideClient,
+   *   points: 5,
+   *   duration: 1
+   * });
+   *
+   * @example <caption>With custom Lua function</caption>
+   * const customScript = `local key = KEYS[1]
+   * local pointsToConsume = tonumber(ARGV[1]) or 0
+   * local secDuration = tonumber(ARGV[2]) or 0
+   *
+   * -- Custom implementation
+   * -- ...
+   *
+   * -- Must return exactly two values: [consumed_points, ttl_in_ms]
+   * return {consumed, ttl}`
+   *
+   * const rateLimiter = new RateLimiterValkeyGlide({
+   *   storeClient: glideClient,
+   *   points: 5,
+   *   customFunction: customScript
+   * });
+   *
+   * @example <caption>With insurance limiter</caption>
+   * const rateLimiter = new RateLimiterValkeyGlide({
+   *   storeClient: primaryGlideClient,
+   *   points: 5,
+   *   duration: 2,
+   *   insuranceLimiter: new RateLimiterMemory({
+   *     points: 5,
+   *     duration: 2
+   *   })
+   * });
+   *
+   * @description
+   * When providing a custom Lua script via `opts.customFunction`, it must:
+   *
+   * 1. Accept parameters:
+   *    - KEYS[1]: The key being rate limited
+   *    - ARGV[1]: Points to consume (as string, use tonumber() to convert)
+   *    - ARGV[2]: Duration in seconds (as string, use tonumber() to convert)
+   *
+   * 2. Return an array with exactly two elements:
+   *    - [0]: Consumed points (number)
+   *    - [1]: TTL in milliseconds (number)
+   *
+   * 3. Handle scenarios:
+   *    - New key creation: Initialize with expiry for fixed windows
+   *    - Key updates: Increment existing counters
+   */
+  constructor(opts) {
+    super(opts);
+    this.client = opts.storeClient;
+    this._scriptLoaded = false;
+    this._getScriptLoaded = false;
+    this._rejectIfValkeyNotReady = !!opts.rejectIfValkeyNotReady;
+    this._luaScript = opts.customFunction || DEFAULT_VALKEY_SCRIPT;
+    this._libraryName = opts.customFunctionLibName || DEFAULT_LIBRARY_NAME;
+  }
+
+  /**
+   * Ensure scripts are loaded in the Valkey server
+   * @returns {Promise<boolean>} True if scripts are loaded
+   * @private
+   */
+  async _loadScripts() {
+    if (this._scriptLoaded && this._getScriptLoaded) {
+      return true;
+    }
+    if (!this.client) {
+      throw new Error('Valkey client is not set');
+    }
+    const promises = [];
+    if (!this._scriptLoaded) {
+      const script = Buffer.from(`#!lua name=${this._libraryName}
+        local function consume(KEYS, ARGV)
+          ${this._luaScript.trim()}
+        end
+        server.register_function('consume', consume)`);
+      promises.push(this.client.functionLoad(script, { replace: true }));
+    } else promises.push(Promise.resolve(this._libraryName));
+
+    if (!this._getScriptLoaded) {
+      const script = Buffer.from(`#!lua name=ratelimiter_get
+        local function getValue(KEYS, ARGV)
+          ${GET_VALKEY_SCRIPT.trim()}
+        end
+        server.register_function('getValue', getValue)`);
+      promises.push(this.client.functionLoad(script, { replace: true }));
+    } else promises.push(Promise.resolve('ratelimiter_get'));
+
+    const results = await Promise.all(promises);
+    this._scriptLoaded = results[0] === this._libraryName;
+    this._getScriptLoaded = results[1] === 'ratelimiter_get';
+
+    if ((!this._scriptLoaded || !this._getScriptLoaded)) {
+      throw new Error('Valkey connection is not ready, scripts not loaded');
+    }
+    return true;
+  }
+
+  /**
+   * Update or insert the rate limiter record
+   *
+   * @param {string} rlKey - The rate limiter key
+   * @param {number} pointsToConsume - Points to be consumed
+   * @param {number} msDuration - Duration in milliseconds
+   * @param {boolean} [forceExpire=false] - Whether to force expiration
+   * @param {Object} [options={}] - Additional options
+   * @returns {Promise<Array>} Array containing consumed points and TTL
+   * @private
+   */
+  async _upsert(rlKey, pointsToConsume, msDuration, forceExpire = false, options = {}) {
+    await this._loadScripts();
+    const secDuration = Math.floor(msDuration / 1000);
+    if (forceExpire) {
+      if (secDuration > 0) {
+        await this.client.set(
+          rlKey,
+          String(pointsToConsume),
+          { expiry: { type: 'EX', count: secDuration } },
+        );
+        return [pointsToConsume, secDuration * 1000];
+      }
+      await this.client.set(rlKey, String(pointsToConsume));
+      return [pointsToConsume, -1];
+    }
+    const result = await this.client.fcall(
+      'consume',
+      [rlKey],
+      [String(pointsToConsume), String(secDuration)],
+    );
+    return result;
+  }
+
+  /**
+   * Get the rate limiter record
+   *
+   * @param {string} rlKey - The rate limiter key
+   * @param {Object} [options={}] - Additional options
+   * @returns {Promise<Array|null>} Array containing consumed points and TTL, or null if not found
+   * @private
+   */
+  async _get(rlKey, options = {}) {
+    await this._loadScripts();
+    const res = await this.client.fcall('getValue', [rlKey], []);
+    return res.length > 0 ? res : null;
+  }
+
+  /**
+   * Delete the rate limiter record
+   *
+   * @param {string} rlKey - The rate limiter key
+   * @param {Object} [options={}] - Additional options
+   * @returns {Promise<boolean>} True if successful, false otherwise
+   * @private
+   */
+  async _delete(rlKey, options = {}) {
+    const result = await this.client.del([rlKey]);
+    return result > 0;
+  }
+
+  /**
+   * Convert raw result to RateLimiterRes object
+   *
+   * @param {string} rlKey - The rate limiter key
+   * @param {number} changedPoints - Points changed in this operation
+   * @param {Array|null} result - Result from Valkey operation
+   * @returns {RateLimiterRes|null} RateLimiterRes object or null if result is null
+   * @private
+   */
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    if (result === null) {
+      return null;
+    }
+    const res = new RateLimiterRes();
+    const [consumedPointsStr, pttl] = result;
+    const consumedPoints = Number(consumedPointsStr);
+
+    // Handle consumed points
+    res.isFirstInDuration = consumedPoints === changedPoints;
+    res.consumedPoints = consumedPoints;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = pttl;
+    return res;
+  }
+
+  /**
+   * Close the rate limiter and release resources
+   * Note: The method won't going to close the Valkey client, as it may be shared with other instances.
+   * @returns {Promise<void>} Promise that resolves when the rate limiter is closed
+   */
+  async close() {
+    if (this._scriptLoaded) {
+      await this.client.functionDelete(this._libraryName);
+      this._scriptLoaded = false;
+    }
+    if (this._getScriptLoaded) {
+      await this.client.functionDelete('ratelimiter_get');
+      this._getScriptLoaded = false;
+    }
+    if (this.insuranceLimiter) {
+      try {
+        await this.insuranceLimiter.close();
+      } catch (e) {
+        // We can't assume that insuranceLimiter is a Valkey client or any
+        // other insuranceLimiter type which implement close method.
+      }
+    }
+    // Clear instance properties to let garbage collector free memory
+    this.client = null;
+    this._scriptLoaded = false;
+    this._getScriptLoaded = false;
+    this._rejectIfValkeyNotReady = false;
+    this._luaScript = null;
+    this._libraryName = null;
+    this.insuranceLimiter = null;
+  }
+}
+
+module.exports = RateLimiterValkeyGlide;
+
+
+/***/ }),
+
 /***/ 5202:
 /***/ ((module) => {
 
@@ -29016,6 +30271,23 @@ module.exports = class Record {
 
 /***/ }),
 
+/***/ 3184:
+/***/ ((module) => {
+
+module.exports = class RateLimiterEtcdTransactionFailedError extends Error {
+  constructor(message) {
+    super();
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+    this.name = 'RateLimiterEtcdTransactionFailedError';
+    this.message = message;
+  }
+};
+
+
+/***/ }),
+
 /***/ 7948:
 /***/ ((module) => {
 
@@ -29030,6 +30302,23 @@ module.exports = class RateLimiterQueueError extends Error {
     if (extra) {
       this.extra = extra;
     }
+  }
+};
+
+
+/***/ }),
+
+/***/ 2922:
+/***/ ((module) => {
+
+module.exports = class RateLimiterSetupError extends Error {
+  constructor(message) {
+    super();
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+    this.name = 'RateLimiterSetupError';
+    this.message = message;
   }
 };
 
@@ -55452,6 +56741,14 @@ async function resolveLilyPondVersion() {
     }
     return semver.maxSatisfying(releaseVersions, versionSpec);
 }
+
+
+/***/ }),
+
+/***/ 9874:
+/***/ ((module) => {
+
+module.exports = eval("require")("drizzle-orm");
 
 
 /***/ }),
