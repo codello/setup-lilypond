@@ -70,7 +70,7 @@ jobs:
       # workflow artifact.
       - if: ${{ steps.diff.outcome == 'failure' && github.actor != 'renovate[bot]' }}
         name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist
           path: dist/
