@@ -13145,12 +13145,13 @@ async function defaultOptionsHandler(resourceOptions, {
   asStream = false,
   method = "GET"
 } = {}) {
-  const { headers: preconfiguredHeaders, authHeaders, url } = resourceOptions;
+  const { headers: preconfiguredHeaders, authHeaders, url, agent } = resourceOptions;
   const defaultOptions = {
     method,
     asStream,
     signal,
-    prefixUrl: url
+    prefixUrl: url,
+    agent
   };
   defaultOptions.headers = { ...preconfiguredHeaders };
   if (sudo) defaultOptions.headers.sudo = `${sudo}`;
@@ -13204,20 +13205,27 @@ function createRequesterFn(optionsHandler, requestHandler) {
     return requester;
   };
 }
-function extendClass(Base, customConfig) {
-  return class extends Base {
-    constructor(...options) {
-      const [config, ...opts] = options;
-      super({ ...customConfig, ...config }, ...opts);
+function createPresetConstructor(Constructor, presetConfig) {
+  return class extends Constructor {
+    constructor(...args) {
+      const [config, ...rest] = args;
+      super({ ...presetConfig, ...config }, ...rest);
     }
   };
 }
 function presetResourceArguments(resources, customConfig = {}) {
-  const updated = {};
-  Object.entries(resources).filter(([, s]) => typeof s === "function").forEach(([k, r]) => {
-    updated[k] = extendClass(r, customConfig);
+  const result = {};
+  Object.entries(resources).forEach(([key, Constructor]) => {
+    if (typeof Constructor === "function") {
+      result[key] = createPresetConstructor(
+        Constructor,
+        customConfig
+      );
+    } else {
+      result[key] = Constructor;
+    }
   });
-  return updated;
+  return result;
 }
 function getMatchingRateLimiter(endpoint, rateLimiters = {}, method = "GET") {
   const sortedEndpoints = Object.keys(rateLimiters).sort().reverse();
@@ -13276,16 +13284,15 @@ var BaseResource = class {
   headers;
   authHeaders;
   camelize;
-  rejectUnauthorized;
   constructor({
     sudo,
     profileToken,
     camelize,
     requesterFn,
+    agent,
     profileMode = "execution",
     host = "https://gitlab.com",
     prefixUrl = "",
-    rejectUnauthorized = true,
     queryTimeout = 3e5,
     rateLimitDuration = 60,
     rateLimits = DEFAULT_RATE_LIMITS,
@@ -13295,7 +13302,6 @@ var BaseResource = class {
     this.url = [host, "api", "v4", prefixUrl].join("/");
     this.headers = {};
     this.authHeaders = {};
-    this.rejectUnauthorized = rejectUnauthorized;
     this.camelize = camelize;
     this.queryTimeout = queryTimeout;
     if ("oauthToken" in tokens)
@@ -13312,7 +13318,7 @@ var BaseResource = class {
       this.headers["X-Profile-Mode"] = profileMode;
     }
     if (sudo) this.headers.Sudo = `${sudo}`;
-    this.requester = requesterFn({ ...this, rateLimits, rateLimitDuration });
+    this.requester = requesterFn({ ...this, rateLimits, rateLimitDuration, agent });
   }
 };
 
@@ -13435,7 +13441,7 @@ function getConditionalMode(endpoint) {
 async function defaultRequestHandler(endpoint, options) {
   const retryCodes = [429, 502];
   const maxRetries = 10;
-  const { prefixUrl, asStream, searchParams, rateLimiters, method, ...opts } = options || {};
+  const { rateLimiters, agent, asStream, prefixUrl, searchParams, method, ...opts } = options || {};
   const rateLimit = requesterUtils.getMatchingRateLimiter(endpoint, rateLimiters, method);
   let lastStatus;
   let baseUrl;
@@ -13445,8 +13451,10 @@ async function defaultRequestHandler(endpoint, options) {
   const mode = getConditionalMode(endpoint);
   for (let i = 0; i < maxRetries; i += 1) {
     const request = new Request(url, { ...opts, method, mode });
+    const fetchArgs = [request];
+    if (agent) fetchArgs.push({ dispatcher: agent });
     await rateLimit();
-    const response = await fetch(request).catch((e) => {
+    const response = await fetch(...fetchArgs).catch((e) => {
       if (e.name === "TimeoutError" || e.name === "AbortError") {
         throw new requesterUtils.GitbeakerTimeoutError("Query timeout was reached");
       }
@@ -13466,203 +13474,200 @@ var requesterFn = requesterUtils.createRequesterFn(
   (_, reqo) => Promise.resolve(reqo),
   defaultRequestHandler
 );
-var { AccessLevel: AL, ...Resources } = CORE__namespace;
+var { AccessLevel, ...Resources } = CORE__namespace;
 var API = requesterUtils.presetResourceArguments(Resources, { requesterFn });
-var AccessLevel = AL;
-var {
-  Agents,
-  AlertManagement,
-  ApplicationAppearance,
-  ApplicationPlanLimits,
-  Applications,
-  ApplicationSettings,
-  ApplicationStatistics,
-  AuditEvents,
-  Avatar,
-  BroadcastMessages,
-  CodeSuggestions,
-  Composer,
-  Conan,
-  DashboardAnnotations,
-  Debian,
-  DependencyProxy,
-  DeployKeys,
-  DeployTokens,
-  DockerfileTemplates,
-  Events,
-  Experiments,
-  GeoNodes,
-  GeoSites,
-  GitignoreTemplates,
-  GitLabCIYMLTemplates,
-  Import,
-  InstanceLevelCICDVariables,
-  Keys,
-  License,
-  LicenseTemplates,
-  Lint,
-  Markdown,
-  Maven,
-  Metadata,
-  Migrations,
-  Namespaces,
-  NotificationSettings,
-  NPM,
-  NuGet,
-  PersonalAccessTokens,
-  PyPI,
-  RubyGems,
-  Search,
-  SearchAdmin,
-  ServiceAccounts,
-  ServiceData,
-  SidekiqMetrics,
-  SidekiqQueues,
-  SnippetRepositoryStorageMoves,
-  Snippets,
-  Suggestions,
-  SystemHooks,
-  TodoLists,
-  Topics,
-  Branches,
-  CommitDiscussions,
-  Commits,
-  ContainerRegistry,
-  Deployments,
-  Environments,
-  ErrorTrackingClientKeys,
-  ErrorTrackingSettings,
-  ExternalStatusChecks,
-  FeatureFlags,
-  FeatureFlagUserLists,
-  FreezePeriods,
-  GitlabPages,
-  GoProxy,
-  Helm,
-  Integrations,
-  IssueAwardEmojis,
-  IssueDiscussions,
-  IssueIterationEvents,
-  IssueLabelEvents,
-  IssueLinks,
-  IssueMilestoneEvents,
-  IssueNoteAwardEmojis,
-  IssueNotes,
-  Issues,
-  IssuesStatistics,
-  IssueStateEvents,
-  IssueWeightEvents,
-  JobArtifacts,
-  Jobs,
-  MergeRequestApprovals,
-  MergeRequestAwardEmojis,
-  MergeRequestContextCommits,
-  MergeRequestDiscussions,
-  MergeRequestLabelEvents,
-  MergeRequestMilestoneEvents,
-  MergeRequestDraftNotes,
-  MergeRequestNotes,
-  MergeRequestNoteAwardEmojis,
-  MergeRequests,
-  MergeTrains,
-  PackageRegistry,
-  Packages,
-  PagesDomains,
-  Pipelines,
-  PipelineSchedules,
-  PipelineScheduleVariables,
-  PipelineTriggerTokens,
-  ProductAnalytics,
-  ProjectAccessRequests,
-  ProjectAccessTokens,
-  ProjectAliases,
-  ProjectBadges,
-  ProjectCustomAttributes,
-  ProjectDORA4Metrics,
-  ProjectHooks,
-  ProjectImportExports,
-  ProjectInvitations,
-  ProjectIssueBoards,
-  ProjectIterations,
-  ProjectJobTokenScopes,
-  ProjectLabels,
-  ProjectMarkdownUploads,
-  ProjectMembers,
-  ProjectMilestones,
-  ProjectProtectedEnvironments,
-  ProjectPushRules,
-  ProjectRelationsExport,
-  ProjectReleases,
-  ProjectRemoteMirrors,
-  ProjectRepositoryStorageMoves,
-  Projects,
-  ProjectSnippetAwardEmojis,
-  ProjectSnippetDiscussions,
-  ProjectSnippetNotes,
-  ProjectSnippets,
-  ProjectStatistics,
-  ProjectTemplates,
-  ProjectTerraformState,
-  ProjectVariables,
-  ProjectVulnerabilities,
-  ProjectWikis,
-  ProtectedBranches,
-  ProtectedTags,
-  ReleaseLinks,
-  Repositories,
-  RepositoryFiles,
-  RepositorySubmodules,
-  ResourceGroups,
-  Runners,
-  SecureFiles,
-  Tags,
-  UserStarredMetricsDashboard,
-  EpicAwardEmojis,
-  EpicDiscussions,
-  EpicIssues,
-  EpicLabelEvents,
-  EpicLinks,
-  EpicNotes,
-  Epics,
-  GroupAccessRequests,
-  GroupAccessTokens,
-  GroupActivityAnalytics,
-  GroupBadges,
-  GroupCustomAttributes,
-  GroupDORA4Metrics,
-  GroupEpicBoards,
-  GroupHooks,
-  GroupImportExports,
-  GroupInvitations,
-  GroupIssueBoards,
-  GroupIterations,
-  GroupLabels,
-  GroupLDAPLinks,
-  GroupMarkdownUploads,
-  GroupMembers,
-  GroupMemberRoles,
-  GroupMilestones,
-  GroupProtectedEnvironments,
-  GroupPushRules,
-  GroupRelationExports,
-  GroupReleases,
-  GroupRepositoryStorageMoves,
-  Groups,
-  GroupSAMLIdentities,
-  GroupSAMLLinks,
-  GroupSCIMIdentities,
-  GroupServiceAccounts,
-  GroupVariables,
-  GroupWikis,
-  LinkedEpics,
-  UserCustomAttributes,
-  UserEmails,
-  UserGPGKeys,
-  UserImpersonationTokens,
-  Users,
-  UserSSHKeys,
-  Gitlab
-} = API;
+var { Agents } = API;
+var { AlertManagement } = API;
+var { ApplicationAppearance } = API;
+var { ApplicationPlanLimits } = API;
+var { Applications } = API;
+var { ApplicationSettings } = API;
+var { ApplicationStatistics } = API;
+var { AuditEvents } = API;
+var { Avatar } = API;
+var { Branches } = API;
+var { BroadcastMessages } = API;
+var { CodeSuggestions } = API;
+var { CommitDiscussions } = API;
+var { Commits } = API;
+var { Composer } = API;
+var { Conan } = API;
+var { ContainerRegistry } = API;
+var { DashboardAnnotations } = API;
+var { Debian } = API;
+var { DependencyProxy } = API;
+var { DeployKeys } = API;
+var { DeployTokens } = API;
+var { Deployments } = API;
+var { DockerfileTemplates } = API;
+var { Environments } = API;
+var { EpicAwardEmojis } = API;
+var { EpicDiscussions } = API;
+var { EpicIssues } = API;
+var { EpicLabelEvents } = API;
+var { EpicLinks } = API;
+var { EpicNotes } = API;
+var { Epics } = API;
+var { ErrorTrackingClientKeys } = API;
+var { ErrorTrackingSettings } = API;
+var { Events } = API;
+var { Experiments } = API;
+var { ExternalStatusChecks } = API;
+var { FeatureFlags } = API;
+var { FeatureFlagUserLists } = API;
+var { FreezePeriods } = API;
+var { GeoNodes } = API;
+var { GeoSites } = API;
+var { GitignoreTemplates } = API;
+var { GitLabCIYMLTemplates } = API;
+var { GitlabPages } = API;
+var { GoProxy } = API;
+var { GroupAccessRequests } = API;
+var { GroupAccessTokens } = API;
+var { GroupActivityAnalytics } = API;
+var { GroupBadges } = API;
+var { GroupCustomAttributes } = API;
+var { GroupDORA4Metrics } = API;
+var { GroupEpicBoards } = API;
+var { GroupHooks } = API;
+var { GroupImportExports } = API;
+var { GroupInvitations } = API;
+var { GroupIssueBoards } = API;
+var { GroupIterations } = API;
+var { GroupLabels } = API;
+var { GroupLDAPLinks } = API;
+var { GroupMarkdownUploads } = API;
+var { GroupMemberRoles } = API;
+var { GroupMembers } = API;
+var { GroupMilestones } = API;
+var { GroupProtectedEnvironments } = API;
+var { GroupPushRules } = API;
+var { GroupRelationExports } = API;
+var { GroupReleases } = API;
+var { GroupRepositoryStorageMoves } = API;
+var { Groups } = API;
+var { GroupSAMLIdentities } = API;
+var { GroupSAMLLinks } = API;
+var { GroupSCIMIdentities } = API;
+var { GroupServiceAccounts } = API;
+var { GroupVariables } = API;
+var { GroupWikis } = API;
+var { Helm } = API;
+var { Import } = API;
+var { InstanceLevelCICDVariables } = API;
+var { Integrations } = API;
+var { IssueAwardEmojis } = API;
+var { IssueDiscussions } = API;
+var { IssueIterationEvents } = API;
+var { IssueLabelEvents } = API;
+var { IssueLinks } = API;
+var { IssueMilestoneEvents } = API;
+var { IssueNoteAwardEmojis } = API;
+var { IssueNotes } = API;
+var { Issues } = API;
+var { IssuesStatistics } = API;
+var { IssueStateEvents } = API;
+var { IssueWeightEvents } = API;
+var { JobArtifacts } = API;
+var { Jobs } = API;
+var { Keys } = API;
+var { License } = API;
+var { LicenseTemplates } = API;
+var { LinkedEpics } = API;
+var { Lint } = API;
+var { Markdown } = API;
+var { Maven } = API;
+var { MergeRequestApprovals } = API;
+var { MergeRequestAwardEmojis } = API;
+var { MergeRequestContextCommits } = API;
+var { MergeRequestDiscussions } = API;
+var { MergeRequestDraftNotes } = API;
+var { MergeRequestLabelEvents } = API;
+var { MergeRequestMilestoneEvents } = API;
+var { MergeRequestNoteAwardEmojis } = API;
+var { MergeRequestNotes } = API;
+var { MergeRequests } = API;
+var { MergeTrains } = API;
+var { Metadata } = API;
+var { Migrations } = API;
+var { Namespaces } = API;
+var { NotificationSettings } = API;
+var { NPM } = API;
+var { NuGet } = API;
+var { PackageRegistry } = API;
+var { Packages } = API;
+var { PagesDomains } = API;
+var { PersonalAccessTokens } = API;
+var { PipelineSchedules } = API;
+var { PipelineScheduleVariables } = API;
+var { Pipelines } = API;
+var { PipelineTriggerTokens } = API;
+var { ProductAnalytics } = API;
+var { ProjectAccessRequests } = API;
+var { ProjectAccessTokens } = API;
+var { ProjectAliases } = API;
+var { ProjectBadges } = API;
+var { ProjectCustomAttributes } = API;
+var { ProjectDORA4Metrics } = API;
+var { ProjectHooks } = API;
+var { ProjectImportExports } = API;
+var { ProjectInvitations } = API;
+var { ProjectIssueBoards } = API;
+var { ProjectIterations } = API;
+var { ProjectJobTokenScopes } = API;
+var { ProjectLabels } = API;
+var { ProjectMarkdownUploads } = API;
+var { ProjectMembers } = API;
+var { ProjectMilestones } = API;
+var { ProjectProtectedEnvironments } = API;
+var { ProjectPushRules } = API;
+var { ProjectRelationsExport } = API;
+var { ProjectReleases } = API;
+var { ProjectRemoteMirrors } = API;
+var { ProjectRepositoryStorageMoves } = API;
+var { Projects } = API;
+var { ProjectSnippetAwardEmojis } = API;
+var { ProjectSnippetDiscussions } = API;
+var { ProjectSnippetNotes } = API;
+var { ProjectSnippets } = API;
+var { ProjectStatistics } = API;
+var { ProjectTemplates } = API;
+var { ProjectTerraformState } = API;
+var { ProjectVariables } = API;
+var { ProjectVulnerabilities } = API;
+var { ProjectWikis } = API;
+var { ProtectedBranches } = API;
+var { ProtectedTags } = API;
+var { PyPI } = API;
+var { ReleaseLinks } = API;
+var { Repositories } = API;
+var { RepositoryFiles } = API;
+var { RepositorySubmodules } = API;
+var { ResourceGroups } = API;
+var { RubyGems } = API;
+var { Runners } = API;
+var { Search } = API;
+var { SearchAdmin } = API;
+var { SecureFiles } = API;
+var { ServiceAccounts } = API;
+var { ServiceData } = API;
+var { SidekiqMetrics } = API;
+var { SidekiqQueues } = API;
+var { SnippetRepositoryStorageMoves } = API;
+var { Snippets } = API;
+var { Suggestions } = API;
+var { SystemHooks } = API;
+var { Tags } = API;
+var { TodoLists } = API;
+var { Topics } = API;
+var { UserCustomAttributes } = API;
+var { UserEmails } = API;
+var { UserGPGKeys } = API;
+var { UserImpersonationTokens } = API;
+var { Users } = API;
+var { UserSSHKeys } = API;
+var { UserStarredMetricsDashboard } = API;
+var { Gitlab } = API;
 
 Object.defineProperty(exports, "GitbeakerRequestError", ({
   enumerable: true,
@@ -25472,11 +25477,14 @@ const RateLimiterRes = __nccwpck_require__(449);
 const RateLimiterDynamo = __nccwpck_require__(2309);
 const RateLimiterPrisma = __nccwpck_require__(6323);
 const RateLimiterDrizzle = __nccwpck_require__(673);
+const RateLimiterDrizzleNonAtomic = __nccwpck_require__(5347);
 const RateLimiterValkey = __nccwpck_require__(2193);
 const RateLimiterValkeyGlide = __nccwpck_require__(3756);
 const RateLimiterSQLite = __nccwpck_require__(3283);
 const RateLimiterEtcd = __nccwpck_require__(6481);
 const RateLimiterEtcdNonAtomic = __nccwpck_require__(5299);
+const RateLimiterQueueError = __nccwpck_require__(7948);
+const RateLimiterEtcdTransactionFailedError = __nccwpck_require__(3184);
 
 module.exports = {
   RateLimiterRedis,
@@ -25500,7 +25508,10 @@ module.exports = {
   RateLimiterSQLite,
   RateLimiterEtcd,
   RateLimiterDrizzle,
+  RateLimiterDrizzleNonAtomic,
   RateLimiterEtcdNonAtomic,
+  RateLimiterQueueError,
+  RateLimiterEtcdTransactionFailedError,
 };
 
 
@@ -26313,12 +26324,17 @@ class RateLimiterDrizzleError extends Error {
   }
 }
 
-function getDrizzleOperators() {
+async function getDrizzleOperators() {
   if (drizzleOperators) return drizzleOperators;
 
   try {
-    const { and, or, gt, lt, eq, isNull , sql } = __nccwpck_require__(9874);
-    drizzleOperators = { and, or, gt, lt, eq, isNull , sql };
+    // Use dynamic import to prevent static analysis tools from detecting the import
+    function getPackageName() {
+      return ['drizzle', 'orm'].join('-');
+    }
+    const drizzleOrm = await __nccwpck_require__(5407)(`${getPackageName()}`);
+    const { and, or, gt, lt, eq, isNull, sql } = drizzleOrm.default || drizzleOrm;
+    drizzleOperators = { and, or, gt, lt, eq, isNull, sql };
     return drizzleOperators;
   } catch (error) {
     throw new RateLimiterDrizzleError(
@@ -26370,7 +26386,7 @@ class RateLimiterDrizzle extends RateLimiterStoreAbstract {
       return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'))
     }
 
-    const { eq , sql } = getDrizzleOperators();
+    const { eq, sql } = await getDrizzleOperators();
     const now = new Date();
     const newExpire = msDuration > 0 ? new Date(now.getTime() + msDuration) : null;
 
@@ -26416,7 +26432,7 @@ class RateLimiterDrizzle extends RateLimiterStoreAbstract {
       return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'))
     }
 
-    const { and, or, gt, eq, isNull } = getDrizzleOperators();
+    const { and, or, gt, eq, isNull } = await getDrizzleOperators();
 
     const [response] = await this.drizzleClient
       .select()
@@ -26438,7 +26454,7 @@ class RateLimiterDrizzle extends RateLimiterStoreAbstract {
       return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'))
     }
 
-    const { eq } = getDrizzleOperators();
+    const { eq } = await getDrizzleOperators();
 
     const [result] = await this.drizzleClient
       .delete(this.schema)
@@ -26453,10 +26469,9 @@ class RateLimiterDrizzle extends RateLimiterStoreAbstract {
       clearTimeout(this._clearExpiredTimeoutId);
     }
 
-    const { lt } = getDrizzleOperators();
-
     this._clearExpiredTimeoutId = setTimeout(async () => {
       try {
+        const { lt } = await getDrizzleOperators();
         await this.drizzleClient
           .delete(this.schema)
           .where(lt(this.schema.expire, new Date(Date.now() - EXPIRED_THRESHOLD_MS)));
@@ -26472,6 +26487,188 @@ class RateLimiterDrizzle extends RateLimiterStoreAbstract {
 }
 
 module.exports = RateLimiterDrizzle;
+
+
+/***/ }),
+
+/***/ 5347:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+let drizzleOperators = null;
+const CLEANUP_INTERVAL_MS = 300000; // 5 minutes
+const EXPIRED_THRESHOLD_MS = 3600000; // 1 hour
+
+class RateLimiterDrizzleError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'RateLimiterDrizzleError';
+  }
+}
+
+async function getDrizzleOperators() {
+  if (drizzleOperators) return drizzleOperators;
+
+  try {
+    // Use dynamic import to prevent static analysis tools from detecting the import
+    function getPackageName() {
+      return ['drizzle', 'orm'].join('-');
+    }
+    const drizzleOrm = await __nccwpck_require__(5407)(`${getPackageName()}`);
+    const { and, or, gt, lt, eq, isNull, sql } = drizzleOrm.default || drizzleOrm;
+    drizzleOperators = { and, or, gt, lt, eq, isNull, sql };
+    return drizzleOperators;
+  } catch (error) {
+    throw new RateLimiterDrizzleError(
+      'drizzle-orm is not installed. Please install drizzle-orm to use RateLimiterDrizzleNonAtomic.'
+    );
+  }
+}
+
+const RateLimiterStoreAbstract = __nccwpck_require__(5140);
+const RateLimiterRes = __nccwpck_require__(449);
+
+class RateLimiterDrizzleNonAtomic extends RateLimiterStoreAbstract {
+  constructor(opts) {
+    super(opts);
+
+    if (!opts?.schema) {
+      throw new RateLimiterDrizzleError('Drizzle schema is required');
+    }
+
+    if (!opts?.storeClient) {
+      throw new RateLimiterDrizzleError('Drizzle client is required');
+    }
+
+    this.schema = opts.schema;
+    this.drizzleClient = opts.storeClient;
+    this.clearExpiredByTimeout = opts.clearExpiredByTimeout ?? true;
+
+    if (this.clearExpiredByTimeout) {
+      this._clearExpiredHourAgo();
+    }
+  }
+
+  _getRateLimiterRes(rlKey, changedPoints, result) {
+    const res = new RateLimiterRes();
+
+    let doc = result;
+    res.isFirstInDuration = doc.points === changedPoints;
+    res.consumedPoints = doc.points;
+    res.remainingPoints = Math.max(this.points - res.consumedPoints, 0);
+    res.msBeforeNext = doc.expire !== null
+      ? Math.max(new Date(doc.expire).getTime() - Date.now(), 0)
+      : -1;
+
+    return res;
+  }
+
+  async _upsert(key, points, msDuration, forceExpire = false) {
+    if (!this.drizzleClient) {
+      return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'));
+    }
+
+    const { eq } = await getDrizzleOperators();
+    const now = new Date();
+    const newExpire = msDuration > 0 ? new Date(now.getTime() + msDuration) : null;
+
+    const [existingRecord] = await this.drizzleClient
+      .select()
+      .from(this.schema)
+      .where(eq(this.schema.key, key))
+      .limit(1);
+
+    const shouldUpdateExpire =
+      forceExpire ||
+      !existingRecord ||
+      !existingRecord.expire ||
+      existingRecord.expire <= now ||
+      newExpire === null;
+
+    let newPoints;
+    if (existingRecord && !shouldUpdateExpire) {
+      newPoints = existingRecord.points + points;
+    } else {
+      newPoints = points;
+    }
+
+    const [data] = await this.drizzleClient
+      .insert(this.schema)
+      .values({
+        key,
+        points: newPoints,
+        expire: newExpire,
+      })
+      .onConflictDoUpdate({
+        target: this.schema.key,
+        set: {
+          points: newPoints,
+          ...(shouldUpdateExpire && { expire: newExpire }),
+        },
+      })
+      .returning();
+
+    return data;
+  }
+
+  async _get(rlKey) {
+    if (!this.drizzleClient) {
+      return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'));
+    }
+
+    const { and, or, gt, eq, isNull } = await getDrizzleOperators();
+
+    const [response] = await this.drizzleClient
+      .select()
+      .from(this.schema)
+      .where(
+        and(
+          eq(this.schema.key, rlKey),
+          or(gt(this.schema.expire, new Date()), isNull(this.schema.expire))
+        )
+      )
+      .limit(1);
+
+    return response || null;
+  }
+
+  async _delete(rlKey) {
+    if (!this.drizzleClient) {
+      return Promise.reject(new RateLimiterDrizzleError('Drizzle client is not established'));
+    }
+
+    const { eq } = await getDrizzleOperators();
+
+    const [result] = await this.drizzleClient
+      .delete(this.schema)
+      .where(eq(this.schema.key, rlKey))
+      .returning({ key: this.schema.key });
+
+    return !!(result && result.key);
+  }
+
+  _clearExpiredHourAgo() {
+    if (this._clearExpiredTimeoutId) {
+      clearTimeout(this._clearExpiredTimeoutId);
+    }
+
+    this._clearExpiredTimeoutId = setTimeout(async () => {
+      try {
+        const { lt } = await getDrizzleOperators();
+        await this.drizzleClient
+          .delete(this.schema)
+          .where(lt(this.schema.expire, new Date(Date.now() - EXPIRED_THRESHOLD_MS)));
+      } catch (error) {
+        console.warn('Failed to clear expired records:', error);
+      }
+
+      this._clearExpiredHourAgo();
+    }, CLEANUP_INTERVAL_MS);
+
+    this._clearExpiredTimeoutId.unref();
+  }
+}
+
+module.exports = RateLimiterDrizzleNonAtomic;
 
 
 /***/ }),
@@ -27353,6 +27550,7 @@ class RateLimiterMongo extends RateLimiterStoreAbstract {
     this.dbName = opts.dbName;
     this.tableName = opts.tableName;
     this.indexKeyPrefix = opts.indexKeyPrefix;
+    this.disableIndexesCreation = opts.disableIndexesCreation;
 
     if (opts.mongo) {
       this.client = opts.mongo;
@@ -27412,14 +27610,34 @@ class RateLimiterMongo extends RateLimiterStoreAbstract {
     this._indexKeyPrefix = obj || {};
   }
 
+  get disableIndexesCreation() {
+    return this._disableIndexesCreation;
+  }
+  set disableIndexesCreation(value) {
+    this._disableIndexesCreation = !!value;
+  }
+
+  async createIndexes() {
+    const db = typeof this.client.db === 'function'
+      ? this.client.db(this.dbName)
+      : this.client;
+
+    const collection = db.collection(this.tableName);
+    await collection.createIndex({ expire: -1 }, { expireAfterSeconds: 0 });
+    await collection.createIndex(Object.assign({}, this.indexKeyPrefix, { key: 1 }), { unique: true });
+  }
+
   _initCollection() {
     const db = typeof this.client.db === 'function'
       ? this.client.db(this.dbName)
       : this.client;
 
     const collection = db.collection(this.tableName);
-    collection.createIndex({ expire: -1 }, { expireAfterSeconds: 0 });
-    collection.createIndex(Object.assign({}, this.indexKeyPrefix, { key: 1 }), { unique: true });
+    if (!this.disableIndexesCreation) {
+      this.createIndexes().catch((err) => {
+        console.error(`Cannot create indexes for mongo collection ${this.tableName}`, err);
+      });
+    }
 
     this._collection = collection;
   }
@@ -27490,9 +27708,9 @@ class RateLimiterMongo extends RateLimiterStoreAbstract {
     };
     if ((this._driverVersion.major >= 4) ||
         (this._driverVersion.major === 3 &&
-          (this._driverVersion.feature >=7) || 
-          (this._driverVersion.feature >= 6 && 
-              this._driverVersion.patch >= 7 ))) 
+          (this._driverVersion.feature >=7) ||
+          (this._driverVersion.feature >= 6 &&
+              this._driverVersion.patch >= 7 )))
     {
       upsertOptions.returnDocument = 'after';
     } else {
@@ -28626,20 +28844,41 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
    * Prevent actual redis call if redis connection is not ready
    * Because of different connection state checks for ioredis and node-redis, only this clients would be actually checked.
    * For any other clients all the requests would be passed directly to redis client
+   * @param {String} rlKey
+   * @param {Boolean} isReadonly
    * @return {boolean}
    * @private
    */
-  _isRedisReady() {
+  _isRedisReady(rlKey, isReadonly) {
     if (!this._rejectIfRedisNotReady) {
       return true;
     }
     // ioredis client
-    if (this.client.status && this.client.status !== 'ready') {
-      return false;
+    if (this.client.status) {
+      return this.client.status === 'ready';
     }
-    // node-redis client
-    if (typeof this.client.isReady === 'function' && !this.client.isReady()) {
-      return false;
+    // node-redis v3 client
+    if (typeof this.client.isReady === 'function') {
+      return this.client.isReady();
+    }
+
+    // node-redis v4+ (non-cluster) client
+    if (typeof this.client.isReady === 'boolean') {
+      return this.client.isReady === true;
+    }
+
+    // node-redis v4+ cluster client
+    if (this.client._slots && typeof this.client._slots.getClient === 'function') {
+      if (typeof this.client.isOpen === 'boolean' && this.client.isOpen !== true) {
+        return false;
+      }
+
+      try {
+        const slotClient = this.client._slots.getClient(rlKey, isReadonly);
+        return slotClient && slotClient.isReady === true;
+      } catch (error) {
+        return false;
+      }
     }
     return true;
   }
@@ -28672,7 +28911,7 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
       throw new Error("Consuming decimal number of points is not supported by this package");
     }
 
-    if (!this._isRedisReady()) {
+    if (!this._isRedisReady(rlKey, false)) {
       throw new Error('Redis connection is not ready');
     }
 
@@ -28733,7 +28972,7 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
   }
 
   async _get(rlKey) {
-    if (!this._isRedisReady()) {
+    if (!this._isRedisReady(rlKey, true)) {
       throw new Error('Redis connection is not ready');
     }
     if(!this.useRedisPackage && !this.useRedis3AndLowerPackage){
@@ -56764,11 +57003,246 @@ async function resolveLilyPondVersion() {
 
 /***/ }),
 
-/***/ 9874:
-/***/ ((module) => {
+/***/ 5407:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = eval("require")("drizzle-orm");
+var map = {
+	"./BurstyRateLimiter": [
+		5860
+	],
+	"./BurstyRateLimiter.js": [
+		5860
+	],
+	"./ExpressBruteFlexible": [
+		3966,
+		966
+	],
+	"./ExpressBruteFlexible.js": [
+		3966,
+		966
+	],
+	"./RLWrapperBlackAndWhite": [
+		7383
+	],
+	"./RLWrapperBlackAndWhite.js": [
+		7383
+	],
+	"./RateLimiterAbstract": [
+		8569
+	],
+	"./RateLimiterAbstract.js": [
+		8569
+	],
+	"./RateLimiterCluster": [
+		565
+	],
+	"./RateLimiterCluster.js": [
+		565
+	],
+	"./RateLimiterDrizzle": [
+		673
+	],
+	"./RateLimiterDrizzle.js": [
+		673
+	],
+	"./RateLimiterDrizzleNonAtomic": [
+		5347
+	],
+	"./RateLimiterDrizzleNonAtomic.js": [
+		5347
+	],
+	"./RateLimiterDynamo": [
+		2309
+	],
+	"./RateLimiterDynamo.js": [
+		2309
+	],
+	"./RateLimiterEtcd": [
+		6481
+	],
+	"./RateLimiterEtcd.js": [
+		6481
+	],
+	"./RateLimiterEtcdNonAtomic": [
+		5299
+	],
+	"./RateLimiterEtcdNonAtomic.js": [
+		5299
+	],
+	"./RateLimiterMemcache": [
+		3250
+	],
+	"./RateLimiterMemcache.js": [
+		3250
+	],
+	"./RateLimiterMemory": [
+		4544
+	],
+	"./RateLimiterMemory.js": [
+		4544
+	],
+	"./RateLimiterMongo": [
+		8439
+	],
+	"./RateLimiterMongo.js": [
+		8439
+	],
+	"./RateLimiterMySQL": [
+		7793
+	],
+	"./RateLimiterMySQL.js": [
+		7793
+	],
+	"./RateLimiterPostgres": [
+		3740
+	],
+	"./RateLimiterPostgres.js": [
+		3740
+	],
+	"./RateLimiterPrisma": [
+		6323
+	],
+	"./RateLimiterPrisma.js": [
+		6323
+	],
+	"./RateLimiterQueue": [
+		2860
+	],
+	"./RateLimiterQueue.js": [
+		2860
+	],
+	"./RateLimiterRedis": [
+		4336
+	],
+	"./RateLimiterRedis.js": [
+		4336
+	],
+	"./RateLimiterRes": [
+		449
+	],
+	"./RateLimiterRes.js": [
+		449
+	],
+	"./RateLimiterSQLite": [
+		3283
+	],
+	"./RateLimiterSQLite.js": [
+		3283
+	],
+	"./RateLimiterStoreAbstract": [
+		5140
+	],
+	"./RateLimiterStoreAbstract.js": [
+		5140
+	],
+	"./RateLimiterUnion": [
+		244
+	],
+	"./RateLimiterUnion.js": [
+		244
+	],
+	"./RateLimiterValkey": [
+		2193
+	],
+	"./RateLimiterValkey.js": [
+		2193
+	],
+	"./RateLimiterValkeyGlide": [
+		3756
+	],
+	"./RateLimiterValkeyGlide.js": [
+		3756
+	],
+	"./component/BlockedKeys": [
+		8830
+	],
+	"./component/BlockedKeys/": [
+		8830
+	],
+	"./component/BlockedKeys/BlockedKeys": [
+		5202
+	],
+	"./component/BlockedKeys/BlockedKeys.js": [
+		5202
+	],
+	"./component/BlockedKeys/index": [
+		8830
+	],
+	"./component/BlockedKeys/index.js": [
+		8830
+	],
+	"./component/MemoryStorage": [
+		8178,
+		178
+	],
+	"./component/MemoryStorage/": [
+		8178,
+		178
+	],
+	"./component/MemoryStorage/MemoryStorage": [
+		1534
+	],
+	"./component/MemoryStorage/MemoryStorage.js": [
+		1534
+	],
+	"./component/MemoryStorage/Record": [
+		749
+	],
+	"./component/MemoryStorage/Record.js": [
+		749
+	],
+	"./component/MemoryStorage/index": [
+		8178,
+		178
+	],
+	"./component/MemoryStorage/index.js": [
+		8178,
+		178
+	],
+	"./component/RateLimiterEtcdTransactionFailedError": [
+		3184
+	],
+	"./component/RateLimiterEtcdTransactionFailedError.js": [
+		3184
+	],
+	"./component/RateLimiterQueueError": [
+		7948
+	],
+	"./component/RateLimiterQueueError.js": [
+		7948
+	],
+	"./component/RateLimiterSetupError": [
+		2922
+	],
+	"./component/RateLimiterSetupError.js": [
+		2922
+	],
+	"./constants": [
+		3880,
+		880
+	],
+	"./constants.js": [
+		3880,
+		880
+	]
+};
+function webpackAsyncContext(req) {
+	if(!__nccwpck_require__.o(map, req)) {
+		return Promise.resolve().then(() => {
+			var e = new Error("Cannot find module '" + req + "'");
+			e.code = 'MODULE_NOT_FOUND';
+			throw e;
+		});
+	}
 
+	var ids = map[req], id = ids[0];
+	return Promise.all(ids.slice(1).map(__nccwpck_require__.e)).then(() => {
+		return __nccwpck_require__.t(id, 7 | 16);
+	});
+}
+webpackAsyncContext.keys = () => (Object.keys(map));
+webpackAsyncContext.id = 5407;
+module.exports = webpackAsyncContext;
 
 /***/ }),
 
@@ -58677,10 +59151,135 @@ module.exports = parseParams
 /******/ 		return module.exports;
 /******/ 	}
 /******/ 	
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__nccwpck_require__.m = __webpack_modules__;
+/******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/create fake namespace object */
+/******/ 	(() => {
+/******/ 		var getProto = Object.getPrototypeOf ? (obj) => (Object.getPrototypeOf(obj)) : (obj) => (obj.__proto__);
+/******/ 		var leafPrototypes;
+/******/ 		// create a fake namespace object
+/******/ 		// mode & 1: value is a module id, require it
+/******/ 		// mode & 2: merge all properties of value into the ns
+/******/ 		// mode & 4: return value when already ns object
+/******/ 		// mode & 16: return value when it's Promise-like
+/******/ 		// mode & 8|1: behave like require
+/******/ 		__nccwpck_require__.t = function(value, mode) {
+/******/ 			if(mode & 1) value = this(value);
+/******/ 			if(mode & 8) return value;
+/******/ 			if(typeof value === 'object' && value) {
+/******/ 				if((mode & 4) && value.__esModule) return value;
+/******/ 				if((mode & 16) && typeof value.then === 'function') return value;
+/******/ 			}
+/******/ 			var ns = Object.create(null);
+/******/ 			__nccwpck_require__.r(ns);
+/******/ 			var def = {};
+/******/ 			leafPrototypes = leafPrototypes || [null, getProto({}), getProto([]), getProto(getProto)];
+/******/ 			for(var current = mode & 2 && value; typeof current == 'object' && !~leafPrototypes.indexOf(current); current = getProto(current)) {
+/******/ 				Object.getOwnPropertyNames(current).forEach((key) => (def[key] = () => (value[key])));
+/******/ 			}
+/******/ 			def['default'] = () => (value);
+/******/ 			__nccwpck_require__.d(ns, def);
+/******/ 			return ns;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__nccwpck_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/ensure chunk */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.f = {};
+/******/ 		// This file contains only the entry chunk.
+/******/ 		// The chunk loading function for additional chunks
+/******/ 		__nccwpck_require__.e = (chunkId) => {
+/******/ 			return Promise.all(Object.keys(__nccwpck_require__.f).reduce((promises, key) => {
+/******/ 				__nccwpck_require__.f[key](chunkId, promises);
+/******/ 				return promises;
+/******/ 			}, []));
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/get javascript chunk filename */
+/******/ 	(() => {
+/******/ 		// This function allow to reference async chunks
+/******/ 		__nccwpck_require__.u = (chunkId) => {
+/******/ 			// return url for filenames based on template
+/******/ 			return "" + chunkId + ".index.js";
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__nccwpck_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/******/ 	/* webpack/runtime/require chunk loading */
+/******/ 	(() => {
+/******/ 		// no baseURI
+/******/ 		
+/******/ 		// object to store loaded chunks
+/******/ 		// "1" means "loaded", otherwise not loaded yet
+/******/ 		var installedChunks = {
+/******/ 			792: 1
+/******/ 		};
+/******/ 		
+/******/ 		// no on chunks loaded
+/******/ 		
+/******/ 		var installChunk = (chunk) => {
+/******/ 			var moreModules = chunk.modules, chunkIds = chunk.ids, runtime = chunk.runtime;
+/******/ 			for(var moduleId in moreModules) {
+/******/ 				if(__nccwpck_require__.o(moreModules, moduleId)) {
+/******/ 					__nccwpck_require__.m[moduleId] = moreModules[moduleId];
+/******/ 				}
+/******/ 			}
+/******/ 			if(runtime) runtime(__nccwpck_require__);
+/******/ 			for(var i = 0; i < chunkIds.length; i++)
+/******/ 				installedChunks[chunkIds[i]] = 1;
+/******/ 		
+/******/ 		};
+/******/ 		
+/******/ 		// require() chunk loading for javascript
+/******/ 		__nccwpck_require__.f.require = (chunkId, promises) => {
+/******/ 			// "1" is the signal for "already loaded"
+/******/ 			if(!installedChunks[chunkId]) {
+/******/ 				if(true) { // all chunks have JS
+/******/ 					installChunk(require("./" + __nccwpck_require__.u(chunkId)));
+/******/ 				} else installedChunks[chunkId] = 1;
+/******/ 			}
+/******/ 		};
+/******/ 		
+/******/ 		// no external install chunk
+/******/ 		
+/******/ 		// no HMR
+/******/ 		
+/******/ 		// no HMR manifest
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
