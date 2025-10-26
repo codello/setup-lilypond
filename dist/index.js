@@ -6913,11 +6913,11 @@ var ResourceDiscussions = class extends requesterUtils.BaseResource {
     super({ prefixUrl: resourceType, ...options });
     this.resource2Type = resource2Type;
   }
-  addNote(resourceId, resource2Id, discussionId, noteId, body, options) {
+  addNote(resourceId, resource2Id, discussionId, body, options) {
     return RequestHelper.post()(
       this,
       endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/discussions/${discussionId}/notes`,
-      { ...options, body, noteId }
+      { ...options, body }
     );
   }
   all(resourceId, resource2Id, options) {
