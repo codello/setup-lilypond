@@ -39,8 +39,8 @@ export async function installLilyPond(version: semver.SemVer): Promise<string> {
  * @param version The LilyPond version to be downloaded.
  */
 function downloadUrl(version: semver.SemVer): string {
-  let ext = 'tar.gz'
-  let arch = os.arch()
+  let ext: string = 'tar.gz'
+  let arch: string = os.arch()
   if (arch === 'x64') {
     arch = 'x86_64'
   }
