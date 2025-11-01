@@ -9930,6 +9930,13 @@ var MergeRequests = class extends requesterUtils.BaseResource {
       options
     );
   }
+  showReviewers(projectId, mergerequestIId, options) {
+    return RequestHelper.get()(
+      this,
+      endpoint`projects/${projectId}/merge_requests/${mergerequestIId}/reviewers`,
+      options
+    );
+  }
 };
 var MergeTrains = class extends requesterUtils.BaseResource {
   all(projectId, options) {
