@@ -1,118 +1,24 @@
-name: Run Tests
-
+name: CI
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
   push:
-    branches:
-      - main
-
-permissions:
-  contents: read
+    branches: [ main ]
 
 jobs:
-  test-latest:
-    name: Test Special Version (${{ matrix.version.spec }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - { spec: 'stable', result: 0 }
-          - { spec: 'latest', result: 0 }
-          - { spec: 'development', result: 1 }
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6
+  lint:
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
 
-      - name: Test Setup LilyPond
-        id: test
-        uses: ./
-        with:
-          lilypond-version: ${{ matrix.version.spec }}
+  test:
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
 
-      - name: Test Version
-        run:
-          test $(( $(echo "$VERSION" | cut -d. -f 2) % 2)) -eq ${{
-          matrix.version.result }}
-        env:
-          VERSION: ${{ steps.test.outputs.lilypond-version }}
-
-  test-version-select:
-    name: Test Explicit Version (${{ matrix.version.spec }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - { spec: '2.23', expected: '2.23.82' }
-          - { spec: '2.24.2', expected: '2.24.2' }
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6
-
-      - name: Test Setup LilyPond
-        id: test
-        uses: ./
-        with:
-          lilypond-version: ${{ matrix.version.spec }}
-
-      - name: Assert selected version
-        uses: nick-fields/assert-action@v2
-        with:
-          expected: ${{ matrix.version.expected }}
-          actual: ${{ steps.test.outputs.lilypond-version }}
-
-  test-file:
-    name: Compile Test File (${{ matrix.version }}, ${{ matrix.runs-on }})
-    runs-on: ${{ matrix.runs-on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        runs-on: [ubuntu-latest, macos-13, windows-latest]
-        version: [2.23, 2.24, 2.25]
-        include:
-          # macOS ARM releases are only available for 2.25+
-          - runs-on: macos-latest
-            version: 2.25
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Test Setup LilyPond
-        id: setup
-        uses: ./
-        with:
-          lilypond-version: ${{ matrix.version }}
-
-      - name: Compile Test File
-        run: lilypond testfiles/test.ly
-
-  test-fonts:
-    name: Test Notation Fonts (${{ matrix.version }}, ${{ matrix.runs-on }})
-    runs-on: ${{ matrix.runs-on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        runs-on: [ubuntu-latest, macos-13, windows-latest]
-        version: [2.23, 2.24, 2.25]
-        include:
-          # macOS ARM releases are only available for 2.25+
-          - runs-on: macos-latest
-            version: 2.25
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Test Setup LilyPond
-        id: setup
-        uses: ./
-        with:
-          lilypond-version: ${{ matrix.version }}
-          ol-fonts: beethoven,haydn
-
-      - name: Compile Test File
-        run: lilypond testfiles/test-font-${{ matrix.version }}.ly
+  check-dist:
+    uses: ./.github/workflows/check-dist.yml
+    permissions:
+      contents: write

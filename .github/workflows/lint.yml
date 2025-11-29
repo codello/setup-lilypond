@@ -1,23 +1,10 @@
 name: Lint Codebase
-
-on:
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: read
-  packages: read
-  statuses: write
+on: workflow_call
 
 jobs:
   lint:
     name: Lint Codebase
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
