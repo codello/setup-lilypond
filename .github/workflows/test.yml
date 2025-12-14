@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest, macos-13, windows-latest]
+        runs-on: [ubuntu-latest, macos-15-intel, windows-latest]
         version: [2.23, 2.24, 2.25]
         include:
           # macOS ARM releases are only available for 2.25+
@@ -86,7 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest, macos-13, windows-latest]
+        runs-on: [ubuntu-latest, macos-15-intel, windows-latest]
         version: [2.23, 2.24, 2.25]
         include:
           # macOS ARM releases are only available for 2.25+
