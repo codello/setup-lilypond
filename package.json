@@ -37,7 +37,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^2.0.1",
+    "@actions/core": "^2.0.2",
     "@actions/tool-cache": "^2.0.2",
     "@gitbeaker/rest": "^43.8.0",
     "fast-glob": "^3.3.3",
