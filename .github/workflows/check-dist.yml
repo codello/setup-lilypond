@@ -49,9 +49,7 @@ jobs:
           fi
 
       # If `dist` was different and this is a renovate commit, push the changes.
-      - if:
-          ${{ steps.diff.outcome == 'failure' && github.actor == 'renovate[bot]'
-          }}
+      - if: ${{ steps.diff.outcome == 'failure' && github.actor == 'renovate[bot]' }}
         name: Commit /dist Directory
         uses: EndBug/add-and-commit@v10
         with:
@@ -63,11 +61,14 @@ jobs:
 
       # If `dist/` was different than expected, upload the expected version as a
       # workflow artifact.
-      - if:
-          ${{ steps.diff.outcome == 'failure' && github.actor != 'renovate[bot]'
-          }}
+      - if: ${{ steps.diff.outcome == 'failure' && github.actor != 'renovate[bot]' }}
         name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
+
+      # Fail the workflow if `dist/` was different than expected.
+      - if: ${{ steps.diff.outcome == 'failure' && github.actor != 'renovate[bot]' }}
+        name: Fail Workflow
+        run: exit 1
