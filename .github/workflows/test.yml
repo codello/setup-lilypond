@@ -14,7 +14,7 @@ jobs:
           - { spec: 'development', result: 1 }
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
 
       - name: Test Setup LilyPond
         id: test
@@ -40,7 +40,7 @@ jobs:
           - { spec: '2.24.2', expected: '2.24.2' }
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
 
       - name: Test Setup LilyPond
         id: test
@@ -49,7 +49,7 @@ jobs:
           lilypond-version: ${{ matrix.version.spec }}
 
       - name: Assert selected version
-        uses: nick-fields/assert-action@v2
+        uses: nick-fields/assert-action@22dd2a66ef733fe92022d3704183ac007463eecb # v3.0.0
         with:
           expected: ${{ matrix.version.expected }}
           actual: ${{ steps.test.outputs.lilypond-version }}
@@ -69,7 +69,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
 
       - name: Test Setup LilyPond
         id: setup
@@ -95,7 +95,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
 
       - name: Test Setup LilyPond
         id: setup
