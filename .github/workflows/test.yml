@@ -36,8 +36,9 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - { spec: '2.23', expected: '2.23.82' }
           - { spec: '2.24.2', expected: '2.24.2' }
+          - { spec: '2.25', expected: '2.25.81' }
+          - { spec: '2.26.0', expected: '2.26.0' }
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
@@ -60,12 +61,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest, macos-15-intel, windows-latest]
-        version: [2.23, 2.24, 2.25]
+        runs-on: [ubuntu-slim, ubuntu-latest, macos-15-intel, windows-latest]
+        version: [2.23, 2.24, 2.25, 2.26]
         include:
           # macOS ARM releases are only available for 2.25+
           - runs-on: macos-latest
             version: 2.25
+          - runs-on: macos-latest
+            version: 2.26
 
     steps:
       - name: Checkout
@@ -87,11 +90,13 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-latest, macos-15-intel, windows-latest]
-        version: [2.23, 2.24, 2.25]
+        version: [2.23, 2.24, 2.25, 2.26]
         include:
           # macOS ARM releases are only available for 2.25+
           - runs-on: macos-latest
             version: 2.25
+          - runs-on: macos-latest
+            version: 2.26
 
     steps:
       - name: Checkout
