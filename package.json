@@ -47,7 +47,7 @@
     "@types/node": "^24.13.1",
     "@types/semver": "^7.7.1",
     "@vercel/ncc": "^0.38.4",
-    "prettier": "^3.8.3",
+    "prettier": "^3.8.4",
     "typescript": "^6.0.3"
   }
 }
