@@ -25,13 +25,14 @@
   },
   "scripts": {
     "bundle": "npm run format:write && npm run package",
+    "build": "npx tsc --project tsconfig.json --outDir .ncc-build",
     "ci-test": "npx jest",
     "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
     "lint": "npx eslint .",
-    "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
-    "package:watch": "npm run package -- --watch",
+    "prepackage": "npm run build",
+    "package": "npx ncc build .ncc-build/index.js -o dist --source-map --license licenses.txt",
     "test": "npx jest",
     "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
   },
@@ -48,6 +49,6 @@
     "@types/semver": "^7.7.1",
     "@vercel/ncc": "^0.44.1",
     "prettier": "^3.9.5",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
