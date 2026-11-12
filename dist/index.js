@@ -48993,7 +48993,7 @@ var es5 = __nccwpck_require__(4908);
 
 
 
-//#region src/RequesterUtils.ts
+// src/RequesterUtils.ts
 const { isMatch: isGlobMatch } = picomatch;
 function generateRateLimiterFn(limit, interval) {
 	const limiter = new rate_limiter_flexible.RateLimiterQueue(new rate_limiter_flexible.RateLimiterMemory({
@@ -49003,7 +49003,8 @@ function generateRateLimiterFn(limit, interval) {
 	return () => limiter.removeTokens(1);
 }
 function formatQuery(params = {}) {
-	return stringify((0,es5/* decamelizeKeys */.I8)(params), {
+	const decamelized = (0,es5/* decamelizeKeys */.I8)(params);
+	return stringify(decamelized, {
 		nesting: true,
 		nestingSyntax: "index",
 		arrayRepeat: true,
@@ -49098,8 +49099,7 @@ function getMatchingRateLimiter(endpoint, rateLimiters = {}, method = "GET") {
 	if (rateLimitConfig && rateLimitConfig?.method?.toUpperCase() === method.toUpperCase()) return rateLimitConfig.limit;
 	return generateRateLimiterFn(3e3, 60);
 }
-//#endregion
-//#region src/BaseResource.ts
+// src/BaseResource.ts
 function getDynamicToken(tokenArgument) {
 	return tokenArgument instanceof Function ? tokenArgument() : Promise.resolve(tokenArgument);
 }
@@ -49169,8 +49169,7 @@ var BaseResource = class {
 		});
 	}
 };
-//#endregion
-//#region src/GitbeakerError.ts
+// src/GitbeakerError.ts
 var GitbeakerRequestError = class extends Error {
 	cause;
 	constructor(message, options) {
@@ -49191,14 +49190,13 @@ var GitbeakerRetryError = class extends Error {
 		this.name = "GitbeakerRetryError";
 	}
 };
-//#endregion
 
 
 ;// CONCATENATED MODULE: ./node_modules/@gitbeaker/core/dist/index.mjs
 
 
 
-//#region src/infrastructure/Utils.ts
+// src/infrastructure/Utils.ts
 function createFormData(object) {
 	const form = new FormData();
 	Object.entries(object).forEach(([k, v]) => {
@@ -49257,13 +49255,16 @@ function normalizeFormData(obj, { decamelizeKeys: decamelizeKeys$1 = true } = {}
 		if (Array.isArray(value) && value.length === 2 && value[0] instanceof Blob) fileArrayEntries.push([key, value]);
 		else nonFileArrayObj[key] = value;
 	});
-	if (Object.keys(nonFileArrayObj).length > 0) stringify(decamelizeKeys$1 ? (0,es5/* decamelizeKeys */.I8)(nonFileArrayObj) : nonFileArrayObj, {
-		nesting: true,
-		nestingSyntax: "index"
-	}).split("&").forEach((cur) => {
-		const [key, val] = cur.split(/=(.*)/);
-		result[decodeURIComponent(key)] = decodeURIComponent(val);
-	});
+	if (Object.keys(nonFileArrayObj).length > 0) {
+		const normObj = decamelizeKeys$1 ? (0,es5/* decamelizeKeys */.I8)(nonFileArrayObj) : nonFileArrayObj;
+		stringify(normObj, {
+			nesting: true,
+			nestingSyntax: "index"
+		}).split("&").forEach((cur) => {
+			const [key, val] = cur.split(/=(.*)/);
+			result[decodeURIComponent(key)] = decodeURIComponent(val);
+		});
+	}
 	fileArrayEntries.forEach(([key, value]) => {
 		const normKey = decamelizeKeys$1 ? (0,es5/* decamelize */.aj)(key) : key;
 		result[normKey] = value;
@@ -49291,8 +49292,7 @@ function ensureRequiredParams(params, { maxExpected = 1, minExpected = 1 } = {})
 		throw new Error(`Too many arguments provided. Expected at most ${maxExpected} of: ${paramList}.`);
 	}
 }
-//#endregion
-//#region src/infrastructure/RequestHelper.ts
+// src/infrastructure/RequestHelper.ts
 function packageResponse(response, showExpanded) {
 	return showExpanded ? {
 		data: response.body,
@@ -49321,12 +49321,13 @@ async function getMany(camelize, getFn, endpoint, response, requestOptions, acc)
 	const withinBounds = maxPages && searchParams?.perPage ? newAcc.length / +searchParams?.perPage < maxPages : true;
 	const isLookingForASpecificPage = searchParams && searchParams?.pagination !== "keyset" && "page" in searchParams && (acc || []).length === 0;
 	if (!(!nextResultsUrl || !withinBounds || isLookingForASpecificPage)) {
-		const qs = { ...(0,es5/* camelizeKeys */.bn)(parse(nextResultsUrl.split("?")[1], {
+		const parsedQueryString = parse(nextResultsUrl.split("?")[1], {
 			nesting: true,
 			nestingSyntax: "index",
 			arrayRepeat: true,
 			arrayRepeatSyntax: "bracket"
-		})) };
+		});
+		const qs = { ...(0,es5/* camelizeKeys */.bn)(parsedQueryString) };
 		const newOpts = {
 			maxPages,
 			sudo,
@@ -49449,8 +49450,7 @@ const RequestHelper = {
 	get,
 	del
 };
-//#endregion
-//#region src/resources/AICatalog.ts
+// src/resources/AICatalog.ts
 var AICatalog = class extends BaseResource {
 	seedExternalAgents(options) {
 		const { sudo, showExpanded } = options || {};
@@ -49460,8 +49460,7 @@ var AICatalog = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/AlertManagement.ts
+// src/resources/AlertManagement.ts
 var AlertManagement = class extends BaseResource {
 	allMetricImages(projectId, alertIId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -49500,8 +49499,7 @@ var AlertManagement = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ApplicationAppearance.ts
+// src/resources/ApplicationAppearance.ts
 var ApplicationAppearance = class extends BaseResource {
 	show(options) {
 		const { sudo, showExpanded } = options || {};
@@ -49526,8 +49524,7 @@ var ApplicationAppearance = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ApplicationPlanLimits.ts
+// src/resources/ApplicationPlanLimits.ts
 var ApplicationPlanLimits = class extends BaseResource {
 	show(options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -49549,8 +49546,7 @@ var ApplicationPlanLimits = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ApplicationSettings.ts
+// src/resources/ApplicationSettings.ts
 var ApplicationSettings = class extends BaseResource {
 	show(options) {
 		const { sudo, showExpanded } = options || {};
@@ -49568,8 +49564,7 @@ var ApplicationSettings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ApplicationStatistics.ts
+// src/resources/ApplicationStatistics.ts
 var ApplicationStatistics = class extends BaseResource {
 	show(options) {
 		const { sudo, showExpanded } = options || {};
@@ -49579,8 +49574,7 @@ var ApplicationStatistics = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Applications.ts
+// src/resources/Applications.ts
 var Applications = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -49619,8 +49613,7 @@ var Applications = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Attestations.ts
+// src/resources/Attestations.ts
 var Attestations = class extends BaseResource {
 	all(projectId, subjectDigest, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -49639,8 +49632,7 @@ var Attestations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/AuditEvents.ts
+// src/resources/AuditEvents.ts
 var AuditEvents = class extends BaseResource {
 	all(options) {
 		const { projectId, groupId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -49675,8 +49667,7 @@ var AuditEvents = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Avatar.ts
+// src/resources/Avatar.ts
 var Avatar = class extends BaseResource {
 	show(email, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -49690,8 +49681,7 @@ var Avatar = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/BroadcastMessages.ts
+// src/resources/BroadcastMessages.ts
 var BroadcastMessages = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -49736,8 +49726,7 @@ var BroadcastMessages = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/BulkImports.ts
+// src/resources/BulkImports.ts
 var BulkImports = class extends BaseResource {
 	create(configuration, entities, options) {
 		const { sudo, showExpanded } = options || {};
@@ -49798,8 +49787,7 @@ var BulkImports = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ClusterAgents.ts
+// src/resources/ClusterAgents.ts
 var ClusterAgents = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -49895,8 +49883,7 @@ var ClusterAgents = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/CodeSuggestions.ts
+// src/resources/CodeSuggestions.ts
 var CodeSuggestions = class extends BaseResource {
 	generateCompletion(currentFile, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -49932,8 +49919,7 @@ var CodeSuggestions = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Composer.ts
+// src/resources/Composer.ts
 var Composer = class extends BaseResource {
 	create(projectId, options) {
 		const { showExpanded, ...body } = options || {};
@@ -49972,8 +49958,7 @@ var Composer = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ConanV1.ts
+// src/resources/ConanV1.ts
 var ConanV1 = class extends BaseResource {
 	authenticate({ projectId, ...options } = {}) {
 		const { showExpanded } = options || {};
@@ -50080,8 +50065,7 @@ var ConanV1 = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ConanV2.ts
+// src/resources/ConanV2.ts
 var ConanV2 = class extends BaseResource {
 	authenticate(projectId, options) {
 		const { showExpanded } = options || {};
@@ -50157,8 +50141,7 @@ var ConanV2 = class extends BaseResource {
 		return RequestHelper.get()(this, endpoint`projects/${projectId}/packages/conan/v2/conans/${packageName}/${packageVersion}/${packageUsername}/${packageChannel}/revisions/${recipeRevision}/search`, { showExpanded });
 	}
 };
-//#endregion
-//#region src/resources/DataManagement.ts
+// src/resources/DataManagement.ts
 var DataManagement = class extends BaseResource {
 	allRecords(modelName, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -50192,8 +50175,7 @@ var DataManagement = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/DatabaseMigrations.ts
+// src/resources/DatabaseMigrations.ts
 var DatabaseMigrations = class extends BaseResource {
 	markAsSuccessful(version, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -50212,8 +50194,7 @@ var DatabaseMigrations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Debian.ts
+// src/resources/Debian.ts
 var Debian = class extends BaseResource {
 	downloadBinaryFileIndex(distribution, component, architecture, { projectId, groupId, ...options }) {
 		ensureRequiredParams({
@@ -50440,8 +50421,7 @@ var Debian = class extends BaseResource {
 		return RequestHelper.get()(this, url, { showExpanded });
 	}
 };
-//#endregion
-//#region src/resources/Dependencies.ts
+// src/resources/Dependencies.ts
 var Dependencies = class extends BaseResource {
 	all(projectId, options) {
 		const { showExpanded, sudo, maxPages, ...searchParams } = options || {};
@@ -50453,8 +50433,7 @@ var Dependencies = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/DependencyListExport.ts
+// src/resources/DependencyListExport.ts
 var DependencyListExport = class extends BaseResource {
 	create(id, exportType, options) {
 		const { showExpanded, sudo, entity = "projects", ...body } = options || {};
@@ -50482,8 +50461,7 @@ var DependencyListExport = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/DependencyProxy.ts
+// src/resources/DependencyProxy.ts
 var DependencyProxy = class extends BaseResource {
 	remove(groupId, options) {
 		const { showExpanded, sudo } = options || {};
@@ -50493,8 +50471,7 @@ var DependencyProxy = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/DeployKeys.ts
+// src/resources/DeployKeys.ts
 var DeployKeys = class extends BaseResource {
 	all(options) {
 		const { showExpanded, sudo, maxPages, projectId, userId, ...searchParams } = options || {};
@@ -50564,8 +50541,7 @@ var DeployKeys = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/DeployTokens.ts
+// src/resources/DeployTokens.ts
 var DeployTokens = class extends BaseResource {
 	all(options) {
 		const { projectId, groupId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -50635,8 +50611,7 @@ var DeployTokens = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Events.ts
+// src/resources/Events.ts
 var Events = class extends BaseResource {
 	all(options) {
 		const { projectId, userId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -50656,8 +50631,7 @@ var Events = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Experiments.ts
+// src/resources/Experiments.ts
 var Experiments = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -50669,8 +50643,7 @@ var Experiments = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Import.ts
+// src/resources/Import.ts
 var Import = class extends BaseResource {
 	importGithubRepository(personalAccessToken, repositoryId, targetNamespace, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -50735,8 +50708,7 @@ var Import = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/InstanceLevelCICDVariables.ts
+// src/resources/InstanceLevelCICDVariables.ts
 var InstanceLevelCICDVariables = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -50785,8 +50757,7 @@ var InstanceLevelCICDVariables = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Keys.ts
+// src/resources/Keys.ts
 var Keys = class extends BaseResource {
 	show({ keyId, fingerprint, sudo, showExpanded, ...searchParams } = {}) {
 		let url;
@@ -50803,8 +50774,7 @@ var Keys = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/License.ts
+// src/resources/License.ts
 var License = class extends BaseResource {
 	add(license, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -50854,8 +50824,7 @@ var License = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Licenses.ts
+// src/resources/Licenses.ts
 var Licenses = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -50874,8 +50843,7 @@ var Licenses = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Lint.ts
+// src/resources/Lint.ts
 var Lint = class extends BaseResource {
 	check(projectId, options) {
 		const { sudo, showExpanded, ...searchParams } = options;
@@ -50897,8 +50865,7 @@ var Lint = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Markdown.ts
+// src/resources/Markdown.ts
 var Markdown = class extends BaseResource {
 	render(text, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -50912,8 +50879,7 @@ var Markdown = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Maven.ts
+// src/resources/Maven.ts
 var Maven = class extends BaseResource {
 	downloadPackageFile(path, filename, options) {
 		const { projectId, groupId, sudo, showExpanded } = options || {};
@@ -50935,8 +50901,7 @@ var Maven = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Metadata.ts
+// src/resources/Metadata.ts
 var Metadata = class extends BaseResource {
 	show(options) {
 		const { sudo, showExpanded } = options || {};
@@ -50953,8 +50918,7 @@ var Metadata = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Migrations.ts
+// src/resources/Migrations.ts
 var Migrations = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51001,8 +50965,7 @@ var Migrations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ModelRegistry.ts
+// src/resources/ModelRegistry.ts
 var ModelRegistry = class extends BaseResource {
 	download(projectId, modelVersionId, fileName, options) {
 		const { sudo, showExpanded, path, ...searchParams } = options || {};
@@ -51034,8 +50997,7 @@ var ModelRegistry = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/NPM.ts
+// src/resources/NPM.ts
 var NPM = class extends BaseResource {
 	downloadPackageFile(projectId, packageName, filename, options) {
 		const { showExpanded } = options || {};
@@ -51084,8 +51046,7 @@ var NPM = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Namespaces.ts
+// src/resources/Namespaces.ts
 var Namespaces = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51112,8 +51073,7 @@ var Namespaces = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/NotificationSettings.ts
+// src/resources/NotificationSettings.ts
 var NotificationSettings = class extends BaseResource {
 	edit(options = {}) {
 		const { projectId, groupId, sudo, showExpanded, ...body } = options;
@@ -51147,8 +51107,7 @@ var NotificationSettings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/NuGet.ts
+// src/resources/NuGet.ts
 var NuGet = class extends BaseResource {
 	downloadPackageFile(projectId, packageName, packageVersion, filename, options) {
 		const { showExpanded } = options || {};
@@ -51291,8 +51250,7 @@ var NuGet = class extends BaseResource {
 		return RequestHelper.get()(clonedService, `${uri}/symbolfiles/${fileName}/${signature}/${fileName}`, { showExpanded });
 	}
 };
-//#endregion
-//#region src/resources/Orbit.ts
+// src/resources/Orbit.ts
 var Orbit = class extends BaseResource {
 	createQuery(queryRequest, options) {
 		const { sudo, showExpanded } = options || {};
@@ -51326,8 +51284,7 @@ var Orbit = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Organizations.ts
+// src/resources/Organizations.ts
 var Organizations = class extends BaseResource {
 	create(options) {
 		const { name, path, description, avatar, sudo, showExpanded } = options;
@@ -51348,8 +51305,7 @@ var Organizations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Pages.ts
+// src/resources/Pages.ts
 var Pages = class extends BaseResource {
 	show(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -51374,8 +51330,7 @@ var Pages = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PersonalAccessTokens.ts
+// src/resources/PersonalAccessTokens.ts
 var PersonalAccessTokens = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51436,8 +51391,7 @@ var PersonalAccessTokens = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PipelineTriggers.ts
+// src/resources/PipelineTriggers.ts
 var PipelineTriggers = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -51489,8 +51443,7 @@ var PipelineTriggers = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PlanLimits.ts
+// src/resources/PlanLimits.ts
 var PlanLimits = class extends BaseResource {
 	show(options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -51509,8 +51462,7 @@ var PlanLimits = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PyPI.ts
+// src/resources/PyPI.ts
 var PyPI = class extends BaseResource {
 	downloadPackageFile(sha, fileIdentifier, { projectId, groupId, ...options } = {}) {
 		ensureRequiredParams({
@@ -51569,8 +51521,7 @@ var PyPI = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/RubyGems.ts
+// src/resources/RubyGems.ts
 var RubyGems = class extends BaseResource {
 	allDependencies(projectId, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -51603,8 +51554,7 @@ var RubyGems = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/RunnerControllers.ts
+// src/resources/RunnerControllers.ts
 var RunnerControllers = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51681,8 +51631,7 @@ var RunnerControllers = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/RunnerControllerTokens.ts
+// src/resources/RunnerControllerTokens.ts
 var RunnerControllerTokens = class extends BaseResource {
 	all(runnerControllerId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51723,8 +51672,7 @@ var RunnerControllerTokens = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Search.ts
+// src/resources/Search.ts
 var Search = class extends BaseResource {
 	all(scope, search, options) {
 		const { projectId, groupId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51748,8 +51696,7 @@ var Search = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/SearchAdmin.ts
+// src/resources/SearchAdmin.ts
 var SearchAdmin = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51770,8 +51717,7 @@ var SearchAdmin = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ServiceAccounts.ts
+// src/resources/ServiceAccounts.ts
 var ServiceAccounts = class extends BaseResource {
 	all(options) {
 		const { projectId, groupId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -51839,8 +51785,7 @@ var ServiceAccounts = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ServicePing.ts
+// src/resources/ServicePing.ts
 var ServicePing = class extends BaseResource {
 	exportServicePing(options) {
 		const { sudo, showExpanded } = options || {};
@@ -51887,8 +51832,7 @@ var ServicePing = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ServiceData.ts
+// src/resources/ServiceData.ts
 var ServiceData = class extends BaseResource {
 	showMetricDefinitions(options) {
 		const { sudo, showExpanded } = options || {};
@@ -51912,8 +51856,7 @@ var ServiceData = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/SidekiqMetrics.ts
+// src/resources/SidekiqMetrics.ts
 var SidekiqMetrics = class extends BaseResource {
 	queueMetrics() {
 		return RequestHelper.get()(this, "sidekiq/queue_metrics");
@@ -51928,8 +51871,7 @@ var SidekiqMetrics = class extends BaseResource {
 		return RequestHelper.get()(this, "sidekiq/compound_metrics");
 	}
 };
-//#endregion
-//#region src/resources/SidekiqQueues.ts
+// src/resources/SidekiqQueues.ts
 var SidekiqQueues = class extends BaseResource {
 	remove(queueName, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -51940,8 +51882,7 @@ var SidekiqQueues = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceAccessRequests.ts
+// src/templates/ResourceAccessRequests.ts
 var ResourceAccessRequests = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -51981,8 +51922,7 @@ var ResourceAccessRequests = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceAccessTokens.ts
+// src/templates/ResourceAccessTokens.ts
 var ResourceAccessTokens = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52034,8 +51974,7 @@ var ResourceAccessTokens = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceAwardEmojis.ts
+// src/templates/ResourceAwardEmojis.ts
 var ResourceAwardEmojis = class extends BaseResource {
 	resourceType2;
 	constructor(resourceType1, resourceType2, options) {
@@ -52081,8 +52020,7 @@ var ResourceAwardEmojis = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceNoteAwardEmojis.ts
+// src/templates/ResourceNoteAwardEmojis.ts
 var ResourceNoteAwardEmojis = class extends BaseResource {
 	resourceType;
 	constructor(resourceType, options) {
@@ -52128,8 +52066,7 @@ var ResourceNoteAwardEmojis = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceBadges.ts
+// src/templates/ResourceBadges.ts
 var ResourceBadges = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52192,8 +52129,7 @@ var ResourceBadges = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceCustomAttributes.ts
+// src/templates/ResourceCustomAttributes.ts
 var ResourceCustomAttributes = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52236,8 +52172,7 @@ var ResourceCustomAttributes = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceDORA4Metrics.ts
+// src/templates/ResourceDORA4Metrics.ts
 var ResourceDORA4Metrics = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52257,8 +52192,7 @@ var ResourceDORA4Metrics = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceDiscussions.ts
+// src/templates/ResourceDiscussions.ts
 var ResourceDiscussions = class extends BaseResource {
 	resource2Type;
 	constructor(resourceType, resource2Type, options) {
@@ -52326,8 +52260,7 @@ var ResourceDiscussions = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceIssueBoards.ts
+// src/templates/ResourceIssueBoards.ts
 var ResourceIssueBoards = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52418,8 +52351,7 @@ var ResourceIssueBoards = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceLabels.ts
+// src/templates/ResourceLabels.ts
 var ResourceLabels = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52497,8 +52429,7 @@ var ResourceLabels = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceMarkdownUploads.ts
+// src/templates/ResourceMarkdownUploads.ts
 var ResourceMarkdownUploads = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52544,8 +52475,7 @@ var ResourceMarkdownUploads = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceMembers.ts
+// src/templates/ResourceMembers.ts
 var ResourceMembers = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52603,8 +52533,7 @@ var ResourceMembers = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceMilestones.ts
+// src/templates/ResourceMilestones.ts
 var ResourceMilestones = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52676,8 +52605,7 @@ var ResourceMilestones = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceNotes.ts
+// src/templates/ResourceNotes.ts
 var ResourceNotes = class extends BaseResource {
 	resource2Type;
 	constructor(resourceType, resource2Type, options) {
@@ -52722,8 +52650,7 @@ var ResourceNotes = class extends BaseResource {
 		return RequestHelper.get()(this, endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/notes/${noteId}`, options);
 	}
 };
-//#endregion
-//#region src/templates/ResourceVariables.ts
+// src/templates/ResourceVariables.ts
 var ResourceVariables = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52780,8 +52707,7 @@ var ResourceVariables = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceWikis.ts
+// src/templates/ResourceWikis.ts
 var ResourceWikis = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52845,8 +52771,7 @@ var ResourceWikis = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceHooks.ts
+// src/templates/ResourceHooks.ts
 var ResourceHooks = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52916,8 +52841,7 @@ var ResourceHooks = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourcePushRules.ts
+// src/templates/ResourcePushRules.ts
 var ResourcePushRules = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -52956,8 +52880,7 @@ var ResourcePushRules = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceRepositoryStorageMoves.ts
+// src/templates/ResourceRepositoryStorageMoves.ts
 var ResourceRepositoryStorageMoves = class extends BaseResource {
 	resourceType;
 	resourceTypeSingular;
@@ -52999,8 +52922,7 @@ var ResourceRepositoryStorageMoves = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceInvitations.ts
+// src/templates/ResourceInvitations.ts
 var ResourceInvitations = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -53048,8 +52970,7 @@ var ResourceInvitations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceIterations.ts
+// src/templates/ResourceIterations.ts
 var ResourceIterations = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -53067,8 +52988,7 @@ var ResourceIterations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceProtectedEnvironments.ts
+// src/templates/ResourceProtectedEnvironments.ts
 var ResourceProtectedEnvironments = class extends BaseResource {
 	constructor(resourceType, options) {
 		super({
@@ -53120,8 +53040,7 @@ var ResourceProtectedEnvironments = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceIterationEvents.ts
+// src/templates/ResourceIterationEvents.ts
 var ResourceIterationEvents = class extends BaseResource {
 	resource2Type;
 	constructor(resourceType, resource2Type, options) {
@@ -53148,8 +53067,7 @@ var ResourceIterationEvents = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceLabelEvents.ts
+// src/templates/ResourceLabelEvents.ts
 var ResourceLabelEvents = class extends BaseResource {
 	resource2Type;
 	constructor(resourceType, resource2Type, options) {
@@ -53172,8 +53090,7 @@ var ResourceLabelEvents = class extends BaseResource {
 		return RequestHelper.get()(this, endpoint`${resourceId}/${this.resource2Type}/${resource2Id}/resource_label_events/${labelEventId}`, options);
 	}
 };
-//#endregion
-//#region src/templates/ResourceMilestoneEvents.ts
+// src/templates/ResourceMilestoneEvents.ts
 var ResourceMilestoneEvents = class extends BaseResource {
 	resource2Type;
 	constructor(resourceType, resource2Type, options) {
@@ -53200,8 +53117,7 @@ var ResourceMilestoneEvents = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceStateEvents.ts
+// src/templates/ResourceStateEvents.ts
 var ResourceStateEvents = class extends BaseResource {
 	resource2Type;
 	constructor(resourceType, resource2Type, options) {
@@ -53228,8 +53144,7 @@ var ResourceStateEvents = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/templates/ResourceWeightEvents.ts
+// src/templates/ResourceWeightEvents.ts
 var ResourceWeightEvents = class extends BaseResource {
 	resource2Type;
 	constructor(resourceType, resource2Type, options) {
@@ -53256,16 +53171,14 @@ var ResourceWeightEvents = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/SnippetRepositoryStorageMoves.ts
+// src/resources/SnippetRepositoryStorageMoves.ts
 var SnippetRepositoryStorageMoves = class extends ResourceRepositoryStorageMoves {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("snippets", options);
 	}
 };
-//#endregion
-//#region src/resources/Snippets.ts
+// src/resources/Snippets.ts
 var Snippets = class extends BaseResource {
 	all({ public: ppublic, all, ...options } = {}) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options;
@@ -53336,8 +53249,7 @@ var Snippets = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Suggestions.ts
+// src/resources/Suggestions.ts
 var Suggestions = class extends BaseResource {
 	apply(suggestionId, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -53359,8 +53271,7 @@ var Suggestions = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/SystemHooks.ts
+// src/resources/SystemHooks.ts
 var SystemHooks = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53430,8 +53341,7 @@ var SystemHooks = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/TerraformModules.ts
+// src/resources/TerraformModules.ts
 var TerraformModules = class extends BaseResource {
 	allVersions(moduleNamespace, moduleName, moduleSystem, options) {
 		const { showExpanded } = options || {};
@@ -53470,8 +53380,7 @@ var TerraformModules = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/TodoLists.ts
+// src/resources/TodoLists.ts
 var TodoLists = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53491,8 +53400,7 @@ var TodoLists = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Topics.ts
+// src/resources/Topics.ts
 var Topics = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53557,8 +53465,7 @@ var Topics = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/VirtualRegistriesCleanupPolicies.ts
+// src/resources/VirtualRegistriesCleanupPolicies.ts
 var VirtualRegistriesCleanupPolicies = class extends BaseResource {
 	show(groupId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -53591,8 +53498,7 @@ var VirtualRegistriesCleanupPolicies = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Vulnerabilities.ts
+// src/resources/Vulnerabilities.ts
 var Vulnerabilities = class extends BaseResource {
 	show(vulnerabilityId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -53630,8 +53536,7 @@ var Vulnerabilities = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/VulnerabilityArchiveExports.ts
+// src/resources/VulnerabilityArchiveExports.ts
 var VulnerabilityArchiveExports = class extends BaseResource {
 	create(projectId, options) {
 		const { sudo, showExpanded, ...body } = options;
@@ -53656,8 +53561,7 @@ var VulnerabilityArchiveExports = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/VulnerabilityFindings.ts
+// src/resources/VulnerabilityFindings.ts
 var VulnerabilityFindings = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53669,8 +53573,7 @@ var VulnerabilityFindings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/WebCommits.ts
+// src/resources/WebCommits.ts
 var WebCommits = class extends BaseResource {
 	showPublicKey(options) {
 		const { sudo, showExpanded } = options || {};
@@ -53680,8 +53583,7 @@ var WebCommits = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Branches.ts
+// src/resources/Branches.ts
 var Branches = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53713,16 +53615,14 @@ var Branches = class extends BaseResource {
 		return RequestHelper.get()(this, endpoint`projects/${projectId}/repository/branches/${branchName}`, options);
 	}
 };
-//#endregion
-//#region src/resources/CommitDiscussions.ts
+// src/resources/CommitDiscussions.ts
 var CommitDiscussions = class extends ResourceDiscussions {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", new RawPathSegment("repository/commits"), options);
 	}
 };
-//#endregion
-//#region src/resources/Commits.ts
+// src/resources/Commits.ts
 var Commits = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53851,8 +53751,7 @@ var Commits = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/CompliancePolicySettings.ts
+// src/resources/CompliancePolicySettings.ts
 var CompliancePolicySettings = class extends BaseResource {
 	show(options) {
 		const { sudo, showExpanded } = options || {};
@@ -53870,8 +53769,7 @@ var CompliancePolicySettings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ContainerRegistry.ts
+// src/resources/ContainerRegistry.ts
 var ContainerRegistry = class extends BaseResource {
 	allRepositories(options) {
 		const { projectId, groupId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53948,8 +53846,7 @@ var ContainerRegistry = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ContainerRegistryProtectionTagRules.ts
+// src/resources/ContainerRegistryProtectionTagRules.ts
 var ContainerRegistryProtectionTagRules = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -53988,8 +53885,7 @@ var ContainerRegistryProtectionTagRules = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ContainerRepositoryProtectionRules.ts
+// src/resources/ContainerRepositoryProtectionRules.ts
 var ContainerRepositoryProtectionRules = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54027,8 +53923,7 @@ var ContainerRepositoryProtectionRules = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ContainerVirtualRegistry.ts
+// src/resources/ContainerVirtualRegistry.ts
 var ContainerVirtualRegistry = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, maxPages, showExpanded, ...searchParams } = options || {};
@@ -54200,8 +54095,7 @@ var ContainerVirtualRegistry = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Deployments.ts
+// src/resources/Deployments.ts
 var Deployments = class extends BaseResource {
 	all(projectId, options) {
 		const { showExpanded, sudo, maxPages, ...searchParams } = options || {};
@@ -54272,8 +54166,7 @@ var Deployments = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Environments.ts
+// src/resources/Environments.ts
 var Environments = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54342,8 +54235,7 @@ var Environments = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ErrorTrackingClientKeys.ts
+// src/resources/ErrorTrackingClientKeys.ts
 var ErrorTrackingClientKeys = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54369,8 +54261,7 @@ var ErrorTrackingClientKeys = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ErrorTrackingSettings.ts
+// src/resources/ErrorTrackingSettings.ts
 var ErrorTrackingSettings = class extends BaseResource {
 	create(projectId, active, integrated, options) {
 		const { sudo, showExpanded } = options || {};
@@ -54402,8 +54293,7 @@ var ErrorTrackingSettings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ExternalControls.ts
+// src/resources/ExternalControls.ts
 var ExternalControls = class extends BaseResource {
 	setStatus(projectId, externalControlId, status, options) {
 		const { sudo, showExpanded, timestamp, nonce, hmacSignature } = options || {};
@@ -54423,8 +54313,7 @@ var ExternalControls = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ExternalStatusChecks.ts
+// src/resources/ExternalStatusChecks.ts
 var ExternalStatusChecks = class extends BaseResource {
 	all(projectId, options) {
 		const { mergerequestIId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54486,8 +54375,7 @@ var ExternalStatusChecks = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/FeatureFlagUserLists.ts
+// src/resources/FeatureFlagUserLists.ts
 var FeatureFlagUserLists = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54533,8 +54421,7 @@ var FeatureFlagUserLists = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/FeatureFlags.ts
+// src/resources/FeatureFlags.ts
 var FeatureFlags = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54580,8 +54467,7 @@ var FeatureFlags = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Features.ts
+// src/resources/Features.ts
 var Features = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54620,8 +54506,7 @@ var Features = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Flows.ts
+// src/resources/Flows.ts
 var Flows = class extends BaseResource {
 	create(options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -54641,8 +54526,7 @@ var Flows = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/FreezePeriods.ts
+// src/resources/FreezePeriods.ts
 var FreezePeriods = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54688,8 +54572,7 @@ var FreezePeriods = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GeoSites.ts
+// src/resources/GeoSites.ts
 var GeoSites = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54758,8 +54641,7 @@ var GeoSites = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GitLabDuoChat.ts
+// src/resources/GitLabDuoChat.ts
 var GitLabDuoChat = class extends BaseResource {
 	completions(options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -54770,8 +54652,7 @@ var GitLabDuoChat = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GitlabPages.ts
+// src/resources/GitlabPages.ts
 var GitlabPages = class extends BaseResource {
 	remove(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -54788,8 +54669,7 @@ var GitlabPages = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GoProxy.ts
+// src/resources/GoProxy.ts
 var GoProxy = class extends BaseResource {
 	all(projectId, moduleName, options) {
 		const { sudo, showExpanded } = options || {};
@@ -54820,8 +54700,7 @@ var GoProxy = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GoogleCloudIntegration.ts
+// src/resources/GoogleCloudIntegration.ts
 var GoogleCloudIntegration = class extends BaseResource {
 	workloadIdentityFederationScript(projectId, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -54848,8 +54727,7 @@ var GoogleCloudIntegration = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Helm.ts
+// src/resources/Helm.ts
 var Helm = class extends BaseResource {
 	downloadChartIndex(projectId, channel, options) {
 		const { sudo, showExpanded } = options || {};
@@ -54877,8 +54755,7 @@ var Helm = class extends BaseResource {
 		return this.uploadChart(projectId, channel, chart, options);
 	}
 };
-//#endregion
-//#region src/resources/Integrations.ts
+// src/resources/Integrations.ts
 var Integrations = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -54910,40 +54787,35 @@ var Integrations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/IssueAwardEmojis.ts
+// src/resources/IssueAwardEmojis.ts
 var IssueAwardEmojis = class extends ResourceAwardEmojis {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueDiscussions.ts
+// src/resources/IssueDiscussions.ts
 var IssueDiscussions = class extends ResourceDiscussions {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueIterationEvents.ts
+// src/resources/IssueIterationEvents.ts
 var IssueIterationEvents = class extends ResourceIterationEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueLabelEvents.ts
+// src/resources/IssueLabelEvents.ts
 var IssueLabelEvents = class extends ResourceLabelEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueLinks.ts
+// src/resources/IssueLinks.ts
 var IssueLinks = class extends BaseResource {
 	all(projectId, issueIId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -54982,48 +54854,42 @@ var IssueLinks = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/IssueMilestoneEvents.ts
+// src/resources/IssueMilestoneEvents.ts
 var IssueMilestoneEvents = class extends ResourceMilestoneEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueNoteAwardEmojis.ts
+// src/resources/IssueNoteAwardEmojis.ts
 var IssueNoteAwardEmojis = class extends ResourceNoteAwardEmojis {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueNotes.ts
+// src/resources/IssueNotes.ts
 var IssueNotes = class extends ResourceNotes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueStateEvents.ts
+// src/resources/IssueStateEvents.ts
 var IssueStateEvents = class extends ResourceStateEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/IssueWeightEvents.ts
+// src/resources/IssueWeightEvents.ts
 var IssueWeightEvents = class extends ResourceWeightEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "issues", options);
 	}
 };
-//#endregion
-//#region src/resources/Issues.ts
+// src/resources/Issues.ts
 var Issues = class extends BaseResource {
 	addSpentTime(projectId, issueIId, duration, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -55251,8 +55117,7 @@ var Issues = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/IssuesStatistics.ts
+// src/resources/IssuesStatistics.ts
 var IssuesStatistics = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, projectId, groupId, ...searchParams } = options || {};
@@ -55271,8 +55136,7 @@ var IssuesStatistics = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/JobArtifacts.ts
+// src/resources/JobArtifacts.ts
 var JobArtifacts = class extends BaseResource {
 	downloadArchive(projectId, { jobId, artifactPath, ref, job, sudo, showExpanded, ...searchParams } = {}) {
 		let url = "";
@@ -55326,8 +55190,7 @@ var JobArtifacts = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Jobs.ts
+// src/resources/Jobs.ts
 var Jobs = class extends BaseResource {
 	all(projectId, options) {
 		const { pipelineId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -55412,8 +55275,7 @@ var Jobs = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestApprovals.ts
+// src/resources/MergeRequestApprovals.ts
 var MergeRequestApprovals = class extends BaseResource {
 	allApprovalRules(projectId, { mergerequestIId, ...options } = {}) {
 		const { sudo, showExpanded } = options;
@@ -55525,8 +55387,7 @@ var MergeRequestApprovals = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestApprovalSettings.ts
+// src/resources/MergeRequestApprovalSettings.ts
 var MergeRequestApprovalSettings = class extends BaseResource {
 	show(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -55559,16 +55420,14 @@ var MergeRequestApprovalSettings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestAwardEmojis.ts
+// src/resources/MergeRequestAwardEmojis.ts
 var MergeRequestAwardEmojis = class extends ResourceAwardEmojis {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "merge_requests", options);
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestContextCommits.ts
+// src/resources/MergeRequestContextCommits.ts
 var MergeRequestContextCommits = class extends BaseResource {
 	all(projectId, mergerequestIId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -55602,8 +55461,7 @@ var MergeRequestContextCommits = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestDiscussions.ts
+// src/resources/MergeRequestDiscussions.ts
 var MergeRequestDiscussions = class extends ResourceDiscussions {
 	constructor(options) {
 		/* istanbul ignore next */
@@ -55618,16 +55476,14 @@ var MergeRequestDiscussions = class extends ResourceDiscussions {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestIterationEvents.ts
+// src/resources/MergeRequestIterationEvents.ts
 var MergeRequestIterationEvents = class extends ResourceIterationEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "merge_requests", options);
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestDraftNotes.ts
+// src/resources/MergeRequestDraftNotes.ts
 var MergeRequestDraftNotes = class extends BaseResource {
 	all(projectId, mergerequestIId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -55686,40 +55542,35 @@ var MergeRequestDraftNotes = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestLabelEvents.ts
+// src/resources/MergeRequestLabelEvents.ts
 var MergeRequestLabelEvents = class extends ResourceLabelEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "merge_requests", options);
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestMilestoneEvents.ts
+// src/resources/MergeRequestMilestoneEvents.ts
 var MergeRequestMilestoneEvents = class extends ResourceMilestoneEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "merge_requests", options);
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestNoteAwardEmojis.ts
+// src/resources/MergeRequestNoteAwardEmojis.ts
 var MergeRequestNoteAwardEmojis = class extends ResourceNoteAwardEmojis {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("merge_requests", options);
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestNotes.ts
+// src/resources/MergeRequestNotes.ts
 var MergeRequestNotes = class extends ResourceNotes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "merge_requests", options);
 	}
 };
-//#endregion
-//#region src/resources/MergeRequests.ts
+// src/resources/MergeRequests.ts
 var MergeRequests = class extends BaseResource {
 	accept(projectId, mergerequestIId, options) {
 		return this.merge(projectId, mergerequestIId, options);
@@ -55959,8 +55810,7 @@ var MergeRequests = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeTrains.ts
+// src/resources/MergeTrains.ts
 var MergeTrains = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, targetBranch, ...searchParams } = options || {};
@@ -55991,8 +55841,7 @@ var MergeTrains = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PackageRegistry.ts
+// src/resources/PackageRegistry.ts
 var PackageRegistry = class extends BaseResource {
 	publish(projectId, packageName, packageVersion, packageFile, options) {
 		const { sudo, showExpanded } = options || {};
@@ -56010,8 +55859,7 @@ var PackageRegistry = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Packages.ts
+// src/resources/Packages.ts
 var Packages = class extends BaseResource {
 	all(options) {
 		const { projectId, groupId, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56066,8 +55914,7 @@ var Packages = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PagesDomains.ts
+// src/resources/PagesDomains.ts
 var PagesDomains = class extends BaseResource {
 	all(options) {
 		const { projectId, sudo, showExpanded } = options || {};
@@ -56118,8 +55965,7 @@ var PagesDomains = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PipelineScheduleVariables.ts
+// src/resources/PipelineScheduleVariables.ts
 var PipelineScheduleVariables = class extends BaseResource {
 	all(projectId, pipelineScheduleId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56161,8 +56007,7 @@ var PipelineScheduleVariables = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PipelineSchedules.ts
+// src/resources/PipelineSchedules.ts
 var PipelineSchedules = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56232,8 +56077,7 @@ var PipelineSchedules = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/PipelineTriggerTokens.ts
+// src/resources/PipelineTriggerTokens.ts
 var PipelineTriggerTokens = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56290,8 +56134,7 @@ var PipelineTriggerTokens = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Pipelines.ts
+// src/resources/Pipelines.ts
 var Pipelines = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56372,8 +56215,7 @@ var Pipelines = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProductAnalytics.ts
+// src/resources/ProductAnalytics.ts
 var ProductAnalytics = class extends BaseResource {
 	allFunnels(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -56406,24 +56248,21 @@ var ProductAnalytics = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectAccessRequests.ts
+// src/resources/ProjectAccessRequests.ts
 var ProjectAccessRequests = class extends ResourceAccessRequests {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectAccessTokens.ts
+// src/resources/ProjectAccessTokens.ts
 var ProjectAccessTokens = class extends ResourceAccessTokens {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectAliases.ts
+// src/resources/ProjectAliases.ts
 var ProjectAliases = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56461,40 +56300,35 @@ var ProjectAliases = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectBadges.ts
+// src/resources/ProjectBadges.ts
 var ProjectBadges = class extends ResourceBadges {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectCustomAttributes.ts
+// src/resources/ProjectCustomAttributes.ts
 var ProjectCustomAttributes = class extends ResourceCustomAttributes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectDORA4Metrics.ts
+// src/resources/ProjectDORA4Metrics.ts
 var ProjectDORA4Metrics = class extends ResourceDORA4Metrics {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectHooks.ts
+// src/resources/ProjectHooks.ts
 var ProjectHooks = class extends ResourceHooks {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectImportExports.ts
+// src/resources/ProjectImportExports.ts
 var ProjectImportExports = class extends BaseResource {
 	download(projectId, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -56589,32 +56423,28 @@ var ProjectImportExports = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectInvitations.ts
+// src/resources/ProjectInvitations.ts
 var ProjectInvitations = class extends ResourceInvitations {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectIssueBoards.ts
+// src/resources/ProjectIssueBoards.ts
 var ProjectIssueBoards = class extends ResourceIssueBoards {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectIterations.ts
+// src/resources/ProjectIterations.ts
 var ProjectIterations = class extends ResourceIterations {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("project", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectJobTokenScopes.ts
+// src/resources/ProjectJobTokenScopes.ts
 var ProjectJobTokenScopes = class extends BaseResource {
 	show(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -56685,16 +56515,14 @@ var ProjectJobTokenScopes = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectLabels.ts
+// src/resources/ProjectLabels.ts
 var ProjectLabels = class extends ResourceLabels {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectMarkdownUploads.ts
+// src/resources/ProjectMarkdownUploads.ts
 var ProjectMarkdownUploads = class extends ResourceMarkdownUploads {
 	constructor(options) {
 		/* istanbul ignore next */
@@ -56712,16 +56540,14 @@ var ProjectMarkdownUploads = class extends ResourceMarkdownUploads {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectMembers.ts
+// src/resources/ProjectMembers.ts
 var ProjectMembers = class extends ResourceMembers {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectMilestones.ts
+// src/resources/ProjectMilestones.ts
 var ProjectMilestones = class extends ResourceMilestones {
 	constructor(options) {
 		/* istanbul ignore next */
@@ -56736,16 +56562,14 @@ var ProjectMilestones = class extends ResourceMilestones {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectProtectedEnvironments.ts
+// src/resources/ProjectProtectedEnvironments.ts
 var ProjectProtectedEnvironments = class extends ResourceProtectedEnvironments {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectPullMirroring.ts
+// src/resources/ProjectPullMirroring.ts
 var ProjectPullMirroring = class extends BaseResource {
 	show(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -56770,16 +56594,14 @@ var ProjectPullMirroring = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectPushRules.ts
+// src/resources/ProjectPushRules.ts
 var ProjectPushRules = class extends ResourcePushRules {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectRelationsExport.ts
+// src/resources/ProjectRelationsExport.ts
 var ProjectRelationsExport = class extends BaseResource {
 	download(projectId, relation, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -56809,8 +56631,7 @@ var ProjectRelationsExport = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectReleases.ts
+// src/resources/ProjectReleases.ts
 var ProjectReleases = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56888,8 +56709,7 @@ var ProjectReleases = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectRemoteMirrors.ts
+// src/resources/ProjectRemoteMirrors.ts
 var ProjectRemoteMirrors = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -56961,16 +56781,14 @@ var ProjectRemoteMirrors = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectRepositoryStorageMoves.ts
+// src/resources/ProjectRepositoryStorageMoves.ts
 var ProjectRepositoryStorageMoves = class extends ResourceRepositoryStorageMoves {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectSecuritySettings.ts
+// src/resources/ProjectSecuritySettings.ts
 var ProjectSecuritySettings = class extends BaseResource {
 	show(projectId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -56988,32 +56806,28 @@ var ProjectSecuritySettings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectSnippetAwardEmojis.ts
+// src/resources/ProjectSnippetAwardEmojis.ts
 var ProjectSnippetAwardEmojis = class extends ResourceAwardEmojis {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "snippets", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectSnippetDiscussions.ts
+// src/resources/ProjectSnippetDiscussions.ts
 var ProjectSnippetDiscussions = class extends ResourceDiscussions {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "snippets", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectSnippetNotes.ts
+// src/resources/ProjectSnippetNotes.ts
 var ProjectSnippetNotes = class extends ResourceNotes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "snippets", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectSnippets.ts
+// src/resources/ProjectSnippets.ts
 var ProjectSnippets = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57079,15 +56893,13 @@ var ProjectSnippets = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectStatistics.ts
+// src/resources/ProjectStatistics.ts
 var ProjectStatistics = class extends BaseResource {
 	show(projectId, options) {
 		return RequestHelper.get()(this, endpoint`projects/${projectId}/statistics`, options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectTemplates.ts
+// src/resources/ProjectTemplates.ts
 var ProjectTemplates = class extends BaseResource {
 	all(projectId, type, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57107,8 +56919,7 @@ var ProjectTemplates = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectTerraformState.ts
+// src/resources/ProjectTerraformState.ts
 var ProjectTerraformState = class extends BaseResource {
 	show(projectId, name, options) {
 		return RequestHelper.get()(this, endpoint`projects/${projectId}/terraform/state/${name}`, options);
@@ -57129,16 +56940,14 @@ var ProjectTerraformState = class extends BaseResource {
 		return RequestHelper.post()(this, endpoint`projects/${projectId}/terraform/state/${name}`, options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectVariables.ts
+// src/resources/ProjectVariables.ts
 var ProjectVariables = class extends ResourceVariables {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectVulnerabilities.ts
+// src/resources/ProjectVulnerabilities.ts
 var ProjectVulnerabilities = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57158,24 +56967,21 @@ var ProjectVulnerabilities = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectWikiNotes.ts
+// src/resources/ProjectWikiNotes.ts
 var ProjectWikiNotes = class extends ResourceNotes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "wiki_pages", options);
 	}
 };
-//#endregion
-//#region src/resources/ProjectWikis.ts
+// src/resources/ProjectWikis.ts
 var ProjectWikis = class extends ResourceWikis {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", options);
 	}
 };
-//#endregion
-//#region src/resources/Projects.ts
+// src/resources/Projects.ts
 var Projects = class extends BaseResource {
 	all(options) {
 		const { userId, starredOnly, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57470,8 +57276,7 @@ var Projects = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ProjectProtectedBranches.ts
+// src/resources/ProjectProtectedBranches.ts
 var ProjectProtectedBranches = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57522,8 +57327,7 @@ var ProjectProtectedBranches = class extends BaseResource {
 		return this.remove(projectId, branchName, options);
 	}
 };
-//#endregion
-//#region src/resources/ProtectedTags.ts
+// src/resources/ProtectedTags.ts
 var ProtectedTags = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57566,8 +57370,7 @@ var ProtectedTags = class extends BaseResource {
 		return this.remove(projectId, tagName, options);
 	}
 };
-//#endregion
-//#region src/resources/ReleaseLinks.ts
+// src/resources/ReleaseLinks.ts
 var ReleaseLinks = class extends BaseResource {
 	all(projectId, tagName, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57613,8 +57416,7 @@ var ReleaseLinks = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Repositories.ts
+// src/resources/Repositories.ts
 var Repositories = class extends BaseResource {
 	allContributors(projectId, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -57706,8 +57508,7 @@ var Repositories = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/RepositoryFiles.ts
+// src/resources/RepositoryFiles.ts
 var RepositoryFiles = class extends BaseResource {
 	allFileBlames(projectId, filePath, ref, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -57778,8 +57579,7 @@ var RepositoryFiles = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/RepositorySubmodules.ts
+// src/resources/RepositorySubmodules.ts
 var RepositorySubmodules = class extends BaseResource {
 	edit(projectId, submodule, branch, commitSha, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -57794,8 +57594,7 @@ var RepositorySubmodules = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/ResourceGroups.ts
+// src/resources/ResourceGroups.ts
 var ResourceGroups = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -57836,8 +57635,7 @@ var ResourceGroups = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Runners.ts
+// src/resources/Runners.ts
 var Runners = class extends BaseResource {
 	all(options) {
 		const { projectId, groupId, owned, sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58010,8 +57808,7 @@ var Runners = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/SecureFiles.ts
+// src/resources/SecureFiles.ts
 var SecureFiles = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58055,8 +57852,7 @@ var SecureFiles = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Tags.ts
+// src/resources/Tags.ts
 var Tags = class extends BaseResource {
 	all(projectId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58101,8 +57897,7 @@ var Tags = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/TokenInformation.ts
+// src/resources/TokenInformation.ts
 var TokenInformation = class extends BaseResource {
 	show(token, options) {
 		const { sudo, showExpanded } = options || {};
@@ -58121,8 +57916,7 @@ var TokenInformation = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/UserStarredMetricsDashboard.ts
+// src/resources/UserStarredMetricsDashboard.ts
 var UserStarredMetricsDashboard = class extends BaseResource {
 	create(projectId, dashboardPath, options) {
 		const { sudo, showExpanded } = options || {};
@@ -58141,24 +57935,21 @@ var UserStarredMetricsDashboard = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupAccessRequests.ts
+// src/resources/GroupAccessRequests.ts
 var GroupAccessRequests = class extends ResourceAccessRequests {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupAccessTokens.ts
+// src/resources/GroupAccessTokens.ts
 var GroupAccessTokens = class extends ResourceAccessTokens {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupActivityAnalytics.ts
+// src/resources/GroupActivityAnalytics.ts
 var GroupActivityAnalytics = class extends BaseResource {
 	showIssuesCount(groupPath, options) {
 		const { sudo, showExpanded } = options || {};
@@ -58185,24 +57976,21 @@ var GroupActivityAnalytics = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupBadges.ts
+// src/resources/GroupBadges.ts
 var GroupBadges = class extends ResourceBadges {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupCustomAttributes.ts
+// src/resources/GroupCustomAttributes.ts
 var GroupCustomAttributes = class extends ResourceCustomAttributes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupEnterpriseUsers.ts
+// src/resources/GroupEnterpriseUsers.ts
 var GroupEnterpriseUsers = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58244,8 +58032,7 @@ var GroupEnterpriseUsers = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupEpicBoards.ts
+// src/resources/GroupEpicBoards.ts
 var GroupEpicBoards = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58280,24 +58067,21 @@ var GroupEpicBoards = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupDORA4Metrics.ts
+// src/resources/GroupDORA4Metrics.ts
 var GroupDORA4Metrics = class extends ResourceDORA4Metrics {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupHooks.ts
+// src/resources/GroupHooks.ts
 var GroupHooks = class extends ResourceHooks {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupImportExports.ts
+// src/resources/GroupImportExports.ts
 var GroupImportExports = class extends BaseResource {
 	download(groupId, options) {
 		const { sudo, showExpanded, asStream, ...searchParams } = options || {};
@@ -58329,8 +58113,7 @@ var GroupImportExports = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupIntegrations.ts
+// src/resources/GroupIntegrations.ts
 var GroupIntegrations = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58364,32 +58147,28 @@ var GroupIntegrations = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupInvitations.ts
+// src/resources/GroupInvitations.ts
 var GroupInvitations = class extends ResourceInvitations {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupIssueBoards.ts
+// src/resources/GroupIssueBoards.ts
 var GroupIssueBoards = class extends ResourceIssueBoards {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupIterations.ts
+// src/resources/GroupIterations.ts
 var GroupIterations = class extends ResourceIterations {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupLDAPLinks.ts
+// src/resources/GroupLDAPLinks.ts
 var GroupLDAPLinks = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -58422,24 +58201,21 @@ var GroupLDAPLinks = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupLabels.ts
+// src/resources/GroupLabels.ts
 var GroupLabels = class extends ResourceLabels {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupMarkdownUploads.ts
+// src/resources/GroupMarkdownUploads.ts
 var GroupMarkdownUploads = class extends ResourceMarkdownUploads {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupPlaceholderReassignments.ts
+// src/resources/GroupPlaceholderReassignments.ts
 var GroupPlaceholderReassignments = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, asStream, ...searchParams } = options || {};
@@ -58459,8 +58235,7 @@ var GroupPlaceholderReassignments = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupMemberRoles.ts
+// src/resources/GroupMemberRoles.ts
 var GroupMemberRoles = class extends BaseResource {
 	add(groupId, baseAccessLevel, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -58490,8 +58265,7 @@ var GroupMemberRoles = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupMembers.ts
+// src/resources/GroupMembers.ts
 var GroupMembers = class extends ResourceMembers {
 	constructor(options) {
 		/* istanbul ignore next */
@@ -58577,16 +58351,14 @@ var GroupMembers = class extends ResourceMembers {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupMilestones.ts
+// src/resources/GroupMilestones.ts
 var GroupMilestones = class extends ResourceMilestones {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupProtectedBranches.ts
+// src/resources/GroupProtectedBranches.ts
 var GroupProtectedBranches = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58631,24 +58403,21 @@ var GroupProtectedBranches = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupProtectedEnvironments.ts
+// src/resources/GroupProtectedEnvironments.ts
 var GroupProtectedEnvironments = class extends ResourceProtectedEnvironments {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupPushRules.ts
+// src/resources/GroupPushRules.ts
 var GroupPushRules = class extends ResourcePushRules {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupRelationExports.ts
+// src/resources/GroupRelationExports.ts
 var GroupRelationExports = class extends BaseResource {
 	download(groupId, relation, options) {
 		const { sudo, showExpanded, ...searchParams } = options || {};
@@ -58678,8 +58447,7 @@ var GroupRelationExports = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupReleases.ts
+// src/resources/GroupReleases.ts
 var GroupReleases = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58691,16 +58459,14 @@ var GroupReleases = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupRepositoryStorageMoves.ts
+// src/resources/GroupRepositoryStorageMoves.ts
 var GroupRepositoryStorageMoves = class extends ResourceRepositoryStorageMoves {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupSecuritySettings.ts
+// src/resources/GroupSecuritySettings.ts
 var GroupSecuritySettings = class extends BaseResource {
 	edit(groupId, secretPushProtectionEnabled, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -58714,8 +58480,7 @@ var GroupSecuritySettings = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupSSHCertificates.ts
+// src/resources/GroupSSHCertificates.ts
 var GroupSSHCertificates = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58745,8 +58510,7 @@ var GroupSSHCertificates = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupSAMLIdentities.ts
+// src/resources/GroupSAMLIdentities.ts
 var GroupSAMLIdentities = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58780,8 +58544,7 @@ var GroupSAMLIdentities = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupSAMLLinks.ts
+// src/resources/GroupSAMLLinks.ts
 var GroupSAMLLinks = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58821,8 +58584,7 @@ var GroupSAMLLinks = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupSCIMIdentities.ts
+// src/resources/GroupSCIMIdentities.ts
 var GroupSCIMIdentities = class extends BaseResource {
 	all(groupId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -58856,8 +58618,7 @@ var GroupSCIMIdentities = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupServiceAccounts.ts
+// src/resources/GroupServiceAccounts.ts
 var GroupServiceAccounts = class extends BaseResource {
 	create(groupId, options) {
 		const { sudo, showExpanded, ...body } = options || {};
@@ -58885,32 +58646,28 @@ var GroupServiceAccounts = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/GroupVariables.ts
+// src/resources/GroupVariables.ts
 var GroupVariables = class extends ResourceVariables {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupWikiNotes.ts
+// src/resources/GroupWikiNotes.ts
 var GroupWikiNotes = class extends ResourceNotes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", "wiki_pages", options);
 	}
 };
-//#endregion
-//#region src/resources/GroupWikis.ts
+// src/resources/GroupWikis.ts
 var GroupWikis = class extends ResourceWikis {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("groups", options);
 	}
 };
-//#endregion
-//#region src/resources/Groups.ts
+// src/resources/Groups.ts
 var Groups = class extends BaseResource {
 	all(options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -59094,16 +58851,14 @@ var Groups = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/UserCustomAttributes.ts
+// src/resources/UserCustomAttributes.ts
 var UserCustomAttributes = class extends ResourceCustomAttributes {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("users", options);
 	}
 };
-//#endregion
-//#region src/resources/UserEmails.ts
+// src/resources/UserEmails.ts
 var UserEmails = class extends BaseResource {
 	add(email, options) {
 		return this.create(email, options);
@@ -59153,8 +58908,7 @@ var UserEmails = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/UserFollows.ts
+// src/resources/UserFollows.ts
 var UserFollows = class extends BaseResource {
 	follow(userId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -59185,8 +58939,7 @@ var UserFollows = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/UserGPGKeys.ts
+// src/resources/UserGPGKeys.ts
 var UserGPGKeys = class extends BaseResource {
 	add(key, options) {
 		return this.create(key, options);
@@ -59237,8 +58990,7 @@ var UserGPGKeys = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/UserImpersonationTokens.ts
+// src/resources/UserImpersonationTokens.ts
 var UserImpersonationTokens = class extends BaseResource {
 	all(userId, options) {
 		const { sudo, showExpanded, maxPages, ...searchParams } = options || {};
@@ -59279,8 +59031,7 @@ var UserImpersonationTokens = class extends BaseResource {
 		return this.remove(userId, tokenId, options);
 	}
 };
-//#endregion
-//#region src/resources/UserModeration.ts
+// src/resources/UserModeration.ts
 var UserModeration = class extends BaseResource {
 	approve(userId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -59339,8 +59090,7 @@ var UserModeration = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/UserSSHKeys.ts
+// src/resources/UserSSHKeys.ts
 var UserSSHKeys = class extends BaseResource {
 	add(title, key, options) {
 		return this.create(title, key, options);
@@ -59395,8 +59145,7 @@ var UserSSHKeys = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/UserSupportPin.ts
+// src/resources/UserSupportPin.ts
 var UserSupportPin = class extends BaseResource {
 	create(options) {
 		const { sudo, showExpanded } = options || {};
@@ -59424,8 +59173,7 @@ var UserSupportPin = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/Users.ts
+// src/resources/Users.ts
 var Users = class extends BaseResource {
 	activate(userId, options) {
 		const { sudo, showExpanded } = options || {};
@@ -59712,16 +59460,14 @@ var Users = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/resources/MergeRequestStateEvents.ts
+// src/resources/MergeRequestStateEvents.ts
 var MergeRequestStateEvents = class extends ResourceStateEvents {
 	constructor(options) {
 		/* istanbul ignore next */
 		super("projects", "merge_requests", options);
 	}
 };
-//#endregion
-//#region src/resources/Gitlab.ts
+// src/resources/Gitlab.ts
 const resources = {
 	AICatalog,
 	AlertManagement,
@@ -59959,8 +59705,7 @@ var Gitlab = class extends BaseResource {
 		});
 	}
 };
-//#endregion
-//#region src/constants.ts
+// src/constants.ts
 let AccessLevel = /* @__PURE__ */ function(AccessLevel) {
 	AccessLevel[AccessLevel["NO_ACCESS"] = 0] = "NO_ACCESS";
 	AccessLevel[AccessLevel["MINIMAL_ACCESS"] = 5] = "MINIMAL_ACCESS";
@@ -59974,13 +59719,12 @@ let AccessLevel = /* @__PURE__ */ function(AccessLevel) {
 	AccessLevel[AccessLevel["ADMIN"] = 60] = "ADMIN";
 	return AccessLevel;
 }({});
-//#endregion
 
 
 ;// CONCATENATED MODULE: ./node_modules/@gitbeaker/rest/dist/index.mjs
 
 
-//#region src/Requester.ts
+// src/Requester.ts
 async function processBody(response) {
 	const contentType = (response.headers.get("content-type") || "").split(";")[0].trim();
 	if (contentType === "application/json") return response.json().then((v) => v || {});
@@ -60055,8 +59799,7 @@ async function defaultRequestHandler(endpoint, options) {
 	throw new GitbeakerRetryError(`Could not successfully complete this request after ${maxRetries} retries, last status code: ${lastStatus}. ${lastStatus === 429 ? "Check the applicable rate limits for this endpoint" : "Verify the status of the endpoint"}.`);
 }
 const requesterFn = createRequesterFn((_, ro) => Promise.resolve(ro), defaultRequestHandler);
-//#endregion
-//#region src/index.ts
+// src/index.ts
 /* istanbul ignore file */
 const { AccessLevel: dist_AccessLevel, ...Resources } = core_dist_namespaceObject;
 const API = presetResourceArguments(Resources, { requesterFn });
@@ -60287,7 +60030,6 @@ const { VulnerabilityArchiveExports: dist_VulnerabilityArchiveExports } = API;
 const { VulnerabilityFindings: dist_VulnerabilityFindings } = API;
 const { WebCommits: dist_WebCommits } = API;
 const { Gitlab: dist_Gitlab } = API;
-//#endregion
 
 
 // EXTERNAL MODULE: external "os"
