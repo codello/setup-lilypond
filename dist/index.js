@@ -11479,10 +11479,14 @@ class RateLimiterMemcache extends RateLimiterStoreAbstract {
     return res;
   }
 
+  _getStoredMsDuration(msDuration) {
+    return this._getSecDuration(msDuration) * 1000;
+  }
+
   _upsert(rlKey, points, msDuration, forceExpire = false, options = {}) {
     return new Promise((resolve, reject) => {
       const nowMs = Date.now();
-      const secDuration = Math.floor(msDuration / 1000);
+      const secDuration = this._getSecDuration(msDuration);
 
       if (forceExpire) {
         this.client.set(rlKey, points, secDuration, (err) => {
@@ -13255,6 +13259,10 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
     return res;
   }
 
+  _getStoredMsDuration(msDuration) {
+    return this._getSecDuration(msDuration) * 1000;
+  }
+
   async _upsert(rlKey, points, msDuration, forceExpire = false) {
     if(
       typeof points == 'string'
@@ -13270,7 +13278,7 @@ class RateLimiterRedis extends RateLimiterStoreAbstract {
       throw new Error('Redis connection is not ready');
     }
 
-    const secDuration = Math.floor(msDuration / 1000);
+    const secDuration = this._getSecDuration(msDuration);
 
     if (forceExpire) {
       const multi = this.client.multi();
@@ -13483,6 +13491,10 @@ class RateLimiterRedisNonAtomic extends RateLimiterStoreAbstract {
     return this._execMulti(multi);
   }
 
+  _getStoredMsDuration(msDuration) {
+    return this._getSecDuration(msDuration) * 1000;
+  }
+
   async _upsert(rlKey, points, msDuration, forceExpire = false) {
     if (
       typeof points == 'string'
@@ -13499,7 +13511,7 @@ class RateLimiterRedisNonAtomic extends RateLimiterStoreAbstract {
     }
 
     const parsedPoints = typeof points === 'string' ? parseInt(points, 10) : points;
-    const secDuration = Math.floor(msDuration / 1000);
+    const secDuration = this._getSecDuration(msDuration);
 
     if (forceExpire) {
       await this._setKey(rlKey, parsedPoints, secDuration);
@@ -14054,7 +14066,7 @@ module.exports = class RateLimiterStoreAbstract extends RateLimiterInsuredAbstra
       let blockPromise = Promise.resolve();
       // Block only first time when consumed reaches the block threshold
       if (this.blockDuration > 0 && this._crossedBlockThreshold(res.consumedPoints, changedPoints)) {
-        res.msBeforeNext = this.msBlockDuration;
+        res.msBeforeNext = this._getStoredMsDuration(this.msBlockDuration);
         blockPromise = this._block(rlKey, res.consumedPoints, this.msBlockDuration, options);
       }
 
@@ -14155,6 +14167,33 @@ module.exports = class RateLimiterStoreAbstract extends RateLimiterInsuredAbstra
 
   _getBlockedPoints() {
     return this._isBlockOnConsumedEnabled() ? this.blockOnConsumed : this.points + 1;
+  }
+
+  /**
+   * Whole seconds for stores that take expiry in seconds.
+   * Anything between 0 and 1 second becomes 1 second, otherwise flooring would turn it into 0,
+   * which these stores read as "never expire". 0 stays 0.
+   *
+   * @param {number} msDuration
+   * @return {number}
+   */
+  _getSecDuration(msDuration) {
+    if (msDuration > 0 && msDuration < 1000) {
+      return 1;
+    }
+    return Math.floor(msDuration / 1000);
+  }
+
+  /**
+   * How long the store keeps a key for msDuration, in milliseconds.
+   * Stores that take expiry in whole seconds override this, so the returned msBeforeNext
+   * matches the stored expiry.
+   *
+   * @param {number} msDuration
+   * @return {number}
+   */
+  _getStoredMsDuration(msDuration) {
+    return msDuration;
   }
 
   /**
@@ -14323,7 +14362,8 @@ module.exports = class RateLimiterStoreAbstract extends RateLimiterInsuredAbstra
     return new Promise((resolve, reject) => {
       this._upsert(rlKey, initPoints, msDuration, true, options)
         .then(() => {
-          resolve(new RateLimiterRes(0, msDuration > 0 ? msDuration : -1, initPoints));
+          const storedMsDuration = this._getStoredMsDuration(msDuration);
+          resolve(new RateLimiterRes(0, storedMsDuration > 0 ? storedMsDuration : -1, initPoints));
         })
         .catch((err) => {
           this._handleError(err, 'block', resolve, reject, [this.parseKey(rlKey), msDuration / 1000, options]);
@@ -14343,7 +14383,8 @@ module.exports = class RateLimiterStoreAbstract extends RateLimiterInsuredAbstra
     return new Promise((resolve, reject) => {
       this._upsert(rlKey, points, msDuration, true, options)
         .then(() => {
-          resolve(new RateLimiterRes(0, msDuration > 0 ? msDuration : -1, points));
+          const storedMsDuration = this._getStoredMsDuration(msDuration);
+          resolve(new RateLimiterRes(0, storedMsDuration > 0 ? storedMsDuration : -1, points));
         })
         .catch((err) => {
           this._handleError(err, 'set', resolve, reject, [this.parseKey(rlKey), points, msDuration / 1000, options]);
@@ -14529,12 +14570,16 @@ class RateLimiterValkey extends RateLimiterStoreAbstract {
     return res;
   }
 
+  _getStoredMsDuration(msDuration) {
+    return this._getSecDuration(msDuration) * 1000;
+  }
+
   _upsert(rlKey, points, msDuration, forceExpire = false) {
     if (!this._isValkeyReady()) {
       throw new Error('Valkey connection is not ready');
     }
 
-    const secDuration = Math.floor(msDuration / 1000);
+    const secDuration = this._getSecDuration(msDuration);
 
     if (forceExpire) {
       const multi = this.client.multi();
@@ -14740,6 +14785,10 @@ class RateLimiterValkeyGlide extends RateLimiterStoreAbstract {
     return true;
   }
 
+  _getStoredMsDuration(msDuration) {
+    return this._getSecDuration(msDuration) * 1000;
+  }
+
   /**
    * Update or insert the rate limiter record
    *
@@ -14753,7 +14802,7 @@ class RateLimiterValkeyGlide extends RateLimiterStoreAbstract {
    */
   async _upsert(rlKey, pointsToConsume, msDuration, forceExpire = false, options = {}) {
     await this._loadScripts();
-    const secDuration = Math.floor(msDuration / 1000);
+    const secDuration = this._getSecDuration(msDuration);
     if (forceExpire) {
       if (secDuration > 0) {
         await this.client.set(
@@ -59736,6 +59785,26 @@ function delay(ms) {
 		setTimeout(resolve, ms);
 	});
 }
+/**
+* Parse the Retry-After header into a delay in milliseconds.
+*
+* GitLab returns the number of seconds until the rate limit quota resets
+* (https://docs.gitlab.com/user/gitlab_com/rate_limits/#when-you-exceed-a-limit).
+* The HTTP-date form from RFC 9110 is also supported.
+*
+* Returns undefined when the header is absent or cannot be parsed.
+*/
+function getRetryAfterDelay(response) {
+	const header = response.headers.get("retry-after")?.trim();
+	if (!header) return void 0;
+	if (/^-?\d+$/.test(header)) {
+		const seconds = Number(header);
+		return seconds >= 0 ? seconds * 1e3 : void 0;
+	}
+	const resetTime = Date.parse(header);
+	if (Number.isNaN(resetTime)) return void 0;
+	return Math.max(0, resetTime - Date.now());
+}
 async function parseResponse(response, asStream = false) {
 	const { status, headers: rawHeaders } = response;
 	const headers = Object.fromEntries(rawHeaders.entries());
@@ -59794,7 +59863,7 @@ async function defaultRequestHandler(endpoint, options) {
 		if (response.ok) return parseResponse(response, asStream);
 		if (!retryCodes.includes(response.status)) await throwFailedRequestError(request, response);
 		lastStatus = response.status;
-		await delay(2 ** i * 250);
+		await delay(getRetryAfterDelay(response) ?? 2 ** i * 250);
 	}
 	throw new GitbeakerRetryError(`Could not successfully complete this request after ${maxRetries} retries, last status code: ${lastStatus}. ${lastStatus === 429 ? "Check the applicable rate limits for this endpoint" : "Verify the status of the endpoint"}.`);
 }
